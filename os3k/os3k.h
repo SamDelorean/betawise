@@ -222,6 +222,9 @@ short DialogRun();
 char DialogGetChoice();
 int DialogGetChoiceId();
 int DialogGetItemId(uint8_t index);
+void ShowBatteryPercentage(uint8_t time_seconds); // display battery graphic
+/* 0 for "porcentage text and press any key" screen
+if time>zero shows battery icon for n seconds */
 
 char TranslateKeyToChar(KeyMod_e key);
 
