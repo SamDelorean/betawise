@@ -446,6 +446,10 @@ void ProcessMessage(Message_e message, uint32_t param, uint32_t* status) {
                     memset((char*)g_scratch, 0, sizeof(g_scratch));
                     DumpRedrawScreen();
                     break;
+                
+                case KEY_MOD_CTRL | KEY_MOD_CMD | KEY_B:
+                    ShowBatteryPercentage(0);
+                    break;
             }
             break;
     }
