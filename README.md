@@ -1,6 +1,6 @@
 BetaWise
 ========
-Several custom applets for the AlphaSmart NEO / NEO2, and tools to create them.
+Several custom applets for the AlphaSmart 3000 / NEO / NEO2, and tools to create them.
 
 Compiling
 ---------
