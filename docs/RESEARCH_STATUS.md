@@ -23,6 +23,10 @@ The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`.
   - Later-OS3K analyzed capacity is 64 items.
   - returns `0` on insertion and `-1` when full.
   - historical predecessor confirms `text`, `text_len` and literal prefix `marker` lineage.
+  - `shortcut_key` core semantics confirmed: accepted values are validated through the internal shortcut formatter, unsupported values normalize to `KEY_NONE`, labels are rendered automatically, and `DialogRun` matches the raw key byte.
+  - shortcut match selects/redraws but does not exit unless the same key is also registered as an exit key; duplicate shortcuts resolve to the last matching item.
+  - high-byte Ctrl/Cmd/Alt/Shift/Caps-Lock modifier bits do not participate in shortcut matching.
+  - `file_size` core semantics confirmed as optional character-count display metadata with `-1` sentinel.
   - `file_size` is a per-item 32-bit character count consumed by `DialogDraw`; `(size_t)-1` suppresses its annotation.
   - formatter cases are confirmed as `0 -> " (empty)"`, `1 -> " (1 char)"`, and `>1 -> " (N chars)"` with thousands grouping.
 - `A0F8` — `DialogAddExitKey`
@@ -49,9 +53,9 @@ DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
 - `A100` — `DialogDraw`
   - role is coherent with historical `DialogMenuDisplay`; rendering differences remain to test.
 - `A104` — `DialogRun`
-  - firmware returns a 16-bit value; navigation, shortcut and full exit-key behavior remain to characterize in execution.
-- `DialogAddItem.shortcut_key`
-  - real fifth ABI argument; exact matching/rendering rules remain experimental.
+  - firmware returns a 16-bit value.
+  - shortcut selection and shortcut/exit-key interaction are confirmed directly from both 2005 handlers.
+  - remaining work is primarily arrow/navigation edge cases and execution-level AS3000/NEO differences.
 
 The baseline `DialogProbe` remains useful as an emulator/hardware regression test, but `A10C` no longer requires a separate discovery probe; it should now be checked against the confirmed relation above.
 
