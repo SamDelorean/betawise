@@ -228,6 +228,11 @@ if time>zero shows battery icon for n seconds */
 
 char TranslateKeyToChar(KeyMod_e key);
 
+// File namespace selection. applet_index is a runtime SmartApplet index (0..31).
+// applet_flags_out may be NULL. Returns the previous folder index on success;
+// negative System 3 status values indicate validation failure.
+int32_t FileSetFolder(uint32_t applet_index, uint32_t* applet_flags_out);
+
 // These functions return an index of 0 (system applet) if not found.
 uint8_t AppletFindByName(char* name, uint8_t start_index);
 uint8_t AppletFindById(uint16_t id);
