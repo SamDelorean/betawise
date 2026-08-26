@@ -81,9 +81,20 @@ Expected behavior:
 
 The baseline ALPHA/BETA/GAMMA probe already supplies three distinct shortcut keys and can verify selection-without-exit. Add separate follow-up cases for a file key and for shortcut+exit-key behavior; keep each variation isolated. Modifier tests should compare the same raw key with and without one high-byte modifier while keeping all other dialog state identical.
 
-## Stage 4 — marker behavior
+## Stage 4 — marker regression
 
-Keep IDs, shortcuts and file sizes fixed. Compare markers from known real usage. Treat marker bytes first as literal glyphs because that behavior is confirmed in the historical dialog implementation. Record any later OS3K-specific behavior separately.
+Firmware analysis has resolved the marker contract. The third argument is stored as a raw byte and `DialogDraw` passes it directly to `A010 / PutChar`. This behavior is present in AS3000 2005, NEO 2005 and NEO 2013 firmware. Official code uses visible markers including `'*'`, `'+'`, and `'x'` as well as the normal blank space.
+
+Keep text, ID, shortcut and file size fixed and vary only the marker in separate runs:
+
+- `' '` — blank marker position;
+- `'*'` — literal asterisk;
+- `'+'` — literal plus sign;
+- `'x'` — literal lowercase x.
+
+The emulator trace should show the `A0F4` third-argument byte and the same byte reaching `PutChar` during drawing. Changing the marker must not change choice, ID, shortcut behavior, exit behavior or file-size metadata.
+
+Do not use arbitrary control bytes on physical hardware merely to discover behavior. The raw firmware forwards them to `PutChar`; any useful rendering of non-printable characters may depend on font/display details.
 
 ## Stage 5 — file_size rendering regression
 
@@ -124,4 +135,4 @@ return register/value
 selected-choice state before and after
 ```
 
-For `A0F4`, decode all six arguments. For `A108`, `A10C`, and `A110`, correlate the return with the current dialog state and enforce the confirmed metadata relation for valid choices.
+For `A0F4`, decode all six arguments. For marker regressions, correlate argument 3 with the `PutChar` call reached through `DialogDraw`. For `A108`, `A10C`, and `A110`, correlate the return with the current dialog state and enforce the confirmed metadata relation for valid choices.
