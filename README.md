@@ -23,7 +23,7 @@ used [MinGW GCC for M68K](https://sourceforge.net/projects/mingw-gcc-68k-elf/).
 
 Installing Custom Applets
 -------------------------
-Using Neo Manager:
+Using [Neo Manager](https://support.renaissance.com/techkb/techkb/13002475e.asp):
 * File → Add to Applet List... → select [AppletFile].OS3KApp
 * SmartApplets tab → select [AppletName] → Add
   * Optional: checking *Delete SmartApplets that are not in the Install List…*
