@@ -221,8 +221,13 @@ void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
  *         AS3000 code draws this character immediately before the label.
  * id: caller-defined item metadata, distinct from the insertion-order
  *     choice index.
- * shortcut_key: OS3K-added per-item key argument. Its exact rendering and
- *               handling are still being characterized.
+ * shortcut_key: optional one-byte per-item shortcut. Accepted keys are
+ *               rendered automatically by DialogDraw (translated keys use
+ *               "[c]"; File 1-8 use "[F1]"..."[F8]"). Unsupported values
+ *               normalize to KEY_NONE. A match selects/redraws the item but
+ *               does not exit DialogRun unless that key is also an exit key.
+ *               High-byte Ctrl/Cmd/Alt/Shift/Caps-Lock flags are ignored by
+ *               the shortcut-byte comparison.
  * file_size: optional file length in characters for display by DialogDraw.
  *            (size_t)-1 suppresses the size annotation; 0 is shown as
  *            " (empty)", 1 as " (1 char)", and larger values as a grouped
