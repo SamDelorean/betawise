@@ -34,19 +34,25 @@ The dialog family is documented in detail in [`DIALOG_API.md`](DIALOG_API.md).
 
 | Trap | Name | Confidence summary |
 | --- | --- | --- |
-| `A0F0` | `DialogInit` | A/B — call shape and historical model strong |
-| `A0F4` | `DialogAddItem` | A for six-argument OS3K call shape; partial parameter semantics |
-| `A0F8` | `DialogAddExitKey` | B |
-| `A0FC` | `DialogSetChoice` | B/A- |
-| `A100` | `DialogDraw` | B/A- |
-| `A104` | `DialogRun` | B/A- |
-| `A108` | `DialogGetChoice` | B/A- |
-| `A10C` | `DialogGetChoiceId` | C — exact contract unresolved |
-| `A110` | `DialogGetItemId` | B — official/existing usage stronger than A10C |
+| `A0F0` | `DialogInit` | A — argument/state initialization confirmed in AS3000 and NEO firmware |
+| `A0F4` | `DialogAddItem` | A for six-argument ABI, `id`, 64-item capacity and 0/-1 return; partial for shortcut/file-size semantics |
+| `A0F8` | `DialogAddExitKey` | A — 15-key capacity, 0/-1 return confirmed |
+| `A0FC` | `DialogSetChoice` | A — writes current-choice byte directly |
+| `A100` | `DialogDraw` | B/A- — function role strong, rendering details still under execution validation |
+| `A104` | `DialogRun` | B/A- — 16-bit return confirmed, complete input contract still under validation |
+| `A108` | `DialogGetChoice` | A — returns current-choice byte |
+| `A10C` | `DialogGetChoiceId` | A — returns current item's 32-bit caller ID |
+| `A110` | `DialogGetItemId` | A — indexed caller-ID getter with bounds check |
 
-The historical AS3000 dialog implementation establishes insertion-ordered, 1-based choices and literal marker rendering. Official OS3K SmartApplet machine code establishes the six-argument `DialogAddItem` ABI. The later `shortcut_key` and `file_size` fields are real ABI arguments, but complete semantics remain under investigation.
+Direct handler analysis establishes the key metadata identity:
 
-`DialogProbe` remains the executable baseline for emulator/hardware validation. In particular, `A10C` is not considered required for the minimal confirmed lifecycle until its exact behavior is established.
+```c
+DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
+```
+
+for a valid current choice. `A10C` directly indexes the current-choice ID and does not bounds-check; `A110` checks `1 <= index <= item_count` and returns `0` otherwise.
+
+The later `shortcut_key` and `file_size` fields are real OS3K ABI arguments, but their complete semantics remain under investigation.
 
 ## A25C special-key dispatcher
 
