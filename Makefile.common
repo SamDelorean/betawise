@@ -10,6 +10,9 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 ASFLAGS = --pcrel
 CFLAGS = -mpcrel -fomit-frame-pointer -ffixed-a5 -ffixed-d7 -fshort-enums
 CFLAGS += -Os -I"$(TOP)/os3k" -ffunction-sections -fdata-sections
+ifeq ($(SAVE_TEMPS),1)
+CFLAGS += -save-temps=obj
+endif
 LDFLAGS = -static -T "$(TOP)/os3k/os3k.lds" -L"$(TOP)/os3k" -los3k
 LDFLAGS += --gc-sections
 ARFLAGS = rcs
