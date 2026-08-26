@@ -11,36 +11,49 @@ This file separates usable SDK interfaces from active reverse-engineering hypoth
 
 ## Dialog family A0F0–A110
 
-The dialog subsystem is now tracked function by function in `docs/DIALOG_API.md`.
+The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`.
 
-### Strongest members
+### Confirmed members / properties
 
 - `A0F0` — `DialogInit`
-  - Four-argument call shape established by existing use and historical lineage.
+  - Four-argument handler state mapping confirmed in AS3000 and NEO 2005 firmware.
 - `A0F4` — `DialogAddItem`
-  - Official OS3K machine code confirms six 32-bit stack arguments.
-  - Historical predecessor confirms `text`, `text_len`, literal prefix `marker`, insertion order, 1-based selection model, historical `0/-1` return behavior and historical 25-item capacity.
-  - Later `id`, `shortcut_key`, and `file_size` are OS3K extensions.
-- `A0FC` — `DialogSetChoice`
-- `A100` — `DialogDraw`
-- `A104` — `DialogRun`
-- `A108` — `DialogGetChoice`
-- `A110` — `DialogGetItemId`
-
-These functions have coherent historical/official/BetaWise usage, but later-OS3K edge cases and some exact return contracts still need execution validation.
-
-### Still incomplete
-
+  - Six-argument OS3K ABI confirmed.
+  - `id` is a caller-provided 32-bit value stored in a per-item array.
+  - Later-OS3K analyzed capacity is 64 items.
+  - returns `0` on insertion and `-1` when full.
+  - historical predecessor confirms `text`, `text_len` and literal prefix `marker` lineage.
 - `A0F8` — `DialogAddExitKey`
-  - Purpose is strong; exact return/error contract remains incomplete.
+  - capacity 15 keys; returns `0` on success and `-1` when full.
+- `A0FC` — `DialogSetChoice`
+  - writes the current-choice byte directly; no syscall-level range validation.
+- `A108` — `DialogGetChoice`
+  - returns the current-choice byte.
 - `A10C` — `DialogGetChoiceId`
-  - Exact contract remains unresolved and is deliberately kept below the confidence of `A110`.
-- `DialogAddItem.shortcut_key`
-  - Real fifth ABI argument; shortcut behavior is strongly suggested, but rendering/matching rules remain experimental.
-- `DialogAddItem.file_size`
-  - Real sixth ABI argument; official callers commonly use `(size_t)-1`, but semantic meaning is not yet established.
+  - direct firmware analysis confirms it returns the 32-bit `id` for the current 1-based choice.
+  - does not explicitly bounds-check.
+- `A110` — `DialogGetItemId`
+  - returns the same per-item `id` array by 1-based index.
+  - returns `0` if the index is outside `1..item_count`.
 
-The baseline `DialogProbe` should remain unchanged until the emulator can execute it; follow-up probes should vary one unresolved property at a time.
+For a valid current choice, firmware establishes:
+
+```c
+DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
+```
+
+### Strong but still execution-oriented
+
+- `A100` — `DialogDraw`
+  - role is coherent with historical `DialogMenuDisplay`; rendering differences remain to test.
+- `A104` — `DialogRun`
+  - firmware returns a 16-bit value; navigation, shortcut and full exit-key behavior remain to characterize in execution.
+- `DialogAddItem.shortcut_key`
+  - real fifth ABI argument; exact matching/rendering rules remain experimental.
+- `DialogAddItem.file_size`
+  - real sixth ABI argument; official callers commonly use `(size_t)-1`, but semantic meaning is not yet established.
+
+The baseline `DialogProbe` remains useful as an emulator/hardware regression test, but `A10C` no longer requires a separate discovery probe; it should now be checked against the confirmed relation above.
 
 ## Strong but still under validation
 
@@ -81,6 +94,6 @@ For each syscall:
 2. inspect firmware/Ghidra symbols and callers;
 3. inspect BetaWise and existing applet use;
 4. inspect emulator traces and related hardware behavior;
-5. create a minimal probe;
+5. create a minimal probe when execution can resolve remaining uncertainty;
 6. validate separately on AS3000 and NEO when practical;
 7. only then promote the interface and documentation.
