@@ -2,6 +2,14 @@ BetaWise
 ========
 Several custom applets for the AlphaSmart 3000 / NEO / NEO2, and tools to create them.
 
+Documentation
+-------------
+Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
+
+* [File API reconstruction](docs/file-api-reconstruction.md) — firmware- and caller-backed work on the A198–A1CC file subsystem, including descriptor layout, A1C8/A1CC, A1B4/A1B8, and current A1C0/A1C4 findings.
+
+Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed.
+
 Compiling
 ---------
 Any `m68k-elf` gcc cross compiler should work. On Windows, I have successfully
@@ -32,6 +40,7 @@ Much research and work is still needed:
 * Investigate different statuses from `ProcessMessage`
 * Find and document timer functions and messages
 * Find and document non-message keyboard functions
+* Reconstruct and validate the System 3 file API
 * Eliminate need to put global data into a structure
 
 Contributions welcome!
