@@ -101,9 +101,9 @@ DEFINE_SYSCALL(100, SYS_A190);
 DEFINE_SYSCALL(101, SYS_A194);
 DEFINE_SYSCALL(102, FileWriteBuffer);
 DEFINE_SYSCALL(103, FileReadBuffer);
-DEFINE_SYSCALL(104, SYS_A1A0); // destructive active-file reset; historical-name correlation pending
+DEFINE_SYSCALL(104, FileSmashFile);
 DEFINE_SYSCALL(105, SYS_A1A4);
-DEFINE_SYSCALL(106, SYS_A1A8); // get file count?
+DEFINE_SYSCALL(106, FileGetCurrentFile);
 DEFINE_SYSCALL(107, SYS_A1AC);
 DEFINE_SYSCALL(108, SYS_A1B0);
 DEFINE_SYSCALL(109, SYS_A1B4); // size/accounting query family; selector names pending
