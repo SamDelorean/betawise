@@ -364,7 +364,7 @@ extern char __os3k_bss_size;
         .fileUsage = 0, \
         .entryPoint = &BwProcessMessage, \
         .magic = {0, 1, 2},
-#define APPLET_FLAGS(param) .flags = param,
+#define APPLET_FLAGS(param) .flags = 0xFF000000 | (param),
 #define APPLET_ID(param) .id = param,
 #define APPLET_NAME(param) .name = param,
 #define APPLET_FONT_NAME(param) .name = "Neo Font - " param,
