@@ -101,16 +101,16 @@ DEFINE_SYSCALL(100, SYS_A190);
 DEFINE_SYSCALL(101, SYS_A194);
 DEFINE_SYSCALL(102, FileWriteBuffer);
 DEFINE_SYSCALL(103, FileReadBuffer);
-DEFINE_SYSCALL(104, SYS_A1A0); // get current file number?
+DEFINE_SYSCALL(104, SYS_A1A0); // destructive active-file reset; historical-name correlation pending
 DEFINE_SYSCALL(105, SYS_A1A4);
 DEFINE_SYSCALL(106, SYS_A1A8); // get file count?
 DEFINE_SYSCALL(107, SYS_A1AC);
 DEFINE_SYSCALL(108, SYS_A1B0);
-DEFINE_SYSCALL(109, SYS_A1B4); // file system check? get consumed space for file #n?
-DEFINE_SYSCALL(110, SYS_A1B8); // returns 0x65800 - maybe resizes it to max size for editing?
+DEFINE_SYSCALL(109, SYS_A1B4); // size/accounting query family; selector names pending
+DEFINE_SYSCALL(110, SYS_A1B8); // active-file resize/state operation; command names pending
 DEFINE_SYSCALL(111, SYS_A1BC);
 DEFINE_SYSCALL(112, FileSetFolder);
-DEFINE_SYSCALL(113, SYS_A1C4); // set file properties... also name?
+DEFINE_SYSCALL(113, FileGetFileInfo);
 DEFINE_SYSCALL(114, FileOpen);
 DEFINE_SYSCALL(115, FileClose);
 DEFINE_SYSCALL(116, SYS_A1D0);
