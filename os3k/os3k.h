@@ -228,6 +228,16 @@ if time>zero shows battery icon for n seconds */
 
 char TranslateKeyToChar(KeyMod_e key);
 
+// Irreversibly zero-fills the active file and clears current/recoverable size
+// and cursor. Returns the active file's canonical 16-bit token, or 0 if no
+// active descriptor resolves. Destructive: do not use on data that must survive.
+uint16_t FileSmashFile(void);
+
+// Returns the canonical 16-bit token of the active file descriptor, or 0 when
+// no active descriptor resolves. Modern OS3K tokens are wider than the early
+// AS3000 sequential UInt8 file-number convention.
+uint16_t FileGetCurrentFile(void);
+
 // File namespace selection. applet_index is a runtime SmartApplet index (0..31).
 // applet_flags_out may be NULL. Returns the previous folder index on success;
 // negative System 3 status values indicate validation failure.
