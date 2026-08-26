@@ -64,15 +64,22 @@ Firmware analysis of the November 2005 AS3000 and NEO handlers establishes:
 
 These should be verified in the emulator before intentionally stressing physical hardware. Do not set an invalid current choice on hardware merely to test the unchecked A10C path.
 
-## Stage 3 — shortcut-key behavior
+## Stage 3 — shortcut-key regression
 
-Keep all other arguments fixed. Use three unique shortcuts and test:
+Firmware analysis has resolved the core shortcut contract, so this stage is now a regression test.
 
-- whether shortcuts activate/select an item;
-- whether a shortcut exits `DialogRun` or only moves the choice;
-- whether shortcut letters are rendered automatically;
-- behavior with modifiers/Caps Lock;
-- whether the full label or an omitted-leading-letter convention is expected.
+Expected behavior:
+
+- `A0F4` validates the low-byte shortcut using the internal label helper.
+- If `TranslateKeyToChar(shortcut_key)` returns a non-zero character, `DialogDraw` renders a localized `"[c]"` label automatically.
+- `KEY_FILE_1` through `KEY_FILE_8` are special-cased and render `"[F1]"` through `"[F8]"`.
+- Other non-translatable shortcut values are normalized to `KEY_NONE` (`0xFF`).
+- Pressing a shortcut changes the current 1-based choice and redraws the dialog.
+- A shortcut does not exit `DialogRun` unless the same key was also registered with `DialogAddExitKey`.
+- Ctrl/Cmd/Alt/Shift/Caps-Lock high-byte modifier flags do not affect the raw shortcut-byte comparison.
+- Duplicate shortcuts are not rejected; because the scan continues, the last matching item becomes the final selection.
+
+The baseline ALPHA/BETA/GAMMA probe already supplies three distinct shortcut keys and can verify selection-without-exit. Add separate follow-up cases for a file key and for shortcut+exit-key behavior; keep each variation isolated. Modifier tests should compare the same raw key with and without one high-byte modifier while keeping all other dialog state identical.
 
 ## Stage 4 — marker behavior
 
