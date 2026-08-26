@@ -75,6 +75,35 @@ The normal public dialog contract is now mostly closed. Remaining work is narrow
 
 The baseline `DialogProbe` is now primarily a regression applet. Marker, shortcut, file-size, choice-ID and normal navigation stages should assert known behavior rather than discover it.
 
+## Filesystem reconstruction — active
+
+Detailed notes are in `docs/FILE_API.md`.
+
+The current BetaWise names in the `A198`–`A1CC` range remain research-derived and are not yet public SDK contracts.
+
+### Directly established so far
+
+- `A1C8`:
+  - two ABI argument slots are consumed;
+  - the first argument is resolved through a common descriptor resolver and only its low 16 bits are used by that path;
+  - the second argument is inspected as a byte-sized mode/flag;
+  - the resolved descriptor is installed as the current/active object after `A1CC` clears the previous current descriptor;
+  - `mode == 1` clears descriptor field `+0x14`;
+  - a scalar/status-like value is returned in `D0`, but its exact contract remains unresolved.
+- `A1CC`:
+  - consumes no arguments;
+  - clears the current/active descriptor global and returns.
+
+These mechanics are structurally equivalent in the November 2005 AS3000 and NEO handlers.
+
+### Naming status
+
+- Legacy BetaWise `FileOpen` / `FileClose`: **B working names**. Direct firmware behavior materially supports an enter/open/select-current-context and release-current-context interpretation, but exact ownership and return semantics still need callers.
+- Independent `neo-re` currently calls `A1C8` `query_object_metric` and `A1CC` `commit_editable_buffer`. That interpretation conflicts with the full direct handler behavior and is retained as comparative evidence rather than adopted.
+- No public prototypes have been added to `os3k.h`.
+
+Historical April 2000 `FileModule.c` confirms a per-file descriptor model (`max size`, `size`, `old size`, `cursor`, row-one position, read-only state, storage pointer) and current-file selection, but it contains no historical functions literally named `FileOpen` or `FileClose`. Later OS3K semantics must therefore be reconstructed independently.
+
 ## Strong but still under validation
 
 - Keyboard primitives `A088`–`A0B0`.
