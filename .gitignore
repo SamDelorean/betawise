@@ -1,4 +1,6 @@
 *.o
 *.a
+*.i
+*.s
 *.OS3KApp
 version.h
