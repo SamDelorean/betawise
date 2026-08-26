@@ -407,7 +407,7 @@ extern char __os3k_bss_size;
 #define LCD_CMD_REVERSE(yes) (0xA6 | ((yes) & 1))
 #define LCD_CMD_ALL_PIX_ON(yes) (0xA4 | ((yes) & 1))
 #define LCD_CMD_START_LINE(line) (0x40 | ((line) & 0x3F))
-#define LCD_CMD_PAGE_ADDR_HI(coladdr) (0x10 | (((coladdr) >> 4) & 0x0F))
+#define LCD_CMD_COL_ADDR_HI(coladdr) (0x10 | (((coladdr) >> 4) & 0x0F))
 #define LCD_CMD_COL_ADDR_LO(coladdr) (0x00 | ((coladdr) & 0x0F))
 #define LCD_CMD_COL_ADDR_INC 0xE0
 #define LCD_CMD_COL_ADDR_END 0xEE
