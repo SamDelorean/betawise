@@ -11,6 +11,7 @@ Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
 * [Core file operations](docs/file-core-operations.md) — closes A1A0 as `FileSmashFile` and A1A8 as `FileGetCurrentFile`, including modern return/token behavior and historical lineage.
 * [FileDeleteChars ABI closure](docs/filedeletechars-closure.md) — closes A1A4 as the active-file deletion primitive, including EOF clamping, return semantics, clipboard caller evidence and historical lineage.
 * [File-space accounting](docs/file-space-accounting.md) — closes the mechanics of A1AC, A1B0 and A1BC, including 512-byte global accounting and the per-descriptor size/capacity invariant; original public names remain intentionally unresolved.
+* [FileOpen / FileClose ABI closure](docs/fileopen-fileclose-closure.md) — closes A1C8/A1CC, including exact token/cursor behavior, failed-open state preservation, and the fact that FileClose only detaches the active descriptor rather than committing or flushing it.
 * `FileGetFileInfo` / A1C4 is now exposed in the SDK with persistent live-mirror semantics; `applets/FileGetFileInfoProbe/` provides a read-only regression specification and explicit unbind test.
 
 Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed.
@@ -22,7 +23,7 @@ used [MinGW GCC for M68K](https://sourceforge.net/projects/mingw-gcc-68k-elf/).
 
 Installing Custom Applets
 -------------------------
-Using [Neo Manager](https://support.renaissance.com/techkb/techkb/13002475e.asp):
+Using Neo Manager:
 * File → Add to Applet List... → select [AppletFile].OS3KApp
 * SmartApplets tab → select [AppletName] → Add
   * Optional: checking *Delete SmartApplets that are not in the Install List…*
