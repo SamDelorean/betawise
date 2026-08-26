@@ -259,6 +259,16 @@ uint8_t* FileGetFileInfo(uint16_t file_id,
     uint32_t* max_size_out,
     uint32_t* cursor_out);
 
+// Resolves file_id in the current file namespace and makes that descriptor the
+// active file context. Returns its canonical 16-bit token, or 0 on resolution
+// failure. reset_position is byte-sized: exactly 1 rewinds the cursor to zero;
+// other values preserve the cursor. A failed open preserves the current context.
+uint16_t FileOpen(uint16_t file_id, uint8_t reset_position);
+
+// Detaches the active file context. This does not itself erase, flush, commit,
+// rewind, or otherwise mutate the descriptor's file metadata.
+void FileClose(void);
+
 // These functions return an index of 0 (system applet) if not found.
 uint8_t AppletFindByName(char* name, uint8_t start_index);
 uint8_t AppletFindById(uint16_t id);
@@ -397,9 +407,8 @@ extern char __os3k_bss_size;
 #define LCD_CMD_REVERSE(yes) (0xA6 | ((yes) & 1))
 #define LCD_CMD_ALL_PIX_ON(yes) (0xA4 | ((yes) & 1))
 #define LCD_CMD_START_LINE(line) (0x40 | ((line) & 0x3F))
-#define LCD_CMD_PAGE_ADDR(pageaddr) (0xB0 | ((pageaddr) & 0x0F))
-#define LCD_CMD_COL_ADDR_HI(coladdr) (0x10 | (((coladdr) >> 4) & 0x0F)
-#define LCD_CMD_COL_ADDR_LO(coladdr) (0x00 | ((coladdr) & 0x0F)
+#define LCD_CMD_PAGE_ADDR_HI(coladdr) (0x10 | (((coladdr) >> 4) & 0x0F))
+#define LCD_CMD_COL_ADDR_LO(coladdr) (0x00 | ((coladdr) & 0x0F))
 #define LCD_CMD_COL_ADDR_INC 0xE0
 #define LCD_CMD_COL_ADDR_END 0xEE
 #define LCD_DATA_REG_LEFT (*(volatile uint8_t*)0x1008001)
