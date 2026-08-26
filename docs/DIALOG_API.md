@@ -1,47 +1,65 @@
 # Dialog API — A0F0 through A110
 
-This document tracks the System 3 / OS3K dialog syscall family as a coherent subsystem rather than as isolated A-line traps.
+This document tracks the System 3 / OS3K dialog syscall family as one subsystem. Focused evidence notes live in [`DIALOG_MARKER.md`](DIALOG_MARKER.md) and [`DIALOG_NAVIGATION.md`](DIALOG_NAVIGATION.md).
 
 ## Current mapping
 
-| Trap | BetaWise name | Current confidence | Historical relationship |
+| Trap | BetaWise name | Confidence | Core contract |
 | --- | --- | --- | --- |
-| `A0F0` | `DialogInit` | A | `DialogMenuInit` |
-| `A0F4` | `DialogAddItem` | A for six-argument ABI, `marker`, `id`, `shortcut_key`, `file_size`, capacity and core semantics | `DialogMenuAddItem` |
-| `A0F8` | `DialogAddExitKey` | A | `DialogMenuAddExitICode` |
-| `A0FC` | `DialogSetChoice` | A | `DialogMenuSetCursorItemNumber` |
-| `A100` | `DialogDraw` | B/A- | `DialogMenuDisplay` |
-| `A104` | `DialogRun` | B/A- | `DialogMenuGetInput` |
-| `A108` | `DialogGetChoice` | A | `DialogMenuGetCursorItemNumber` |
-| `A10C` | `DialogGetChoiceId` | A | OS3K metadata getter for current choice |
-| `A110` | `DialogGetItemId` | A | OS3K metadata getter by item index |
+| `A0F0` | `DialogInit` | A | initializes dialog state and layout mode |
+| `A0F4` | `DialogAddItem` | A | six-argument item insertion with marker, ID, shortcut and character-count metadata |
+| `A0F8` | `DialogAddExitKey` | A | appends one of up to 15 normal exit keys |
+| `A0FC` | `DialogSetChoice` | A | directly writes the 1-based current choice |
+| `A100` | `DialogDraw` | A for core layout | computes grid geometry, normalizes viewport and renders visible items |
+| `A104` | `DialogRun` | A for public keyboard/navigation path | Home/End/grid arrows, shortcuts and normal exit-key processing |
+| `A108` | `DialogGetChoice` | A | returns current 1-based choice |
+| `A10C` | `DialogGetChoiceId` | A | returns caller ID for current choice |
+| `A110` | `DialogGetItemId` | A | returns caller ID for an indexed item, with bounds checking |
 
-Confidence refers to the known contract, not merely the presence of a name in `syscall.c`.
+The remaining dialog uncertainties are presentation edge cases and internal System 3 event codes, not the normal public grid/navigation contract.
 
-## Historical AS3000 dialog model
+## Historical lineage
 
-The original AS3000 dialog implementation predates the later OS3K SmartApplet ABI. Historical compiled code and source usage show an insertion-ordered menu model with functions corresponding to initialization, adding items, adding exit keys, selecting the cursor item, drawing, waiting for input, and retrieving the selected item.
+The original AS3000 `DialogModule` predates the later SmartApplet ABI but already contains the same conceptual subsystem:
 
-The historical `DialogMenuAddItem` accepts three arguments:
+```text
+DialogMenuInit
+DialogMenuAddItem
+DialogMenuAddExitICode
+DialogMenuSetCursorItemNumber
+DialogMenuDisplay
+DialogMenuGetInput
+DialogMenuGetCursorItemNumber
+DialogMenuGetItem
+```
+
+The historical `DialogMenuAddItem` accepted only:
 
 ```c
 int DialogMenuAddItem(char *text, uint8_t text_len, char marker);
 ```
 
-Observed historical behavior:
+Historical behavior includes insertion-order items, a literal marker glyph, a 1-based selection model, grid display/navigation and a 25-item capacity. Later OS3K keeps the underlying model but expands item capacity and adds `id`, `shortcut_key` and `file_size` metadata.
 
-- items are stored in insertion order;
-- the historical implementation accepts at most 25 items;
-- `text_len` is clipped to the available dialog width;
-- `marker` is stored per item and drawn as a literal character;
-- success returns `0`; a full menu returns `-1`;
-- the selected cursor item is 1-based in original AlphaWord usage.
+## A0F0 — DialogInit
 
-The old global dialog structure contains item text pointers, lengths, markers, cursor/visible-window state and exit keys. It does not contain the later OS3K `id`, `shortcut_key`, or `file_size` metadata.
+```c
+void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
+```
 
-## OS3K extension of DialogAddItem
+**Confidence: A.** Direct firmware analysis establishes the initialization state:
 
-Official OS3K SmartApplet machine code confirms that `A0F4` is called with six 32-bit stack slots under the compiler ABI:
+```c
+item_count = 0;
+exit_key_count = 0;
+first_visible = 1;
+current_choice = 1;
+columns = single ? 1 : 0;
+```
+
+`row_first` and `row_last` form an inclusive display-row range. `col` is the horizontal character budget used by the grid layout. A stored `columns == 0` means `DialogDraw` will auto-calculate the number of columns; `single != 0` therefore means fixed **single-column mode**.
+
+## A0F4 — DialogAddItem
 
 ```c
 int DialogAddItem(char* text,
@@ -52,183 +70,210 @@ int DialogAddItem(char* text,
                   size_t file_size);
 ```
 
-Direct handler analysis in both the November 2005 AS3000 and NEO System 3 ROMs confirms that the fourth argument (`id`) is stored as a 32-bit value in a per-item ID array indexed by insertion order. The same array is read by `A10C` and `A110`.
+**Confidence: A for the normal six-argument contract in the analyzed firmware.**
 
-### Parameters
+### text / text_len
 
-`text` and `text_len`
-: Strongly established and inherited directly from the historical three-argument interface.
+The label pointer and explicit label length descend directly from the historical interface. The later implementation stores a clipped presentation length appropriate to the dialog width.
 
-`marker`
-: **Confirmed.** A caller-provided one-byte literal glyph. `A0F4` stores the low byte of the third argument unchanged in a per-item marker array. The rendering helper reached from `A100 / DialogDraw` reads that byte and passes it directly to `A010 / PutChar`. No marker-dependent navigation or selection logic was found. The same writer/reader relation is present in AS3000 2005, NEO 2005 and NEO 2013 firmware. Official code uses at least `' '`, `'*'`, `'+'`, and `'x'`. See [`DIALOG_MARKER.md`](DIALOG_MARKER.md).
+### marker
 
-`id`
-: **Confirmed.** Caller-provided 32-bit metadata independent of the insertion-order choice index. `A0F4` stores this value in the ID array; `A10C` and `A110` retrieve it.
+`marker` is a raw one-byte literal glyph. `A0F4` stores the byte unchanged and the drawing path later passes it directly to `A010 / PutChar`. Official later-OS3K callers use at least `' '`, `'*'`, `'+'`, and `'x'`. The dialog subsystem does not assign application state semantics to the glyph. See [`DIALOG_MARKER.md`](DIALOG_MARKER.md).
 
-`shortcut_key`
-: **Confirmed.** A one-byte per-item shortcut key. `A0F4` validates the key through the same internal shortcut-label helper used by `DialogDraw`, stores an accepted raw `Key_e` byte in a 64-entry array, and normalizes unsupported values to `KEY_NONE` (`0xFF`). `DialogRun` compares the raw low byte of incoming keys against this array.
+### id
 
-### `shortcut_key` validation, rendering and selection path
+`id` is caller-provided 32-bit metadata, independent of the insertion-order choice index. It is stored in a parallel per-item array and is the value returned by `A10C` and `A110`.
 
-Direct handler analysis in both the November 2005 AS3000 and NEO ROMs establishes the full core path.
+### shortcut_key
 
-`A0F4` first calls an internal formatter/validator with the low byte of `shortcut_key`. That helper:
+`shortcut_key` is an optional one-byte per-item key. The firmware validates it through the same formatter used by `DialogDraw`:
 
-1. calls `A164 / TranslateKeyToChar` with the unmodified key code;
-2. if translation returns a non-zero character, builds the localized template `"[ ]"` and inserts the translated character at offset 1;
-3. otherwise special-cases `KEY_FILE_1` through `KEY_FILE_8`, builds `"[F ]"`, and inserts `1` through `8` at offset 2;
-4. returns null for other non-translatable keys.
+- a key translated by `A164 / TranslateKeyToChar` generates `[c]`;
+- `KEY_FILE_1` through `KEY_FILE_8` generate `[F1]` through `[F8]`;
+- unsupported values normalize to `KEY_NONE` (`0xFF`).
 
-If the helper returns null, `A0F4` replaces the supplied shortcut byte with `0xFF` before storing it. Therefore `KEY_NONE` is the effective no-shortcut sentinel, and unsupported shortcut values are silently normalized to that state.
+`DialogRun` compares the stored shortcut with the raw low byte of the input key. A match selects the item and redraws but does not exit unless the same key is also configured as an exit key. High-byte Ctrl/Cmd/Alt/Shift/Caps-Lock flags do not participate in shortcut matching. Duplicate shortcuts are not rejected; because the item scan continues, the last matching item becomes the final selection.
 
-`DialogDraw` reads the stored shortcut array and uses the same helper. A non-null label is written automatically before the rest of the item presentation. The strings `"[ ]"` and `"[F ]"` are present in both analyzed ROMs and the helper writes the translated character or file number into those templates. This proves that shortcut labels are generated by the dialog subsystem; callers should not manually prepend a shortcut label to `text`.
+### file_size
 
-`DialogRun` uses a simple byte comparison against every item:
+Despite the historical BetaWise name, this field is a **character count**, not a byte count. It is display metadata consumed by `DialogDraw`:
 
-```c
-for (uint8_t i = 0; i < item_count; ++i) {
-    if (shortcut_keys[i] == (uint8_t)key) {
-        current_choice = i + 1;
-        DialogDraw();
-    }
-}
+```text
+(size_t)-1 -> no size annotation
+0          -> " (empty)"
+1          -> " (1 char)"
+>1         -> " (N chars)"
 ```
 
-The loop does not break after a match. Consequently, if duplicate shortcut bytes are assigned, the last matching item becomes the final current choice and the dialog may redraw more than once.
+Large values are grouped with thousands commas. The field does not control file I/O or navigation.
 
-Shortcut selection by itself does **not** terminate `DialogRun`. After the shortcut scan, the same key is checked independently against the `DialogAddExitKey` array. Therefore:
+### capacity / return
 
-- shortcut only: select the item, redraw, and continue waiting;
-- shortcut + exit key: select/redraw first, then exit and return the key;
-- normal `ENTER`/`ESC` behavior remains governed by the exit-key list.
+In the November 2005 AS3000 and NEO System 3 implementations:
 
-The shortcut comparison is byte-sized. High-byte `KeyMod_e` flags such as Ctrl, Cmd, Alt, Shift and Caps Lock do not participate in the shortcut match. `DialogRun` still returns the original 16-bit key value when an exit condition is met, so modifiers can remain present in its return even though they do not affect shortcut selection.
-
-This core behavior is structurally identical in the analyzed AS3000 and NEO 2005 handlers.
-
-`file_size`
-: **Confirmed.** A 32-bit character-count field associated with the item, intended to render a file-size annotation. `A0F4` stores it in a per-item array. The analyzed `DialogDraw` path is the only other consumer of that array in both 2005 ROMs. `(size_t)-1` (`0xFFFFFFFF`) is a sentinel that suppresses the annotation entirely.
-
-The formatter embedded in `DialogModule` establishes the visible cases directly:
-
-- `(size_t)-1` — no size suffix is rendered;
-- `0` — appends `" (empty)"`;
-- `1` — appends `" (1 char)"`;
-- values greater than 1 — appends a grouped decimal count in the form `" (N chars)"`, using `,%03d` for thousands groups (for example, `1,234`).
-
-The relevant strings (`" (empty)"`, `" (1 char)"`, `" ("`, `",%03d"`, `"%d"`, `" chars)"`) are present next to the `DialogModule.c` string in both the AS3000 and NEO 2005 system images. This proves that the unit is **characters**, not bytes.
-
-The official SmartApplet callers inspected during this reconstruction overwhelmingly pass `-1`; no verified non-`-1` caller was found in that sample. That negative caller result does not weaken the semantic conclusion, which comes from the firmware writer/reader/formatter path itself.
-
-### `file_size` storage and rendering path
-
-In both analyzed 2005 firmwares, `A0F4` writes the sixth argument into a 64-entry array of 32-bit values indexed in parallel with the dialog items. A reference scan of the corresponding array base finds the expected writer in `A0F4` and one reader in the dialog rendering path reached from `A100 / DialogDraw`. No reader was found in `DialogRun`, navigation, or file-I/O code.
-
-The rendering helper first compares the stored value with `0xFFFFFFFF`. If equal, it returns without producing an annotation. Otherwise it formats the character count as described above. This makes `file_size` presentation metadata; it does not control the actual file contents or the selection logic.
-
-### Capacity and return value
-
-The later 2005 OS3K implementation does **not** preserve the historical 25-item capacity. Both AS3000 and NEO handlers compare the current item count against `0x40` before insertion:
-
-- maximum later-OS3K capacity observed: **64 items**;
-- when already at capacity, `DialogAddItem` returns `-1`;
-- on successful insertion, it returns `0`.
-
-This is direct firmware evidence for the analyzed 2005 System 3 images. It should not be projected onto unrelated firmware generations without verification.
-
-## Control and execution functions
-
-### A0F0 — DialogInit
-
-```c
-void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
+```text
+maximum items = 64
+success       = 0
+full          = -1
 ```
 
-**Confidence: A for argument placement/state initialization in the analyzed AS3000 and NEO ROMs.**
+The historical 25-item limit must not be projected onto later OS3K.
 
-The handler clears item and exit-key counts, initializes the current choice to 1, stores the three geometry bytes, and normalizes the `single` argument to a boolean state. Exact visual behavior of unusual geometry remains an execution-level question, not an ABI question.
-
-### A0F8 — DialogAddExitKey
+## A0F8 — DialogAddExitKey
 
 ```c
 int DialogAddExitKey(Key_e key);
 ```
 
-**Confidence: A.** The analyzed AS3000 and NEO handlers maintain an explicit byte array of exit keys:
+**Confidence: A.** The analyzed firmware stores up to **15** one-byte exit keys. It returns `0` when a key is appended and `-1` when the array is full.
 
-- capacity: **15 exit keys**;
-- success: returns `0` and appends the key;
-- full array: returns `-1`.
+Normal exit keys are tested after ordinary shortcut processing. Navigation keys are a special case described under `DialogRun`: Home/End/Left/Right/Up/Down are consumed by the navigation dispatcher before the normal exit-key scan.
 
-### A0FC — DialogSetChoice
+The firmware also recognizes raw internal dialog event/exit bytes `0x64`–`0x67`. Their meanings are unresolved and they must not yet receive public SDK names.
+
+## A0FC — DialogSetChoice
 
 ```c
 void DialogSetChoice(uint8_t index);
 ```
 
-**Confidence: A.** The handler writes the low byte of `index` directly into the dialog's current-choice state. No range validation is performed by this syscall itself. Normal usage is 1-based.
+**Confidence: A.** Writes the low byte directly into `current_choice`; no syscall-level range validation is performed. Normal usage is 1-based.
 
-### A100 — DialogDraw
+## A100 — DialogDraw
 
 ```c
 void DialogDraw(void);
 ```
 
-Renders the current dialog state. It corresponds conceptually to historical `DialogMenuDisplay`. Marker rendering, shortcut labels and file-size presentation are now directly characterized; geometry, clipping and AS3000/NEO visual differences remain best validated through emulator/hardware execution.
+**Confidence: A for the core layout algorithm.** AS3000 2005, NEO 2005 and NEO 2013 implement the same logical grid model, and the historical AS3000 `DialogMenuDisplay` independently preserves the same structure.
 
-### A104 — DialogRun
+When items exist, the firmware computes:
+
+```c
+item_width = max_rendered_item_length + 3;
+```
+
+If the dialog is not in fixed single-column mode, `columns` is calculated as:
+
+```c
+columns = col / item_width;
+```
+
+The grid is row-major. The inclusive visible row count and visible item capacity are:
+
+```c
+visible_rows = row_last - row_first + 1;
+visible_capacity = visible_rows * columns;
+```
+
+The dialog tracks a 1-based `first_visible` item and normalizes that viewport so the selected item can be displayed. The final selected-cell coordinates follow the established layout:
+
+```c
+cursor_col = 1 + ((current_choice - 1) % columns) * item_width;
+cursor_row = row_first + (current_choice - first_visible) / columns;
+```
+
+The visible-row renderer lays out cells left-to-right, using the already-characterized marker, generated shortcut label, text and optional character-count annotation.
+
+The exact visual selection/border glyph remains an emulator/hardware presentation detail rather than a portable ABI promise. Full formulas and scrolling behavior are documented in [`DIALOG_NAVIGATION.md`](DIALOG_NAVIGATION.md).
+
+## A104 — DialogRun
 
 ```c
 short DialogRun(void);
 ```
 
-Processes dialog input until an exit condition is reached. Firmware returns the 16-bit key value from the routine, consistent with the existing `short` declaration and caller treatment as a `KeyMod_e`-compatible result.
+**Confidence: A for the normal public keyboard/navigation path.** The firmware returns a 16-bit key/event value on normal exit and implements a non-wrapping row-major grid.
 
-**Shortcut handling is now confirmed:** the routine scans every stored shortcut byte, compares it with the low byte of the current key, changes `current_choice` to the matching 1-based item, and calls `DialogDraw`. It then separately scans the exit-key list. A shortcut therefore selects/redraws but does not exit unless the same key is also configured as an exit key. Duplicate shortcuts resolve to the last matching item because the item scan does not break.
+### Navigation
 
-Arrow/navigation edge cases and platform-specific rendering remain execution-level validation targets.
+`KEY_HOME` selects item 1; `KEY_END` selects `item_count`. Both perform a full dialog refresh when the selection changes.
 
-### A108 — DialogGetChoice
+Right moves by `+1` only when there is an item immediately to the right in the same row:
+
+```c
+(current_choice % columns) != 0 && current_choice + 1 <= item_count
+```
+
+Left moves by `-1` only when not at the first column and when `columns != 1`:
+
+```c
+(current_choice % columns) != 1
+```
+
+Up and Down move vertically by exactly one grid row:
+
+```c
+UP:   current_choice -= columns;   // only if choice > columns
+DOWN: current_choice += columns;   // only if choice + columns <= item_count
+```
+
+There is no horizontal or vertical wrapping. Down does nothing when the final row has no item directly beneath the current selection.
+
+### Scrolling
+
+For ordinary cursor movement, the viewport shifts by one item row when required:
+
+```c
+current_choice < first_visible -> first_visible -= columns
+current_choice > last_visible  -> first_visible += columns
+```
+
+where:
+
+```c
+last_visible = min(first_visible + visible_rows * columns - 1, item_count);
+```
+
+Home, End and shortcut jumps may move farther; their redraw path re-establishes a viewport containing the new selection.
+
+### Shortcut and exit order
+
+Navigation is dispatched before the general shortcut/exit-key loop. Therefore adding `KEY_HOME`, `KEY_END`, `KEY_LEFT`, `KEY_RIGHT`, `KEY_UP`, or `KEY_DOWN` with `DialogAddExitKey` does not make the normal navigation key exit through that later scan.
+
+For non-navigation keys the established order is:
+
+```text
+shortcut scan -> selection/redraw if matched -> exit-key scan -> return if matched
+```
+
+Thus a key that is both an item shortcut and an exit key first selects/redraws the item and then returns.
+
+### Internal event codes
+
+`DialogRun` contains special logic for raw bytes `0x64`, `0x65`, `0x66`, and `0x67`. These are internal System 3 dialog event/exit codes. Their semantic names remain unresolved and BetaWise intentionally does not expose guessed enum values for them.
+
+See [`DIALOG_NAVIGATION.md`](DIALOG_NAVIGATION.md) for the detailed reconstruction and emulator regression matrix.
+
+## A108 — DialogGetChoice
 
 ```c
 char DialogGetChoice(void);
 ```
 
-**Confidence: A.** In both analyzed ROMs the handler reads the current-choice byte directly and returns it. The normal model is 1-based.
+**Confidence: A.** Returns the current 1-based choice byte directly.
 
-### A10C — DialogGetChoiceId
+## A10C — DialogGetChoiceId
 
 ```c
 int DialogGetChoiceId(void);
 ```
 
-**Confidence: A.** Direct firmware handler analysis resolves the previously uncertain contract.
-
-For a valid current dialog state, the implementation is equivalent to:
+**Confidence: A.** Equivalent for a valid state to:
 
 ```c
 return item_ids[current_choice - 1];
 ```
 
-The AS3000 and NEO implementations are structurally identical; only their RAM addresses differ. The routine reads the same current-choice byte returned by `A108`, converts the 1-based choice to a zero-based array offset, multiplies by four, and returns the corresponding 32-bit ID stored by `A0F4`.
+The handler performs no explicit bounds check.
 
-Importantly, `A10C` performs **no explicit bounds check**. It relies on the current dialog choice being valid.
-
-Therefore, for a valid choice:
-
-```c
-DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
-```
-
-### A110 — DialogGetItemId
+## A110 — DialogGetItemId
 
 ```c
 int DialogGetItemId(uint8_t index);
 ```
 
-**Confidence: A.** Direct firmware analysis shows that `A110` reads the same per-item ID array used by `A10C`.
-
-Unlike `A10C`, `A110` validates its 1-based argument:
+**Confidence: A.** Uses the same ID array as A10C but validates its 1-based index:
 
 ```c
 if(index < 1 || index > item_count)
@@ -236,72 +281,51 @@ if(index < 1 || index > item_count)
 return item_ids[index - 1];
 ```
 
-This also confirms that the `id` argument to `DialogAddItem` is semantically distinct from the insertion-order choice index.
+Therefore, for a valid current choice:
 
-## Firmware state relationship
+```c
+DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
+```
 
-The analyzed System 3 ROMs use the same logical dialog state with different RAM locations. Relevant fields include:
+## Logical state relationship
+
+The analyzed firmware generations preserve the same conceptual dialog state despite different internal RAM addresses:
 
 ```text
 item_count
+item_width
+first_visible
+columns
+col
+row_first
+row_last
 current_choice
 exit_key_count
 exit_key[]
 marker[]
+text_ptr[]
+rendered_item_length[]
 shortcut_key[]
 item_id[]
 item_file_size_chars[]
 ```
 
-The important ABI relation is logical rather than address-based; these RAM addresses are firmware-internal and must not be exposed as portable SDK constants.
+These addresses are firmware internals and must never become portable BetaWise constants.
 
-## Working lifecycle
+## Emulator regression targets
 
-The now-confirmed metadata lifecycle is:
+The emulator should eventually trace `A0F0–A110` with enough state to assert the known contract. In particular it should expose `item_width`, `columns`, `first_visible`, `current_choice`, viewport boundaries and `DialogRun` key dispatch alongside the existing marker/shortcut/ID/file-size checks.
 
-```c
-DialogInit(...);
-DialogAddExitKey(KEY_ENTER);
-DialogAddExitKey(KEY_ESC);
-
-DialogAddItem(..., 100, ...);
-DialogAddItem(..., 200, ...);
-
-DialogSetChoice(1);
-DialogDraw();
-KeyMod_e exit_key = DialogRun();
-char choice = DialogGetChoice();
-int current_id = DialogGetChoiceId();
-int indexed_id = DialogGetItemId(choice);
-```
-
-For a valid current choice, `current_id` and `indexed_id` should be identical by construction of the firmware handlers.
-
-## Emulator feedback targets
-
-When the emulator can execute SmartApplets, dialog tracing should record at minimum:
-
-- A-line opcode and caller PC;
-- stack pointer on entry;
-- decoded arguments for `A0F0`–`A110` where known;
-- item/exit-key counts where useful;
-- selected index before/after `DialogRun`;
-- `DialogRun` return value;
-- `A108`, `A10C`, and `A110` results;
-- marker byte received by `A0F4` and the corresponding `PutChar` during drawing;
-- shortcut label generated by `TranslateKeyToChar` / `[F1]`–`[F8]` special case;
-- whether shortcut selection redraws without exiting, and exit behavior when the same key is registered as an exit key;
-- differences between AS3000 and NEO rendering/navigation behavior.
-
-For `A10C`, the emulator regression expectation is now explicit: with a valid choice it must match `A110(A108())`.
+The public grid behavior is no longer a discovery question. Emulator execution should be used to validate the reconstructed contract and reveal platform-specific visual details.
 
 ## Remaining questions
 
-The main unresolved dialog questions are now:
+The main unresolved dialog issues are now narrow:
 
-1. AS3000/NEO behavioral differences in geometry and navigation;
-2. exact edge-case behavior of `DialogDraw` and non-shortcut `DialogRun` navigation;
-3. keyboard-layout-specific details of the character returned by `TranslateKeyToChar` for unusual shortcut keys;
-4. whether capacities or metadata layout differ in System 3 firmware generations other than the analyzed images.
+1. semantic names and exact behavior of internal event/exit codes `0x64–0x67`;
+2. exact visual selection/border rendering across AS3000 and NEO;
+3. pathological invalid geometry or deliberately invalid `current_choice` states;
+4. keyboard-layout edge cases for unusual translated shortcuts;
+5. whether unrelated System 3 generations change capacities or internal presentation details.
 
-`marker`, `A10C`, `shortcut_key`, and `file_size` are no longer discovery blockers; their core contracts are directly established by firmware and/or original implementation evidence.
+The normal `DialogAddItem`, grid geometry, Home/End/arrow navigation, shortcut, exit-key, choice and ID contracts are sufficiently characterized to treat the family as an SDK-ready API with the caveats above.
