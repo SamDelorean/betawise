@@ -30,22 +30,23 @@ The historical AS3000 source contains an earlier `PowerShowBatteryPercentage` fu
 
 ## Dialog API: A0F0–A110
 
-Known functions:
+The dialog family is documented in detail in [`DIALOG_API.md`](DIALOG_API.md).
 
-```c
-void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
-int DialogAddItem(char* text, uint8_t text_len, char marker, int id,
-                  Key_e shortcut_key, size_t file_size);
-int DialogAddExitKey(Key_e key);
-void DialogSetChoice(uint8_t index);
-void DialogDraw(void);
-short DialogRun(void);
-char DialogGetChoice(void);
-int DialogGetChoiceId(void);
-int DialogGetItemId(uint8_t index);
-```
+| Trap | Name | Confidence summary |
+| --- | --- | --- |
+| `A0F0` | `DialogInit` | A/B — call shape and historical model strong |
+| `A0F4` | `DialogAddItem` | A for six-argument OS3K call shape; partial parameter semantics |
+| `A0F8` | `DialogAddExitKey` | B |
+| `A0FC` | `DialogSetChoice` | B/A- |
+| `A100` | `DialogDraw` | B/A- |
+| `A104` | `DialogRun` | B/A- |
+| `A108` | `DialogGetChoice` | B/A- |
+| `A10C` | `DialogGetChoiceId` | C — exact contract unresolved |
+| `A110` | `DialogGetItemId` | B — official/existing usage stronger than A10C |
 
-Current evidence strongly supports ordered item indexing and a caller-provided `id` independent of that index. `shortcut_key` behaves as a per-item keyboard shortcut in existing applets, but its complete visual/behavioral contract is still being characterized. `file_size` remains incompletely understood. `DialogProbe` exists specifically to validate these details without changing several uncertain parameters at once.
+The historical AS3000 dialog implementation establishes insertion-ordered, 1-based choices and literal marker rendering. Official OS3K SmartApplet machine code establishes the six-argument `DialogAddItem` ABI. The later `shortcut_key` and `file_size` fields are real ABI arguments, but complete semantics remain under investigation.
+
+`DialogProbe` remains the executable baseline for emulator/hardware validation. In particular, `A10C` is not considered required for the minimal confirmed lifecycle until its exact behavior is established.
 
 ## A25C special-key dispatcher
 
