@@ -35,7 +35,7 @@ The dialog family is documented in detail in [`DIALOG_API.md`](DIALOG_API.md).
 | Trap | Name | Confidence summary |
 | --- | --- | --- |
 | `A0F0` | `DialogInit` | A — argument/state initialization confirmed in AS3000 and NEO firmware |
-| `A0F4` | `DialogAddItem` | A for six-argument ABI, `id`, 64-item capacity and 0/-1 return; partial for shortcut/file-size semantics |
+| `A0F4` | `DialogAddItem` | A for six-argument ABI, `id`, `file_size`, 64-item capacity and 0/-1 return; shortcut details remain partial |
 | `A0F8` | `DialogAddExitKey` | A — 15-key capacity, 0/-1 return confirmed |
 | `A0FC` | `DialogSetChoice` | A — writes current-choice byte directly |
 | `A100` | `DialogDraw` | B/A- — function role strong, rendering details still under execution validation |
@@ -52,7 +52,7 @@ DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
 
 for a valid current choice. `A10C` directly indexes the current-choice ID and does not bounds-check; `A110` checks `1 <= index <= item_count` and returns `0` otherwise.
 
-The later `shortcut_key` and `file_size` fields are real OS3K ABI arguments, but their complete semantics remain under investigation.
+`file_size` is now directly characterized: it is a per-item **character count** used by `DialogDraw` to append a file-size annotation. `(size_t)-1` suppresses the annotation, `0` renders `" (empty)"`, `1` renders `" (1 char)"`, and larger values are rendered as grouped decimal `" (N chars)"`. The remaining later metadata uncertainty is concentrated in `shortcut_key` rendering/matching rules.
 
 ## A25C special-key dispatcher
 
