@@ -233,6 +233,12 @@ char TranslateKeyToChar(KeyMod_e key);
 // active descriptor resolves. Destructive: do not use on data that must survive.
 uint16_t FileSmashFile(void);
 
+// Deletes up to delete_count bytes from the active file beginning at the current
+// cursor. The cursor is not moved. Deletion is clamped at EOF; previous/recoverable
+// size is preserved. Returns the actual number of bytes deleted, or 0 if no active
+// descriptor resolves or nothing can be deleted.
+uint32_t FileDeleteChars(uint32_t delete_count);
+
 // Returns the canonical 16-bit token of the active file descriptor, or 0 when
 // no active descriptor resolves. Modern OS3K tokens are wider than the early
 // AS3000 sequential UInt8 file-number convention.
