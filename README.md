@@ -9,6 +9,7 @@ Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
 * [File API reconstruction](docs/file-api-reconstruction.md) — firmware- and caller-backed work on the A198–A1CC file subsystem and descriptor model.
 * [FileSetFolder ABI closure](docs/filesetfolder-closure.md) — closed A1C0 contract, raw error behavior, the unresolved `0x40` flag name, and the emulator-first regression matrix in `applets/FileSetFolderProbe/`.
 * [Core file operations](docs/file-core-operations.md) — closes A1A0 as `FileSmashFile` and A1A8 as `FileGetCurrentFile`, including modern return/token behavior and historical lineage.
+* [FileDeleteChars ABI closure](docs/filedeletechars-closure.md) — closes A1A4 as the active-file deletion primitive, including EOF clamping, return semantics, clipboard caller evidence and historical lineage.
 * `FileGetFileInfo` / A1C4 is now exposed in the SDK with persistent live-mirror semantics; `applets/FileGetFileInfoProbe/` provides a read-only regression specification and explicit unbind test.
 
 Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed.
