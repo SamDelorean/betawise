@@ -10,12 +10,16 @@ Confidence **A** means the behavior is established directly by firmware analysis
 
 | Offset | Current interpretation | Confidence |
 | --- | --- | --- |
-| `+0x00` | storage/base pointer | A for mechanical use |
+| `+0x00` | storage/base pointer | A |
 | `+0x04` | current file size | A |
 | `+0x08` | previous/recoverable size | A |
 | `+0x0C` | maximum size/capacity | A |
 | `+0x10` | accounting/reservation threshold; exact public meaning still open | A for mechanical use |
 | `+0x14` | current cursor/file position | A |
+| `+0x24` | stored pointer to caller's storage-pointer mirror | A |
+| `+0x28` | stored pointer to caller's current-size mirror | A |
+| `+0x2C` | stored pointer to caller's maximum-size mirror | A |
+| `+0x30` | stored pointer to caller's cursor-position mirror | A |
 | `+0x44` | canonical 16-bit descriptor/file token | A |
 
 The historical AS3000 `FileModule.c` independently describes the same conceptual model for maximum size, current size, previous size, cursor position and backing storage. Modern OS3K adds fields and accounting behavior that should not be projected back into the 2000 structure without evidence.
@@ -152,34 +156,100 @@ Real A1B8 callers were found in AlphaWord Plus, AlphaQuiz and KeyWords. They inc
 
 No direct SmartApplet constant call to `-3`, `-4`, `-5` or `-6` has yet been established. Their mechanics are nevertheless explicit in the firmware handler and therefore can be documented without assigning public semantic names.
 
-## A1C0 — current status
+## A1C0 — `FileSetFolder`
 
-A1C0 is **not** a one-argument syscall in the analyzed firmware. It consumes two 32-bit argument slots. Official callers commonly pass a dynamic first value plus a null second argument, while ControlPanel contains a caller with a real pointer as the second argument.
+The inherited `FileSetFolder` name is now strongly supported and its mechanical contract is closed for the analyzed AS3000 and NEO 2005 firmware.
 
-Direct handler analysis shows a bounded 0..31 selection/search path, updates a global selection value, and conditionally writes a 32-bit value through the second argument when it is non-null. This is compatible with a folder/context-selection role, so the inherited `FileSetFolder` name remains plausible, but its exact two-argument prototype is still under reconstruction and the existing one-argument interpretation must not be published as final.
+A1C0 consumes two 32-bit slots:
 
-## A1C4 — current status
-
-A1C4 uses the same token resolver as A1C8 and consumes **five argument slots**: a 16-bit token plus four 32-bit values. On successful resolution it writes those four values into descriptor offsets:
-
-```text
-+0x24
-+0x28
-+0x2C
-+0x30
+```c
+int32_t FileSetFolder(uint32_t applet_index, uint32_t *applet_flags_out);
 ```
 
-and then invokes follow-up file-system helpers. The four field meanings are still open. Official AlphaWord Plus, AlphaQuiz and KeyWords callers frequently initialize all four metadata values to zero, but other call paths will be used to identify their semantics before exposing a prototype.
+The second pointer is optional.
+
+### What `folder` means
+
+The first argument is a **SmartApplet index**, not a user-file number. Official callers prove this directly: AlphaQuiz and ControlPanel call `AppletFindById(0xA000)`, retain the returned applet index, and pass it to A1C0. The firmware uses the same 32-entry applet-pointer table used by `AppletFindById`.
+
+The table entries point to `AppletHeader_t`. This is independently confirmed by `AppletFindById`, which reads the 16-bit applet ID at header offset `+0x14`, exactly matching the SDK `AppletHeader_t` layout.
+
+A1C0 therefore selects the file namespace/folder owned by an applet.
+
+### Validation and side effects
+
+The handler:
+
+1. Clears `*applet_flags_out` first when the pointer is non-NULL.
+2. Validates `applet_index` against the 32-entry runtime applet tables.
+3. Verifies that the requested applet has a usable file namespace, with a special flag path for one class of applets.
+4. Calls A1CC to clear the currently active file descriptor before changing folders.
+5. Saves the previous current-folder index.
+6. Stores the new `applet_index` into the global current-folder selector.
+7. If `applet_flags_out != NULL`, writes the applet header's 32-bit `flags` field (`header+0x10`) through it.
+8. Returns the **previous folder/applet index** on success; validation failures return negative status values.
+
+The same logic appears in AS3000 2005 and NEO 2005 with only relocated global tables.
+
+This closes the earlier uncertainty that the syscall might have only one parameter.
+
+## A1C4 — live file-info binding
+
+A1C4 uses the same file-token resolver as A1C8 and consumes **five argument slots**: a 16-bit file token plus four pointer values.
+
+Mechanical research prototype:
+
+```c
+void *SYS_A1C4(
+    uint16_t file_id,
+    uint8_t **storage_out,
+    uint32_t *current_size_out,
+    uint32_t *max_size_out,
+    uint32_t *cursor_out);
+```
+
+The public semantic name remains provisional, but the ABI and the meaning of all four pointer arguments are confidence A.
+
+On successful resolution A1C4 stores the caller pointers in descriptor offsets:
+
+```text
++0x24 = storage_out
++0x28 = current_size_out
++0x2C = max_size_out
++0x30 = cursor_out
+```
+
+It then immediately invokes a synchronization helper. That helper performs:
+
+```text
+if storage_out      != NULL: *storage_out      = descriptor->storage
+if current_size_out != NULL: *current_size_out = descriptor->current_size
+if max_size_out     != NULL: *max_size_out     = descriptor->max_size
+if cursor_out       != NULL: *cursor_out       = descriptor->cursor
+```
+
+The helper is byte-for-byte logically equivalent in AS3000 2005 and NEO 2005.
+
+### Persistent binding, not one-shot output
+
+These four addresses remain stored in the descriptor. The same synchronization helper is called by multiple neighboring file operations, including write/read/state-changing paths and A1B8. Consequently the arguments are **live mirror bindings**: while installed, System 3 keeps the caller variables synchronized with changes to the backing file descriptor.
+
+This also explains why many official SmartApplets call A1C4 with four NULL values: they do not need live mirrors. Internal System 3 callers can provide real storage/size/capacity/cursor destinations when they need continuously synchronized state.
+
+### Historical relationship
+
+The AS3000 source from 2000 contains `FileGetFileInfo()`, which returns the storage pointer and outputs current size, cursor and maximum size. A1C4 is clearly related to that information family, but the modern ABI adds an explicit file token and persistent pointer binding. Therefore the historical function name is useful genealogy but is not yet assigned automatically to A1C4.
 
 ## Current naming decision
 
-The observed A1C8/A1CC behavior strongly supports the inherited `FileOpen` / `FileClose` names and conflicts with treating A1C8 as a simple scalar-property query. However, the public headers will remain unchanged until A1B4, A1B8, A1C0 and A1C4 are sufficiently characterized to publish a coherent File API rather than isolated provisional functions.
+`FileSetFolder` is now sufficiently supported as the A1C0 name. A1C4's ABI is closed but its final public name is still held back. The observed A1C8/A1CC behavior strongly supports the inherited `FileOpen` / `FileClose` names and conflicts with treating A1C8 as a simple scalar-property query.
+
+The remaining work before publishing the File API as a coherent SDK family is now mainly semantic naming of A1A0/A1B4/A1B8/A1C4 and validation of how the storage accounting selectors are presented by AlphaWord.
 
 ## Next work
 
-1. Correlate A1B4 `0xFD`–`0xFF` with the AlphaWord storage UI before assigning accounting names.
-2. Recover the exact two-argument A1C0 contract from official callers and its 32-entry table.
-3. Identify descriptor fields `+0x24..+0x30` written by A1C4.
-4. Revisit A1A0 against official destructive-delete/recovery callers.
-5. Define emulator regressions for A1C8 selection/reset and A1B8 size/recovery commands.
-6. Promote stable names/prototypes into `os3k.h` only after the family is internally consistent.
+1. Correlate A1B4 `0xFD`–`0xFF` with the AlphaWord storage/status UI before assigning accounting names.
+2. Find real non-NULL A1C4 callers and determine whether an original System 3 name can be recovered.
+3. Revisit A1A0 against official destructive-delete/recovery callers.
+4. Define emulator regressions for A1C8 selection/reset, A1C0 folder switching, A1C4 live mirrors and A1B8 size/recovery commands.
+5. Promote stable names/prototypes into `os3k.h` as a coherent File API rather than isolated guesses.
