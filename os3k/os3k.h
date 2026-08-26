@@ -213,7 +213,22 @@ uint32_t GetUptimeCentiseconds();
 uint32_t GetUptimeMilliseconds();
 
 void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
-// marker is usually ' '; id is for the user; shortcut_key and file_size are usually -1.
+/*
+ * Add a dialog item.
+ *
+ * text/text_len: item label and explicit label length.
+ * marker: prefix glyph. A space is the normal blank marker; historical
+ *         AS3000 code draws this character immediately before the label.
+ * id: caller-defined item metadata, distinct from the insertion-order
+ *     choice index.
+ * shortcut_key: OS3K-added per-item key argument. Its exact rendering and
+ *               handling are still being characterized.
+ * file_size: OS3K-added argument. Official callers commonly pass
+ *            (size_t)-1; its exact semantics remain under study.
+ *
+ * The historical AS3000 predecessor accepted only text, text_len and marker.
+ * Official OS3K SmartApplets pass all six arguments shown here.
+ */
 int DialogAddItem(char* text, uint8_t text_len, char marker, int id, Key_e shortcut_key, size_t file_size);
 int DialogAddExitKey(Key_e key);
 void DialogSetChoice(uint8_t index);
@@ -222,9 +237,19 @@ short DialogRun();
 char DialogGetChoice();
 int DialogGetChoiceId();
 int DialogGetItemId(uint8_t index);
-void ShowBatteryPercentage(uint8_t time_seconds); // display battery graphic
-/* 0 for "porcentage text and press any key" screen
-if time>zero shows battery icon for n seconds */
+
+/*
+ * Display battery status through A138.
+ *
+ * time_seconds == 0: display the full battery-capacity screen and wait for
+ *                    a key before returning.
+ * time_seconds > 0: display the battery indicator for that many seconds.
+ *
+ * In timed mode the System 3 firmware reads the argument as a byte and calls
+ * SleepCentiseconds(time_seconds * 100). This behavior is confirmed in
+ * AS3000 and NEO System 3 ROM implementations.
+ */
+void ShowBatteryPercentage(uint8_t time_seconds);
 
 char TranslateKeyToChar(KeyMod_e key);
 
@@ -234,7 +259,12 @@ uint8_t AppletFindById(uint16_t id);
 int AppletGetName(uint8_t index, char* name);
 int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t* status);
 
-// mask=0x8 to process special key. mask=4,2,1 unknown.
+/*
+ * Partially characterized special/system-key dispatcher.
+ * mask 0x08 is known to process a special key; with KEY_APPLETS it enters
+ * the system applet chooser. The meanings of mask bits 0x01, 0x02 and 0x04
+ * remain unknown, so the raw syscall name is retained.
+ */
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
 uint32_t CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
@@ -334,7 +364,7 @@ extern char __os3k_bss_size;
         .fileUsage = 0, \
         .entryPoint = &BwProcessMessage, \
         .magic = {0, 1, 2},
-#define APPLET_FLAGS(param) .flags = 0xFF000000 | (param),
+#define APPLET_FLAGS(param) .flags = param,
 #define APPLET_ID(param) .id = param,
 #define APPLET_NAME(param) .name = param,
 #define APPLET_FONT_NAME(param) .name = "Neo Font - " param,
