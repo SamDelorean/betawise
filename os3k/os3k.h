@@ -235,7 +235,12 @@ void DialogSetChoice(uint8_t index);
 void DialogDraw();
 short DialogRun();
 char DialogGetChoice();
+/* Returns the caller-defined id for the current 1-based dialog choice.
+ * Confirmed by direct AS3000 and NEO firmware analysis. The firmware does
+ * not explicitly bounds-check the current choice in this syscall. */
 int DialogGetChoiceId();
+/* Returns the caller-defined id for a 1-based item index. Returns 0 when
+ * index is outside 1..item_count in the analyzed System 3 firmware. */
 int DialogGetItemId(uint8_t index);
 
 /*
