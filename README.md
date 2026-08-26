@@ -17,6 +17,7 @@ SDK / ABI Documentation
 See:
 
 * `docs/ABI.md` — documented OS3K calls and confidence levels;
+* `docs/DIALOG_API.md` — detailed reconstruction of the `A0F0`–`A110` dialog subsystem;
 * `docs/COMPATIBILITY.md` — AS3000 vs NEO/NEO2 compatibility model;
 * `docs/RESEARCH_STATUS.md` — confirmed, probable, and unresolved interfaces.
 
@@ -79,6 +80,7 @@ Work in Progress
 
 Major ongoing areas include:
 
+* complete validation of the `A0F0`–`A110` dialog subsystem, especially `A10C`, shortcut behavior, `file_size`, and later-OS3K error limits;
 * improve stdio compatibility across character and graphical display hardware;
 * investigate `ProcessMessage` statuses and additional messages;
 * finish timer API reconstruction;
