@@ -136,7 +136,8 @@ char TranslateKeyToChar(KeyMod_e key)
     if(!c) {
         key &= ~KEY_MOD_CAPS_LOCK;
         if(key == KEY_APPLETS) {
-            // Invokes the applets menu and does not return.
+            // Known A25C use: mask 0x8 processes KEY_APPLETS as a system key
+            // and enters the system applet chooser. Other mask bits are unknown.
             SYS_A25C(0x8, key);
         } else if(key == (KEY_MOD_CTRL | KEY_C)) {
             c = '\x03';
