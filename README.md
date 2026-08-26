@@ -7,6 +7,7 @@ Documentation
 Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
 
 * [File API reconstruction](docs/file-api-reconstruction.md) — firmware- and caller-backed work on the A198–A1CC file subsystem, including descriptor layout, A1C8/A1CC, A1B4/A1B8, and current A1C0/A1C4 findings.
+* [FileSetFolder ABI closure](docs/filesetfolder-closure.md) — closed A1C0 contract, raw error behavior, the unresolved `0x40` flag name, and the emulator-first regression matrix in `applets/FileSetFolderProbe/`.
 
 Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed.
 
