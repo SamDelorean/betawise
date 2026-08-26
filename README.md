@@ -6,8 +6,10 @@ Documentation
 -------------
 Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
 
-* [File API reconstruction](docs/file-api-reconstruction.md) — firmware- and caller-backed work on the A198–A1CC file subsystem, including descriptor layout, A1C8/A1CC, A1B4/A1B8, and current A1C0/A1C4 findings.
+* [File API reconstruction](docs/file-api-reconstruction.md) — firmware- and caller-backed work on the A198–A1CC file subsystem and descriptor model.
 * [FileSetFolder ABI closure](docs/filesetfolder-closure.md) — closed A1C0 contract, raw error behavior, the unresolved `0x40` flag name, and the emulator-first regression matrix in `applets/FileSetFolderProbe/`.
+* [Core file operations](docs/file-core-operations.md) — closes A1A0 as `FileSmashFile` and A1A8 as `FileGetCurrentFile`, including modern return/token behavior and historical lineage.
+* `FileGetFileInfo` / A1C4 is now exposed in the SDK with persistent live-mirror semantics; `applets/FileGetFileInfoProbe/` provides a read-only regression specification and explicit unbind test.
 
 Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed.
 
@@ -41,7 +43,7 @@ Much research and work is still needed:
 * Investigate different statuses from `ProcessMessage`
 * Find and document timer functions and messages
 * Find and document non-message keyboard functions
-* Reconstruct and validate the System 3 file API
+* Reconstruct and validate the remaining System 3 file API operations
 * Eliminate need to put global data into a structure
 
 Contributions welcome!
