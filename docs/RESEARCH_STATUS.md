@@ -77,32 +77,116 @@ The baseline `DialogProbe` is now primarily a regression applet. Marker, shortcu
 
 ## Filesystem reconstruction — active
 
-Detailed notes are in `docs/FILE_API.md`.
+Detailed evidence and caller notes are in `docs/FILE_API.md`.
 
-The current BetaWise names in the `A198`–`A1CC` range remain research-derived and are not yet public SDK contracts.
+The modern descriptor mechanics are now substantially clearer, but public names and error enums are still being withheld until the write path and identifier namespace are closed.
 
-### Directly established so far
+### Confirmed modern descriptor fields
 
-- `A1C8`:
-  - two ABI argument slots are consumed;
-  - the first argument is resolved through a common descriptor resolver and only its low 16 bits are used by that path;
-  - the second argument is inspected as a byte-sized mode/flag;
-  - the resolved descriptor is installed as the current/active object after `A1CC` clears the previous current descriptor;
-  - `mode == 1` clears descriptor field `+0x14`;
-  - a scalar/status-like value is returned in `D0`, but its exact contract remains unresolved.
-- `A1CC`:
-  - consumes no arguments;
-  - clears the current/active descriptor global and returns.
+From direct November 2005 AS3000 and NEO handler analysis:
 
-These mechanics are structurally equivalent in the November 2005 AS3000 and NEO handlers.
+```text
++0x00  storage/data pointer
++0x04  current content size
++0x14  sequential file/stream position
++0x44  16-bit descriptor identifier
+```
 
-### Naming status
+`+0x14` is confirmed by `A19C` and supersedes the earlier unknown-field hypothesis.
 
-- Legacy BetaWise `FileOpen` / `FileClose`: **B working names**. Direct firmware behavior materially supports an enter/open/select-current-context and release-current-context interpretation, but exact ownership and return semantics still need callers.
-- Independent `neo-re` currently calls `A1C8` `query_object_metric` and `A1CC` `commit_editable_buffer`. That interpretation conflicts with the full direct handler behavior and is retained as comparative evidence rather than adopted.
-- No public prototypes have been added to `os3k.h`.
+### `A19C` — FileReadBuffer mechanics
 
-Historical April 2000 `FileModule.c` confirms a per-file descriptor model (`max size`, `size`, `old size`, `cursor`, row-one position, read-only state, storage pointer) and current-file selection, but it contains no historical functions literally named `FileOpen` or `FileClose`. Later OS3K semantics must therefore be reconstructed independently.
+Directly established:
+
+- resolves a 16-bit file/object identifier to a descriptor;
+- consumes a destination pointer and requested length;
+- reads from `storage + position`;
+- clamps the operation to `size - position`;
+- advances `position` by the amount actually read;
+- returns the actual count;
+- null destination has an explicit `-6` error path;
+- resolver errors can propagate.
+
+Research shape:
+
+```c
+int32_t FileReadBuffer(uint16_t file_id, void *dst, uint32_t requested);
+```
+
+The shape/behavior is confidence **A**; public error typing is pending.
+
+### `A198` — FileWriteBuffer mechanics
+
+Direct firmware confirms:
+
+- four arguments;
+- descriptor-backed write/update behavior;
+- a byte-sized fourth mode with distinct cases for at least `1`, `2` and `3`;
+- descriptor storage/size/position are modified according to mode.
+
+Official caller analysis independently shows patterns such as:
+
+```text
+A190(id, 0, 2)
+A198(id, src, len, 1)
+```
+
+Exact symbolic mode names and return/error semantics are the next reconstruction target.
+
+### `A1C8` — active descriptor selection/open-like operation
+
+Directly established:
+
+- two ABI arguments;
+- first argument is a resolvable 16-bit identifier;
+- second argument is byte-sized and official callers use both `0` and `1`;
+- the resolved descriptor becomes the active descriptor after the previous active state is cleared through `A1CC`;
+- `argument1 == 0` preserves the sequential position;
+- `argument1 == 1` resets descriptor `+0x14` position to zero;
+- the return is the resolver's 32-bit status/result, **not** the descriptor identifier;
+- an official `AlphaWord Plus` caller performs a signed negative test and treats `< 0` as failure.
+
+Research shape:
+
+```c
+int32_t SYS_A1C8(uint16_t file_id, uint8_t reset_position);
+```
+
+The mechanics and signed success/failure contract are confidence **A**. The legacy public name `FileOpen` is **B+** pending final API packaging and exact result enum.
+
+Official caller evidence includes `AlphaWord Plus`, `KeyWords`, `AlphaQuiz` and `Accelerated Reader`. `AlphaQuiz` contains `A1C8(0x00CB, 1)`; resolver id `0x00CB` is a special descriptor path whose semantic constant remains unresolved.
+
+### `A1CC` — release active descriptor
+
+- consumes no arguments;
+- clears the current active descriptor global and returns;
+- mechanics are confidence **A**;
+- legacy name `FileClose` is **B+** pending final naming policy.
+
+### `A1A8` — current descriptor identifier
+
+The old BetaWise comment `get file count?` is rejected by direct handler analysis.
+
+`A1A8` resolves identifier `0` (the current-active-descriptor path) and returns the resolver's 16-bit descriptor identifier zero-extended. This is mechanically a current-file/current-descriptor-id query and has a strong historical analogue in `FileGetCurrentFile()`.
+
+Mechanics: **A**. Final public name: **B+**.
+
+### Common resolver
+
+The shared resolver used by `A1C4`, `A1C8`, `A19C` and nearby operations has special behavior for:
+
+- id `0`: current active descriptor;
+- id `0x00CB`: dedicated descriptor global, exact semantic constant unresolved.
+
+Observed negative status values include at least `-1` and `-7`; symbolic meanings remain pending.
+
+### Nearby warnings
+
+- `A1A0` is not a simple current-file getter despite its old comment.
+- `A1C0` is more complex than a naïve one-argument `FileSetFolder` interpretation.
+- `A1C4` resolves a descriptor and writes four 32-bit fields at offsets `+0x24`, `+0x28`, `+0x2C`, `+0x30`; semantic names remain open.
+
+No public filesystem prototypes have yet been added to `os3k.h`.
 
 ## Strong but still under validation
 
