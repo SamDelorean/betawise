@@ -11,7 +11,7 @@ This file separates usable SDK interfaces from active reverse-engineering hypoth
 
 ## Dialog family A0F0–A110
 
-The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`.
+The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`. Marker-specific evidence is summarized in `docs/DIALOG_MARKER.md`.
 
 ### Confirmed members / properties
 
@@ -19,10 +19,12 @@ The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`.
   - Four-argument handler state mapping confirmed in AS3000 and NEO 2005 firmware.
 - `A0F4` — `DialogAddItem`
   - Six-argument OS3K ABI confirmed.
+  - `marker` is a raw one-byte glyph: stored unchanged by `A0F4` and passed directly to `A010 / PutChar` by the draw path.
+  - marker writer/reader behavior is present in AS3000 2005, NEO 2005 and NEO 2013 firmware.
+  - official code uses at least `' '`, `'*'`, `'+'`, and `'x'`; the dialog subsystem does not attach state semantics to those glyphs.
   - `id` is a caller-provided 32-bit value stored in a per-item array.
-  - Later-OS3K analyzed capacity is 64 items.
+  - later-OS3K analyzed 2005 capacity is 64 items.
   - returns `0` on insertion and `-1` when full.
-  - historical predecessor confirms `text`, `text_len` and literal prefix `marker` lineage.
   - `shortcut_key` core semantics confirmed: accepted values are validated through the internal shortcut formatter, unsupported values normalize to `KEY_NONE`, labels are rendered automatically, and `DialogRun` matches the raw key byte.
   - shortcut match selects/redraws but does not exit unless the same key is also registered as an exit key; duplicate shortcuts resolve to the last matching item.
   - high-byte Ctrl/Cmd/Alt/Shift/Caps-Lock modifier bits do not participate in shortcut matching.
@@ -51,13 +53,14 @@ DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
 ### Strong but still execution-oriented
 
 - `A100` — `DialogDraw`
-  - role is coherent with historical `DialogMenuDisplay`; rendering differences remain to test.
+  - marker, shortcut-label and file-size subpaths are directly characterized.
+  - geometry, clipping and platform-specific visual behavior remain to test.
 - `A104` — `DialogRun`
   - firmware returns a 16-bit value.
   - shortcut selection and shortcut/exit-key interaction are confirmed directly from both 2005 handlers.
   - remaining work is primarily arrow/navigation edge cases and execution-level AS3000/NEO differences.
 
-The baseline `DialogProbe` remains useful as an emulator/hardware regression test, but `A10C` no longer requires a separate discovery probe; it should now be checked against the confirmed relation above.
+The baseline `DialogProbe` remains useful as an emulator/hardware regression test. `marker`, `shortcut_key`, `file_size` and `A10C` no longer require discovery probes; their known behavior should be asserted as regression expectations.
 
 ## Strong but still under validation
 
