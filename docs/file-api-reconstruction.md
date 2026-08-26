@@ -6,6 +6,12 @@ This document tracks reverse-engineered behavior of the System 3 file ABI used b
 
 Confidence **A** means the behavior is established directly by firmware analysis or equivalent primary evidence. Historical BetaWise names are retained only when they match the observed behavior.
 
+## Historical-source audit
+
+The original AS3000 `FileModule.c` from 2000 was rechecked directly while auditing continuity between the `betawise` and `Betawise 2` research threads. It contains `FileGetCurrentFile`, `FileSetCurrentFile`, `FileRestoreOldFile`, `FileClearFile`, `FileSmashFile`, and `FileGetFileInfo`. It does **not** contain functions literally named `FileOpen`, `FileClose`, or `FileSetFolder`.
+
+An earlier working-note statement that the historical file contained `FileOpen`/`FileClose` wrappers was therefore incorrect and is intentionally not carried forward. The later System 3 names must continue to be established from firmware and real callers rather than projected backward onto the 2000 source.
+
 ## Descriptor fields identified so far
 
 | Offset | Current interpretation | Confidence |
@@ -158,9 +164,9 @@ No direct SmartApplet constant call to `-3`, `-4`, `-5` or `-6` has yet been est
 
 ## A1C0 — `FileSetFolder`
 
-The inherited `FileSetFolder` name is now strongly supported and its mechanical contract is closed for the analyzed AS3000 and NEO 2005 firmware.
+The inherited `FileSetFolder` name is now supported strongly enough to publish. Its mechanical contract is confidence **A** in the analyzed AS3000/NEO 2005 firmware and was independently rechecked against NEO System 3 from July 2013.
 
-A1C0 consumes two 32-bit slots:
+Public SDK prototype:
 
 ```c
 int32_t FileSetFolder(uint32_t applet_index, uint32_t *applet_flags_out);
@@ -170,28 +176,52 @@ The second pointer is optional.
 
 ### What `folder` means
 
-The first argument is a **SmartApplet index**, not a user-file number. Official callers prove this directly: AlphaQuiz and ControlPanel call `AppletFindById(0xA000)`, retain the returned applet index, and pass it to A1C0. The firmware uses the same 32-entry applet-pointer table used by `AppletFindById`.
+The first argument is a **runtime SmartApplet index**, not an applet ID and not a user-file number. The handler reads the complete 32-bit argument and accepts only the unsigned range `0..31`.
 
-The table entries point to `AppletHeader_t`. This is independently confirmed by `AppletFindById`, which reads the 16-bit applet ID at header offset `+0x14`, exactly matching the SDK `AppletHeader_t` layout.
+Official callers prove the mapping directly. AlphaQuiz and ControlPanel call `AppletFindById(0xA000)`, retain the returned runtime index for AlphaWord Plus, and pass that value to A1C0. `AppletFindById` walks the same 32-entry applet-header pointer table and compares `AppletHeader_t.id` at header offset `+0x14`.
 
-A1C0 therefore selects the file namespace/folder owned by an applet.
+A1C0 therefore selects the file namespace/folder owned by the selected runtime SmartApplet.
 
-### Validation and side effects
+### Exact validation path
 
-The handler:
+The NEO 2013 handler makes the previously generic validation language precise:
 
-1. Clears `*applet_flags_out` first when the pointer is non-NULL.
-2. Validates `applet_index` against the 32-entry runtime applet tables.
-3. Verifies that the requested applet has a usable file namespace, with a special flag path for one class of applets.
-4. Calls A1CC to clear the currently active file descriptor before changing folders.
-5. Saves the previous current-folder index.
-6. Stores the new `applet_index` into the global current-folder selector.
-7. If `applet_flags_out != NULL`, writes the applet header's 32-bit `flags` field (`header+0x10`) through it.
-8. Returns the **previous folder/applet index** on success; validation failures return negative status values.
+1. If `applet_flags_out != NULL`, initialize `*applet_flags_out = 0`.
+2. Reject an `applet_index >= 32` with return `-64`.
+3. Consult the 32-word runtime applet-ID table. If the slot contains `0xFFFF`, reject it with return `-64`.
+4. Resolve the corresponding `AppletHeader_t` from the 32-entry header-pointer table.
+5. Test bit `0x40` of the low byte of `AppletHeader_t.flags` (`header+0x13`, bit 6).
+6. If that bit is clear, inspect the current runtime file-group record for the selected applet. Its byte at `group+0x04` is the group's file count; A1B4 independently uses the same byte as its enumeration loop bound. If this count is zero, reject the selection with return `-7`.
+7. If validation succeeds, call A1CC so that no file descriptor from the old folder remains active.
+8. Save the previous global folder index.
+9. Store `applet_index` as the new current folder.
+10. If `applet_flags_out != NULL`, copy the complete 32-bit `AppletHeader_t.flags` field (`header+0x10`) to the caller.
+11. Return the previous folder index.
 
-The same logic appears in AS3000 2005 and NEO 2005 with only relocated global tables.
+The low-byte flag `0x40` is therefore a confirmed bypass of the normal non-zero runtime-file-count requirement. Its final public symbolic name is intentionally **not** guessed yet. AlphaWord Plus provides an important real example: its 2012 header has flags `0xFF0000CE`, so bit `0x40` is set even though its header `fileCount` byte is zero.
 
-This closes the earlier uncertainty that the syscall might have only one parameter.
+The raw negative returns are also documented without invented symbolic names: `-64` covers an out-of-range/uninstalled runtime applet slot, while `-7` covers a selected applet with no eligible runtime file group when the `0x40` bypass flag is absent.
+
+### Official caller behavior
+
+Six A1C0 callers were traced in the 2012 AlphaQuiz binary. They all pass `NULL` for `applet_flags_out`. A representative sequence is especially useful for the contract:
+
+```text
+index = AppletFindById(0xA000)
+previous = FileSetFolder(index, NULL)
+... operate in AlphaWord Plus file namespace ...
+FileSetFolder(previous, NULL)
+```
+
+The first call's D0 value is explicitly saved and later supplied as the first argument to another A1C0 call, proving that the success return is the **previous folder index**, not merely a success status.
+
+ControlPanel contains a non-NULL second-argument caller. After `FileSetFolder`, it directly tests bit 6 of the low byte of the returned 32-bit flags value. This independently confirms that the second argument is an `AppletHeader_t.flags` output rather than an opaque status structure.
+
+### Public SDK decision
+
+`FileSetFolder` is the first member of the reconstructed modern File API considered sufficiently closed for an `os3k.h` prototype. The implementation stub was already present as syscall A1C0; publishing the prototype does not rename an unknown trap.
+
+No public constants are added yet for `-64`, `-7`, or flag `0x40`, because their mechanics are established but their original symbolic names have not been recovered.
 
 ## A1C4 — live file-info binding
 
@@ -242,14 +272,14 @@ The AS3000 source from 2000 contains `FileGetFileInfo()`, which returns the stor
 
 ## Current naming decision
 
-`FileSetFolder` is now sufficiently supported as the A1C0 name. A1C4's ABI is closed but its final public name is still held back. The observed A1C8/A1CC behavior strongly supports the inherited `FileOpen` / `FileClose` names and conflicts with treating A1C8 as a simple scalar-property query.
+`FileSetFolder` is now SDK-ready and can be exposed in `os3k.h`. A1C4's ABI is closed but its final public name is still held back. The observed A1C8/A1CC behavior strongly supports the inherited `FileOpen` / `FileClose` names and conflicts with treating A1C8 as a simple scalar-property query.
 
-The remaining work before publishing the File API as a coherent SDK family is now mainly semantic naming of A1A0/A1B4/A1B8/A1C4 and validation of how the storage accounting selectors are presented by AlphaWord.
+The remaining work before publishing the rest of the File API as a coherent SDK family is mainly semantic naming of A1A0/A1B4/A1B8/A1C4 and validation of how the storage accounting selectors are presented by AlphaWord.
 
 ## Next work
 
-1. Correlate A1B4 `0xFD`–`0xFF` with the AlphaWord storage/status UI before assigning accounting names.
-2. Find real non-NULL A1C4 callers and determine whether an original System 3 name can be recovered.
-3. Revisit A1A0 against official destructive-delete/recovery callers.
-4. Define emulator regressions for A1C8 selection/reset, A1C0 folder switching, A1C4 live mirrors and A1B8 size/recovery commands.
-5. Promote stable names/prototypes into `os3k.h` as a coherent File API rather than isolated guesses.
+1. Add the confirmed `FileSetFolder` prototype to `os3k.h` without inventing error/flag constants.
+2. Correlate A1B4 `0xFD`–`0xFF` with the AlphaWord storage/status UI before assigning accounting names.
+3. Find real non-NULL A1C4 callers and determine whether an original System 3 name can be recovered.
+4. Revisit A1A0 against official destructive-delete/recovery callers.
+5. Define emulator regressions for A1C8 selection/reset, A1C0 folder switching, A1C4 live mirrors and A1B8 size/recovery commands.
