@@ -7,7 +7,7 @@ This document tracks the System 3 / OS3K dialog syscall family as a coherent sub
 | Trap | BetaWise name | Current confidence | Historical relationship |
 | --- | --- | --- | --- |
 | `A0F0` | `DialogInit` | A | `DialogMenuInit` |
-| `A0F4` | `DialogAddItem` | A for call shape, `id`, capacity and core inherited fields; partial for later metadata | `DialogMenuAddItem` |
+| `A0F4` | `DialogAddItem` | A for call shape, `id`, `file_size`, capacity and core inherited fields; shortcut details remain partial | `DialogMenuAddItem` |
 | `A0F8` | `DialogAddExitKey` | A | `DialogMenuAddExitICode` |
 | `A0FC` | `DialogSetChoice` | A | `DialogMenuSetCursorItemNumber` |
 | `A100` | `DialogDraw` | B/A- | `DialogMenuDisplay` |
@@ -69,7 +69,24 @@ Direct handler analysis in both the November 2005 AS3000 and NEO System 3 ROMs c
 : A real fifth OS3K argument. Existing applets pass key codes. Its role as a per-item shortcut is strongly supported, but exact rendering and all matching rules remain to be validated.
 
 `file_size`
-: A real sixth OS3K argument. Official callers frequently pass `(size_t)-1`. No stable SDK-level semantic description is yet justified.
+: **Confirmed.** A 32-bit character-count field associated with the item, intended to render a file-size annotation. `A0F4` stores it in a per-item array. The analyzed `DialogDraw` path is the only other consumer of that array in both 2005 ROMs. `(size_t)-1` (`0xFFFFFFFF`) is a sentinel that suppresses the annotation entirely.
+
+The formatter embedded in `DialogModule` establishes the visible cases directly:
+
+- `(size_t)-1` — no size suffix is rendered;
+- `0` — appends `" (empty)"`;
+- `1` — appends `" (1 char)"`;
+- values greater than 1 — appends a grouped decimal count in the form `" (N chars)"`, using `,%03d` for thousands groups (for example, `1,234`).
+
+The relevant strings (`" (empty)"`, `" (1 char)"`, `" ("`, `",%03d"`, `"%d"`, `" chars)"`) are present next to the `DialogModule.c` string in both the AS3000 and NEO 2005 system images. This proves that the unit is **characters**, not bytes.
+
+The official SmartApplet callers inspected during this reconstruction overwhelmingly pass `-1`; no verified non-`-1` caller was found in that sample. That negative caller result does not weaken the semantic conclusion, which comes from the firmware writer/reader/formatter path itself.
+
+### `file_size` storage and rendering path
+
+In both analyzed 2005 firmwares, `A0F4` writes the sixth argument into a 64-entry array of 32-bit values indexed in parallel with the dialog items. A reference scan of the corresponding array base finds the expected writer in `A0F4` and one reader in the dialog rendering path reached from `A100 / DialogDraw`. No reader was found in `DialogRun`, navigation, or file-I/O code.
+
+The rendering helper first compares the stored value with `0xFFFFFFFF`. If equal, it returns without producing an annotation. Otherwise it formats the character count as described above. This makes `file_size` presentation metadata; it does not control the actual file contents or the selection logic.
 
 ### Capacity and return value
 
@@ -189,6 +206,7 @@ current_choice
 exit_key_count
 exit_key[]
 item_id[]
+item_file_size_chars[]
 ```
 
 The important ABI relation is logical rather than address-based; these RAM addresses are firmware-internal and must not be exposed as portable SDK constants.
@@ -235,9 +253,8 @@ For `A10C`, the emulator regression expectation is now explicit: with a valid ch
 The main unresolved dialog questions are now:
 
 1. exact shortcut-key rendering and matching rules;
-2. exact `file_size` semantics and cases where it differs from `-1`;
-3. AS3000/NEO behavioral differences in geometry, markers and navigation;
-4. exact edge-case behavior of `DialogDraw` and `DialogRun`;
-5. whether capacities or metadata layout differ in System 3 firmware generations other than the analyzed 2005 images.
+2. AS3000/NEO behavioral differences in geometry, markers and navigation;
+3. exact edge-case behavior of `DialogDraw` and `DialogRun`;
+4. whether capacities or metadata layout differ in System 3 firmware generations other than the analyzed 2005 images.
 
 `A10C` is no longer a blocker: its contract is directly established by both AS3000 and NEO firmware handlers.
