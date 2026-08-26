@@ -78,9 +78,20 @@ Keep all other arguments fixed. Use three unique shortcuts and test:
 
 Keep IDs, shortcuts and file sizes fixed. Compare markers from known real usage. Treat marker bytes first as literal glyphs because that behavior is confirmed in the historical dialog implementation. Record any later OS3K-specific behavior separately.
 
-## Stage 5 — file_size behavior
+## Stage 5 — file_size rendering regression
 
-Do not vary this parameter until the earlier stages are stable. Start from `(size_t)-1`, then use values selected from actual official callers if a non-`-1` case is identified in firmware/app code. Avoid arbitrary values until a plausible semantic hypothesis exists.
+Firmware analysis has resolved the semantics, so this stage is now a rendering regression rather than a discovery experiment. Keep text, marker, ID and shortcut fixed and vary only `file_size` in separate emulator runs.
+
+Expected cases from the 2005 `DialogModule` formatter:
+
+- `(size_t)-1` — no size annotation;
+- `0` — `" (empty)"`;
+- `1` — `" (1 char)"`;
+- `999` — `" (999 chars)"`;
+- `1000` — `" (1,000 chars)"`;
+- `1234567` — `" (1,234,567 chars)"`.
+
+Run these first in the emulator. The baseline `DialogProbe` should remain unchanged at `-1`; a follow-up probe should change one value at a time. Physical-hardware validation can follow once the emulator behavior is stable.
 
 ## Stage 6 — geometry/navigation edge cases
 
