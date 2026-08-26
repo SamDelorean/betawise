@@ -223,8 +223,11 @@ void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
  *     choice index.
  * shortcut_key: OS3K-added per-item key argument. Its exact rendering and
  *               handling are still being characterized.
- * file_size: OS3K-added argument. Official callers commonly pass
- *            (size_t)-1; its exact semantics remain under study.
+ * file_size: optional file length in characters for display by DialogDraw.
+ *            (size_t)-1 suppresses the size annotation; 0 is shown as
+ *            " (empty)", 1 as " (1 char)", and larger values as a grouped
+ *            decimal " (N chars)" annotation. Confirmed in AS3000 and NEO
+ *            System 3 firmware.
  *
  * The historical AS3000 predecessor accepted only text, text_len and marker.
  * Official OS3K SmartApplets pass all six arguments shown here.
