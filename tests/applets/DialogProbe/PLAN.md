@@ -1,10 +1,10 @@
 # DialogProbe staged validation plan
 
-The existing `DialogProbe.c` is the baseline and should remain stable until it can be executed in the emulator. Follow-up experiments should be additive and change one uncertain dimension at a time.
+The existing `DialogProbe.c` is the baseline and should remain stable until it can be executed in the emulator. Follow-up experiments should be additive and change one dimension at a time.
 
 ## Stage 0 — build/ABI inspection
 
-Already available for the baseline build:
+Available or expected build artifacts:
 
 - source `.c`;
 - preprocessed `.i` when built with saved temporaries;
@@ -12,11 +12,11 @@ Already available for the baseline build:
 - object `.o` locally;
 - final `.OS3KApp`.
 
-Use these artifacts to verify that the caller emits the expected six stack arguments for `A0F4` and the expected A-line stubs.
+Verify the six stack arguments for `A0F4` and the expected A-line stubs.
 
 ## Stage 1 — normal lifecycle regression
 
-Sequence:
+Baseline sequence:
 
 ```c
 DialogInit(0, 1, 4, 40);
@@ -33,98 +33,163 @@ choice_id = DialogGetChoiceId();
 item_id = DialogGetItemId(choice);
 ```
 
-Direct AS3000 and NEO firmware analysis now establishes the expected metadata relation:
+For valid state the emulator must satisfy:
 
 ```c
 choice_id == item_id
 ```
 
-for a valid current choice. This is no longer a speculative A10C experiment; it is an emulator/hardware regression expectation.
-
-Record independently for emulator, AS3000 and NEO:
-
-- visual text and marker placement;
-- initial selected item;
-- arrow navigation;
-- Enter return key;
-- Escape return key;
-- returned choice index;
-- `DialogGetChoiceId()`;
-- `DialogGetItemId(choice)`;
-- `DialogAddItem` return values.
+Record visual output, initial selection, navigation, exit return, choice, ID getters and insertion return values independently for emulator, AS3000 and NEO.
 
 ## Stage 2 — bounds/capacity regression
 
-Firmware analysis of the November 2005 AS3000 and NEO handlers establishes:
+Confirmed in the November 2005 AS3000 and NEO handlers:
 
-- `DialogAddItem`: maximum 64 items; `0` success, `-1` when full;
-- `DialogAddExitKey`: maximum 15 keys; `0` success, `-1` when full;
-- `DialogGetItemId(index)`: returns `0` outside `1..item_count`;
+- `DialogAddItem`: maximum 64 items; `0` success, `-1` full;
+- `DialogAddExitKey`: maximum 15 entries; `0` success, `-1` full;
+- `DialogGetItemId(index)`: `0` outside `1..item_count`;
 - `DialogGetChoiceId()`: no explicit bounds check.
 
-These should be verified in the emulator before intentionally stressing physical hardware. Do not set an invalid current choice on hardware merely to test the unchecked A10C path.
+Stress invalid choice state only in the emulator until its behavior is understood.
 
 ## Stage 3 — shortcut-key regression
 
-Firmware analysis has resolved the core shortcut contract, so this stage is now a regression test.
-
 Expected behavior:
 
-- `A0F4` validates the low-byte shortcut using the internal label helper.
-- If `TranslateKeyToChar(shortcut_key)` returns a non-zero character, `DialogDraw` renders a localized `"[c]"` label automatically.
-- `KEY_FILE_1` through `KEY_FILE_8` are special-cased and render `"[F1]"` through `"[F8]"`.
-- Other non-translatable shortcut values are normalized to `KEY_NONE` (`0xFF`).
-- Pressing a shortcut changes the current 1-based choice and redraws the dialog.
-- A shortcut does not exit `DialogRun` unless the same key was also registered with `DialogAddExitKey`.
-- Ctrl/Cmd/Alt/Shift/Caps-Lock high-byte modifier flags do not affect the raw shortcut-byte comparison.
-- Duplicate shortcuts are not rejected; because the scan continues, the last matching item becomes the final selection.
+- translated shortcut -> generated `[c]` label;
+- File 1–8 -> `[F1]`–`[F8]`;
+- unsupported shortcut -> `KEY_NONE`;
+- shortcut match -> select and redraw;
+- shortcut alone -> does not exit;
+- same key as shortcut + normal exit key -> select/redraw, then return;
+- high-byte Ctrl/Cmd/Alt/Shift/Caps-Lock modifiers do not alter the raw shortcut-byte match;
+- duplicate shortcuts resolve to the last matching item.
 
-The baseline ALPHA/BETA/GAMMA probe already supplies three distinct shortcut keys and can verify selection-without-exit. Add separate follow-up cases for a file key and for shortcut+exit-key behavior; keep each variation isolated. Modifier tests should compare the same raw key with and without one high-byte modifier while keeping all other dialog state identical.
+The baseline ALPHA/BETA/GAMMA case already supplies three distinct shortcuts. Add file-key, shortcut+exit and duplicate-shortcut cases separately.
 
 ## Stage 4 — marker regression
 
-Firmware analysis has resolved the marker contract. The third argument is stored as a raw byte and `DialogDraw` passes it directly to `A010 / PutChar`. This behavior is present in AS3000 2005, NEO 2005 and NEO 2013 firmware. Official code uses visible markers including `'*'`, `'+'`, and `'x'` as well as the normal blank space.
+The third `A0F4` argument is a literal byte forwarded to `PutChar` by the drawing path. Keep all other item metadata fixed and compare:
 
-Keep text, ID, shortcut and file size fixed and vary only the marker in separate runs:
+```text
+' ' -> blank marker
+'*' -> '*'
+'+' -> '+'
+'x' -> 'x'
+```
 
-- `' '` — blank marker position;
-- `'*'` — literal asterisk;
-- `'+'` — literal plus sign;
-- `'x'` — literal lowercase x.
-
-The emulator trace should show the `A0F4` third-argument byte and the same byte reaching `PutChar` during drawing. Changing the marker must not change choice, ID, shortcut behavior, exit behavior or file-size metadata.
-
-Do not use arbitrary control bytes on physical hardware merely to discover behavior. The raw firmware forwards them to `PutChar`; any useful rendering of non-printable characters may depend on font/display details.
+Changing the marker must not alter choice, ID, shortcut, exit behavior or file-size metadata.
 
 ## Stage 5 — file_size rendering regression
 
-Firmware analysis has resolved the semantics, so this stage is now a rendering regression rather than a discovery experiment. Keep text, marker, ID and shortcut fixed and vary only `file_size` in separate emulator runs.
+Keep all other item metadata fixed and vary only `file_size`:
 
-Expected cases from the 2005 `DialogModule` formatter:
+```text
+(size_t)-1 -> no annotation
+0          -> " (empty)"
+1          -> " (1 char)"
+999        -> " (999 chars)"
+1000       -> " (1,000 chars)"
+1234567    -> " (1,234,567 chars)"
+```
 
-- `(size_t)-1` — no size annotation;
-- `0` — `" (empty)"`;
-- `1` — `" (1 char)"`;
-- `999` — `" (999 chars)"`;
-- `1000` — `" (1,000 chars)"`;
-- `1234567` — `" (1,234,567 chars)"`.
+## Stage 6 — geometry/navigation regression
 
-Run these first in the emulator. The baseline `DialogProbe` should remain unchanged at `-1`; a follow-up probe should change one value at a time. Physical-hardware validation can follow once the emulator behavior is stable.
+The grid contract is now known from direct firmware analysis and historical `DialogModule` comparison. This stage should assert it rather than discover it.
 
-## Stage 6 — geometry/navigation edge cases
+### Layout expectations
 
-Only after normal operation is stable, characterize:
+For a non-empty dialog:
 
-- width clipping;
-- unusual row/column geometry;
-- duplicate shortcuts/IDs;
-- zero-length text;
-- navigation at first/last item;
-- exact `DialogRun` return behavior for each exit path.
+```c
+item_width = max_rendered_item_length + 3;
+visible_rows = row_last - row_first + 1;
+```
+
+With `DialogInit(true, ...)`:
+
+```c
+columns == 1
+```
+
+With `DialogInit(false, ...)`, after `DialogDraw`:
+
+```c
+columns == col / item_width
+```
+
+The grid is row-major. The selected-cell coordinates should track:
+
+```c
+cursor_col = 1 + ((choice - 1) % columns) * item_width;
+cursor_row = row_first + (choice - first_visible) / columns;
+```
+
+### Navigation matrix
+
+Build a follow-up probe with enough equal-width items to produce multiple columns and more rows than the visible viewport. Then verify one key at a time:
+
+```text
+HOME  -> choice 1
+END   -> choice item_count
+RIGHT -> +1 only when an item exists to the right in the same row
+LEFT  -> -1 only when an item exists to the left in the same row
+UP    -> -columns when an item exists above
+DOWN  -> +columns when an item exists directly below
+```
+
+Expected boundary rules:
+
+- Right does not wrap to the next row;
+- Left does not wrap to the previous row;
+- Up on the first item row does nothing;
+- Down on an incomplete final row does nothing if no item exists in the same column;
+- single-column mode makes Left/Right ineffective for selection;
+- ordinary vertical movement crossing the viewport changes `first_visible` by exactly `columns` items.
+
+### Navigation versus exit keys
+
+Navigation is dispatched before the normal shortcut/exit-key scan. Verify in the emulator that registering any of these through `DialogAddExitKey` does not turn its normal navigation path into an ordinary exit:
+
+```text
+KEY_HOME
+KEY_END
+KEY_LEFT
+KEY_RIGHT
+KEY_UP
+KEY_DOWN
+```
+
+Do not use this as a physical-hardware stress test until the emulator reproduces the known handler behavior.
+
+### Home/End and viewport
+
+Home and End can jump farther than one visible row. Verify that their full-redraw path re-establishes a viewport containing the selected endpoint.
+
+## Stage 7 — unresolved internal event codes
+
+`DialogRun` contains special handling for raw dialog exit/event bytes:
+
+```text
+0x64  0x65  0x66  0x67
+```
+
+Their semantic names are not established. Do **not** add them to `Key_e`, guess labels, or probe them on physical hardware yet. Future emulator tracing should first determine their triggering conditions and return semantics.
+
+## Stage 8 — presentation/pathological edge cases
+
+After normal grid behavior is stable, characterize:
+
+- exact selection/border glyph rendering;
+- unusually small or otherwise invalid geometry;
+- zero-length item text;
+- deliberately invalid current choice in emulator only;
+- keyboard-layout-specific shortcut characters;
+- differences in visual rendering between AS3000 and NEO.
 
 ## Emulator trace requirements
 
-For every dialog trap, the emulator should be able to log:
+For every dialog trap record:
 
 ```text
 trap / symbolic name
@@ -132,7 +197,13 @@ caller PC
 SP on entry
 known arguments
 return register/value
-selected-choice state before and after
+item_count
+item_width
+columns
+row_first / row_last / col
+first_visible
+current_choice before/after
+last_visible
 ```
 
-For `A0F4`, decode all six arguments. For marker regressions, correlate argument 3 with the `PutChar` call reached through `DialogDraw`. For `A108`, `A10C`, and `A110`, correlate the return with the current dialog state and enforce the confirmed metadata relation for valid choices.
+For `A0F4`, decode all six arguments. For `A100`, expose the computed grid/viewport state. For `A104`, log the incoming key, dispatch branch, selection/viewport changes and final return. For `A108`, `A10C`, and `A110`, enforce the confirmed metadata relation for valid choices.
