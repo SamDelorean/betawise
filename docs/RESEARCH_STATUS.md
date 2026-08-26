@@ -23,6 +23,8 @@ The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`.
   - Later-OS3K analyzed capacity is 64 items.
   - returns `0` on insertion and `-1` when full.
   - historical predecessor confirms `text`, `text_len` and literal prefix `marker` lineage.
+  - `file_size` is a per-item 32-bit character count consumed by `DialogDraw`; `(size_t)-1` suppresses its annotation.
+  - formatter cases are confirmed as `0 -> " (empty)"`, `1 -> " (1 char)"`, and `>1 -> " (N chars)"` with thousands grouping.
 - `A0F8` — `DialogAddExitKey`
   - capacity 15 keys; returns `0` on success and `-1` when full.
 - `A0FC` — `DialogSetChoice`
@@ -50,8 +52,6 @@ DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
   - firmware returns a 16-bit value; navigation, shortcut and full exit-key behavior remain to characterize in execution.
 - `DialogAddItem.shortcut_key`
   - real fifth ABI argument; exact matching/rendering rules remain experimental.
-- `DialogAddItem.file_size`
-  - real sixth ABI argument; official callers commonly use `(size_t)-1`, but semantic meaning is not yet established.
 
 The baseline `DialogProbe` remains useful as an emulator/hardware regression test, but `A10C` no longer requires a separate discovery probe; it should now be checked against the confirmed relation above.
 
