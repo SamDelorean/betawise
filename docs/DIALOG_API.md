@@ -6,17 +6,17 @@ This document tracks the System 3 / OS3K dialog syscall family as a coherent sub
 
 | Trap | BetaWise name | Current confidence | Historical relationship |
 | --- | --- | --- | --- |
-| `A0F0` | `DialogInit` | A/B | `DialogMenuInit` |
-| `A0F4` | `DialogAddItem` | A for six-argument OS3K call shape; partial semantics | `DialogMenuAddItem` |
-| `A0F8` | `DialogAddExitKey` | B | `DialogMenuAddExitICode` |
-| `A0FC` | `DialogSetChoice` | B/A- | `DialogMenuSetCursorItemNumber` |
+| `A0F0` | `DialogInit` | A | `DialogMenuInit` |
+| `A0F4` | `DialogAddItem` | A for call shape, `id`, capacity and core inherited fields; partial for later metadata | `DialogMenuAddItem` |
+| `A0F8` | `DialogAddExitKey` | A | `DialogMenuAddExitICode` |
+| `A0FC` | `DialogSetChoice` | A | `DialogMenuSetCursorItemNumber` |
 | `A100` | `DialogDraw` | B/A- | `DialogMenuDisplay` |
 | `A104` | `DialogRun` | B/A- | `DialogMenuGetInput` |
-| `A108` | `DialogGetChoice` | B/A- | `DialogMenuGetCursorItemNumber` |
-| `A10C` | `DialogGetChoiceId` | C | no historical counterpart established yet |
-| `A110` | `DialogGetItemId` | B | OS3K metadata getter; official use observed |
+| `A108` | `DialogGetChoice` | A | `DialogMenuGetCursorItemNumber` |
+| `A10C` | `DialogGetChoiceId` | A | OS3K metadata getter for current choice |
+| `A110` | `DialogGetItemId` | A | OS3K metadata getter by item index |
 
-The names are retained because the family is internally coherent and is used by existing BetaWise applets. Confidence refers to the known contract, not merely the presence of a name in `syscall.c`.
+Confidence refers to the known contract, not merely the presence of a name in `syscall.c`.
 
 ## Historical AS3000 dialog model
 
@@ -52,28 +52,34 @@ int DialogAddItem(char* text,
                   size_t file_size);
 ```
 
-This resolves earlier decompiler output that showed only two visible arguments: that decompiler signature was incomplete and must not be treated as the actual firmware ABI.
+Direct handler analysis in both the November 2005 AS3000 and NEO System 3 ROMs confirms that the fourth argument (`id`) is stored as a 32-bit value in a per-item ID array indexed by insertion order. The same array is read by `A10C` and `A110`.
 
 ### Parameters
 
 `text` and `text_len`
-: Strongly established. They descend directly from the historical three-argument interface.
+: Strongly established and inherited directly from the historical three-argument interface.
 
 `marker`
-: Historically a literal prefix glyph drawn immediately before the item text. A blank space is normal. Later OS3K applets also use glyph values such as `0xD7` and `0x10`; any additional later semantics remain experimental.
+: Historically a literal prefix glyph drawn immediately before the item text. A blank space is normal. Later OS3K applets also use other byte values; any additional OS3K-specific semantics remain experimental.
 
 `id`
-: Caller-provided metadata independent of the insertion-order choice index. Existing DebugTool code uses `DialogGetItemId(choice)` to inspect this field.
+: **Confirmed.** Caller-provided 32-bit metadata independent of the insertion-order choice index. `A0F4` stores this value in the ID array; `A10C` and `A110` retrieve it.
 
 `shortcut_key`
-: A real fifth OS3K argument. Existing applets pass keys such as `KEY_A`, `KEY_B`, `KEY_G`, etc. Its role as a per-item shortcut is strongly supported, but exact rendering and all key-handling rules remain to be validated.
+: A real fifth OS3K argument. Existing applets pass key codes. Its role as a per-item shortcut is strongly supported, but exact rendering and all matching rules remain to be validated.
 
 `file_size`
 : A real sixth OS3K argument. Official callers frequently pass `(size_t)-1`. No stable SDK-level semantic description is yet justified.
 
-### Return value
+### Capacity and return value
 
-The historical predecessor returns `0` on success and `-1` when its 25-item capacity is exhausted. BetaWise currently declares the OS3K function as returning `int`. Whether later OS3K preserves the exact historical failure conditions is still to be tested.
+The later 2005 OS3K implementation does **not** preserve the historical 25-item capacity. Both AS3000 and NEO handlers compare the current item count against `0x40` before insertion:
+
+- maximum later-OS3K capacity observed: **64 items**;
+- when already at capacity, `DialogAddItem` returns `-1`;
+- on successful insertion, it returns `0`.
+
+This is direct firmware evidence for the analyzed 2005 System 3 images. It should not be projected onto unrelated firmware generations without verification.
 
 ## Control and execution functions
 
@@ -83,7 +89,9 @@ The historical predecessor returns `0` on success and `-1` when its 25-item capa
 void DialogInit(bool single, uint8_t row_first, uint8_t row_last, uint8_t col);
 ```
 
-Existing official/BetaWise usage establishes the four-argument call shape. The historical predecessor initializes menu geometry and single/multi-item behavior. Exact meaning of every later OS3K geometry edge case has not yet been exhaustively tested.
+**Confidence: A for argument placement/state initialization in the analyzed AS3000 and NEO ROMs.**
+
+The handler clears item and exit-key counts, initializes the current choice to 1, stores the three geometry bytes, and normalizes the `single` argument to a boolean state. Exact visual behavior of unusual geometry remains an execution-level question, not an ABI question.
 
 ### A0F8 — DialogAddExitKey
 
@@ -91,7 +99,11 @@ Existing official/BetaWise usage establishes the four-argument call shape. The h
 int DialogAddExitKey(Key_e key);
 ```
 
-Adds a key that terminates `DialogRun`. Existing code commonly adds `KEY_ENTER` and `KEY_ESC`. The historical predecessor stores explicit exit input codes. Exact return/error behavior remains to be characterized.
+**Confidence: A.** The analyzed AS3000 and NEO handlers maintain an explicit byte array of exit keys:
+
+- capacity: **15 exit keys**;
+- success: returns `0` and appends the key;
+- full array: returns `-1`.
 
 ### A0FC — DialogSetChoice
 
@@ -99,7 +111,7 @@ Adds a key that terminates `DialogRun`. Existing code commonly adds `KEY_ENTER` 
 void DialogSetChoice(uint8_t index);
 ```
 
-Sets the current insertion-order choice before drawing/running the dialog. Existing usage is 1-based, matching the historical cursor-item model.
+**Confidence: A.** The handler writes the low byte of `index` directly into the dialog's current-choice state. No range validation is performed by this syscall itself. Normal usage is 1-based.
 
 ### A100 — DialogDraw
 
@@ -107,7 +119,7 @@ Sets the current insertion-order choice before drawing/running the dialog. Exist
 void DialogDraw(void);
 ```
 
-Renders the current dialog state. It corresponds conceptually to historical `DialogMenuDisplay`.
+Renders the current dialog state. It corresponds conceptually to historical `DialogMenuDisplay`. Rendering details and AS3000/NEO differences remain best validated through emulator/hardware execution.
 
 ### A104 — DialogRun
 
@@ -115,7 +127,7 @@ Renders the current dialog state. It corresponds conceptually to historical `Dia
 short DialogRun(void);
 ```
 
-Processes dialog input until an exit condition is reached. Existing callers treat its return as a key value (`KeyMod_e`-compatible) and mask modifier bits such as Caps Lock. Exact full return contract is still classified as strong rather than fully confirmed.
+Processes dialog input until an exit condition is reached. Firmware returns a 16-bit value from the routine, consistent with the existing `short` declaration and caller treatment as a key-compatible value. The complete navigation/shortcut contract remains under execution validation.
 
 ### A108 — DialogGetChoice
 
@@ -123,7 +135,7 @@ Processes dialog input until an exit condition is reached. Existing callers trea
 char DialogGetChoice(void);
 ```
 
-Returns the current/selected insertion-order choice. Existing code compares it against item counts and then passes it to `DialogGetItemId`. The observed model is 1-based.
+**Confidence: A.** In both analyzed ROMs the handler reads the current-choice byte directly and returns it. The normal model is 1-based.
 
 ### A10C — DialogGetChoiceId
 
@@ -131,7 +143,23 @@ Returns the current/selected insertion-order choice. Existing code compares it a
 int DialogGetChoiceId(void);
 ```
 
-This is the least-characterized member of the family. Its name and placement suggest returning the caller-defined `id` associated with the current choice, but this must not be promoted to a confirmed contract until execution or a decisive firmware caller/handler analysis establishes it.
+**Confidence: A.** Direct firmware handler analysis resolves the previously uncertain contract.
+
+For a valid current dialog state, the implementation is equivalent to:
+
+```c
+return item_ids[current_choice - 1];
+```
+
+The AS3000 and NEO implementations are structurally identical; only their RAM addresses differ. The routine reads the same current-choice byte returned by `A108`, converts the 1-based choice to a zero-based array offset, multiplies by four, and returns the corresponding 32-bit ID stored by `A0F4`.
+
+Importantly, `A10C` performs **no explicit bounds check**. It relies on the current dialog choice being valid.
+
+Therefore, for a valid choice:
+
+```c
+DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
+```
 
 ### A110 — DialogGetItemId
 
@@ -139,28 +167,53 @@ This is the least-characterized member of the family. Its name and placement sug
 int DialogGetItemId(uint8_t index);
 ```
 
-Returns caller-defined item metadata for an insertion-order index. Existing DebugTool usage provides strong evidence for this interpretation. Official OS3K code also uses `A110`, making it better supported than `A10C`.
+**Confidence: A.** Direct firmware analysis shows that `A110` reads the same per-item ID array used by `A10C`.
+
+Unlike `A10C`, `A110` validates its 1-based argument:
+
+```c
+if(index < 1 || index > item_count)
+    return 0;
+return item_ids[index - 1];
+```
+
+This also confirms that the `id` argument to `DialogAddItem` is semantically distinct from the insertion-order choice index.
+
+## 2005 firmware state relationship
+
+The analyzed November 2005 AS3000 and NEO ROMs use the same logical structure with different RAM locations:
+
+```text
+item_count
+current_choice
+exit_key_count
+exit_key[]
+item_id[]
+```
+
+The important ABI relation is logical rather than address-based; these RAM addresses are firmware-internal and must not be exposed as portable SDK constants.
 
 ## Working lifecycle
 
-The best-supported normal usage pattern is:
+The now-confirmed metadata lifecycle is:
 
 ```c
 DialogInit(...);
 DialogAddExitKey(KEY_ENTER);
 DialogAddExitKey(KEY_ESC);
 
-DialogAddItem(...);
-DialogAddItem(...);
+DialogAddItem(..., 100, ...);
+DialogAddItem(..., 200, ...);
 
 DialogSetChoice(1);
 DialogDraw();
 KeyMod_e exit_key = DialogRun();
 char choice = DialogGetChoice();
-int item_id = DialogGetItemId(choice);
+int current_id = DialogGetChoiceId();
+int indexed_id = DialogGetItemId(choice);
 ```
 
-`DialogGetChoiceId()` is intentionally not required for the minimal lifecycle because its contract is less certain.
+For a valid current choice, `current_id` and `indexed_id` should be identical by construction of the firmware handlers.
 
 ## Emulator feedback targets
 
@@ -169,23 +222,22 @@ When the emulator can execute SmartApplets, dialog tracing should record at mini
 - A-line opcode and caller PC;
 - stack pointer on entry;
 - decoded arguments for `A0F0`–`A110` where known;
-- `DialogAddItem` return value;
+- item/exit-key counts where useful;
 - selected index before/after `DialogRun`;
 - `DialogRun` return value;
 - `A108`, `A10C`, and `A110` results;
-- differences between AS3000 and NEO firmware behavior.
+- differences between AS3000 and NEO rendering/navigation behavior.
 
-These traces should feed back into this document and `os3k.h` rather than being treated as emulator-only information.
+For `A10C`, the emulator regression expectation is now explicit: with a valid choice it must match `A110(A108())`.
 
 ## Remaining questions
 
-The current blocking questions for SDK promotion are:
+The main unresolved dialog questions are now:
 
-1. exact later-OS3K return/error behavior of `DialogAddItem` and `DialogAddExitKey`;
-2. exact shortcut-key rendering and matching rules;
-3. exact `file_size` semantics and cases where it differs from `-1`;
-4. decisive contract for `DialogGetChoiceId` (`A10C`);
-5. any AS3000/NEO behavioral differences in geometry, markers or navigation;
-6. whether the historical 25-item limit remains unchanged in later OS3K.
+1. exact shortcut-key rendering and matching rules;
+2. exact `file_size` semantics and cases where it differs from `-1`;
+3. AS3000/NEO behavioral differences in geometry, markers and navigation;
+4. exact edge-case behavior of `DialogDraw` and `DialogRun`;
+5. whether capacities or metadata layout differ in System 3 firmware generations other than the analyzed 2005 images.
 
-Until these are resolved, the existing function names/signatures remain usable research interfaces, but unresolved details must stay explicitly marked as such.
+`A10C` is no longer a blocker: its contract is directly established by both AS3000 and NEO firmware handlers.
