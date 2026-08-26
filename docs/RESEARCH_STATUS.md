@@ -7,68 +7,79 @@ This file separates usable SDK interfaces from active reverse-engineering hypoth
 - `A138` — `ShowBatteryPercentage(uint8_t time_seconds)`
   - `0`: interactive battery-capacity screen, waits for a key.
   - `>0`: timed battery indicator in seconds.
-  - Contract observed in AS3000 and NEO firmware.
+  - Contract observed directly in AS3000 and NEO firmware.
 
 ## Dialog family A0F0–A110
 
-The dialog subsystem is tracked function by function in `docs/DIALOG_API.md`. Marker-specific evidence is summarized in `docs/DIALOG_MARKER.md`.
+The dialog subsystem is tracked in `docs/DIALOG_API.md`, with focused evidence in `docs/DIALOG_MARKER.md` and `docs/DIALOG_NAVIGATION.md`.
 
 ### Confirmed members / properties
 
 - `A0F0` — `DialogInit`
-  - Four-argument handler state mapping confirmed in AS3000 and NEO 2005 firmware.
+  - state initialization confirmed;
+  - `single != 0` selects fixed one-column mode;
+  - `single == 0` leaves column count at zero for `DialogDraw` auto-layout;
+  - `row_first..row_last` is an inclusive row range.
 - `A0F4` — `DialogAddItem`
-  - Six-argument OS3K ABI confirmed.
-  - `marker` is a raw one-byte glyph: stored unchanged by `A0F4` and passed directly to `A010 / PutChar` by the draw path.
-  - marker writer/reader behavior is present in AS3000 2005, NEO 2005 and NEO 2013 firmware.
-  - official code uses at least `' '`, `'*'`, `'+'`, and `'x'`; the dialog subsystem does not attach state semantics to those glyphs.
-  - `id` is a caller-provided 32-bit value stored in a per-item array.
-  - later-OS3K analyzed 2005 capacity is 64 items.
+  - six-argument OS3K ABI confirmed;
+  - `marker` is a literal raw glyph byte passed to `PutChar` during drawing;
+  - `id` is a caller-provided 32-bit value;
+  - `shortcut_key` validation/rendering/selection behavior confirmed;
+  - `file_size` is optional character-count presentation metadata with `-1` sentinel;
+  - analyzed 2005 capacity is 64 items;
   - returns `0` on insertion and `-1` when full.
-  - `shortcut_key` core semantics confirmed: accepted values are validated through the internal shortcut formatter, unsupported values normalize to `KEY_NONE`, labels are rendered automatically, and `DialogRun` matches the raw key byte.
-  - shortcut match selects/redraws but does not exit unless the same key is also registered as an exit key; duplicate shortcuts resolve to the last matching item.
-  - high-byte Ctrl/Cmd/Alt/Shift/Caps-Lock modifier bits do not participate in shortcut matching.
-  - `file_size` core semantics confirmed as optional character-count display metadata with `-1` sentinel.
-  - `file_size` is a per-item 32-bit character count consumed by `DialogDraw`; `(size_t)-1` suppresses its annotation.
-  - formatter cases are confirmed as `0 -> " (empty)"`, `1 -> " (1 char)"`, and `>1 -> " (N chars)"` with thousands grouping.
 - `A0F8` — `DialogAddExitKey`
-  - capacity 15 keys; returns `0` on success and `-1` when full.
+  - capacity 15 normal one-byte exit keys;
+  - returns `0` on success and `-1` when full.
 - `A0FC` — `DialogSetChoice`
-  - writes the current-choice byte directly; no syscall-level range validation.
+  - direct current-choice byte write; no syscall-level range validation.
+- `A100` — `DialogDraw`
+  - core row-major geometry promoted to confirmed;
+  - `item_width = max_rendered_item_length + 3`;
+  - automatic `columns = col / item_width` when not fixed to one column;
+  - inclusive `visible_rows = row_last - row_first + 1`;
+  - viewport and selected-cell cursor positioning reconstructed across AS3000 2005, NEO 2005 and NEO 2013.
+- `A104` — `DialogRun`
+  - normal Home/End/Left/Right/Up/Down navigation promoted to confirmed;
+  - no horizontal or vertical wrap;
+  - Up/Down move by `columns`;
+  - incomplete final-row Down is rejected when no item exists directly below;
+  - viewport scrolls by one item row when ordinary movement crosses the visible window;
+  - navigation keys are dispatched before the normal shortcut/exit-key scan;
+  - ordinary shortcut selection occurs before ordinary exit-key matching;
+  - normal return preserves a 16-bit key/event value.
 - `A108` — `DialogGetChoice`
   - returns the current-choice byte.
 - `A10C` — `DialogGetChoiceId`
-  - direct firmware analysis confirms it returns the 32-bit `id` for the current 1-based choice.
-  - does not explicitly bounds-check.
+  - returns the 32-bit `id` for the current 1-based choice;
+  - no explicit bounds check.
 - `A110` — `DialogGetItemId`
-  - returns the same per-item `id` array by 1-based index.
-  - returns `0` if the index is outside `1..item_count`.
+  - returns the same ID array by 1-based index;
+  - returns `0` outside `1..item_count`.
 
-For a valid current choice, firmware establishes:
+For valid state:
 
 ```c
 DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
 ```
 
-### Strong but still execution-oriented
+### Dialog work still requiring execution or further RE
 
-- `A100` — `DialogDraw`
-  - marker, shortcut-label and file-size subpaths are directly characterized.
-  - geometry, clipping and platform-specific visual behavior remain to test.
-- `A104` — `DialogRun`
-  - firmware returns a 16-bit value.
-  - shortcut selection and shortcut/exit-key interaction are confirmed directly from both 2005 handlers.
-  - remaining work is primarily arrow/navigation edge cases and execution-level AS3000/NEO differences.
+The normal public dialog contract is now mostly closed. Remaining work is narrow:
 
-The baseline `DialogProbe` remains useful as an emulator/hardware regression test. `marker`, `shortcut_key`, `file_size` and `A10C` no longer require discovery probes; their known behavior should be asserted as regression expectations.
+- exact visual selection/border rendering across AS3000 and NEO;
+- semantic names and exact event behavior of raw internal dialog codes `0x64`–`0x67`;
+- pathological invalid geometry/current-choice states;
+- keyboard-layout edge cases for unusual shortcut translations;
+- confirmation of capacities/presentation details in additional System 3 generations.
+
+The baseline `DialogProbe` is now primarily a regression applet. Marker, shortcut, file-size, choice-ID and normal navigation stages should assert known behavior rather than discover it.
 
 ## Strong but still under validation
 
 - Keyboard primitives `A088`–`A0B0`.
-  - Existing BetaWise names and applet use are coherent, but individual contracts should eventually be documented function by function.
-
+  - Existing BetaWise names and applet use are coherent, but individual contracts should be documented function by function.
 - Applet primitives `A238`–`A244`.
-
 - `A2B8` — `CallSysInt` and currently known selectors.
 
 ## Probable / experimental
@@ -80,7 +91,7 @@ The baseline `DialogProbe` remains useful as an emulator/hardware regression tes
 
 ## Named but incompletely surfaced in the header
 
-The syscall table already contains several research-derived names that deserve dedicated reconstruction before being promoted to a documented API, including:
+The syscall table already contains research-derived names that deserve dedicated reconstruction before promotion to a documented API, including:
 
 - `FileWriteBuffer`
 - `FileReadBuffer`
