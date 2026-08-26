@@ -219,18 +219,16 @@ ControlPanel contains a non-NULL second-argument caller. After `FileSetFolder`, 
 
 ### Public SDK decision
 
-`FileSetFolder` is the first member of the reconstructed modern File API considered sufficiently closed for an `os3k.h` prototype. The implementation stub was already present as syscall A1C0; publishing the prototype does not rename an unknown trap.
+`FileSetFolder` is a confirmed modern File API member and is exposed in `os3k.h`. No public constants are added yet for `-64`, `-7`, or flag `0x40`, because their mechanics are established but their original symbolic names have not been recovered.
 
-No public constants are added yet for `-64`, `-7`, or flag `0x40`, because their mechanics are established but their original symbolic names have not been recovered.
+## A1C4 — `FileGetFileInfo`
 
-## A1C4 — live file-info binding
+A1C4 is now closed at ABI level. The modern handler extends the historical `FileGetFileInfo` concept with an explicit file token and persistent live-mirror bindings.
 
-A1C4 uses the same file-token resolver as A1C8 and consumes **five argument slots**: a 16-bit file token plus four pointer values.
-
-Mechanical research prototype:
+Public SDK prototype:
 
 ```c
-void *SYS_A1C4(
+uint8_t *FileGetFileInfo(
     uint16_t file_id,
     uint8_t **storage_out,
     uint32_t *current_size_out,
@@ -238,9 +236,30 @@ void *SYS_A1C4(
     uint32_t *cursor_out);
 ```
 
-The public semantic name remains provisional, but the ABI and the meaning of all four pointer arguments are confidence A.
+**ABI/behavior confidence: A. Name continuity confidence: B (strong).** The name comes from primary historical source and is supported by the modern handler's exact return semantics and parameter family; no modern symbol table containing the textual name has been recovered.
 
-On successful resolution A1C4 stores the caller pointers in descriptor offsets:
+### Resolver and return value
+
+A1C4 uses the same 16-bit file-token resolver as A1C8. Resolution failure returns `NULL`.
+
+On success the handler loads `descriptor+0x00` into its return register before returning. Therefore A1C4 returns the **file storage/base pointer**, not the internal descriptor pointer. This corrects an earlier research-note interpretation that treated D0 as the descriptor itself.
+
+The NEO 2005 handler makes the sequence explicit: after resolution the descriptor is held separately, `MOVEA.L (descriptor),A3` loads the storage pointer, and the function ends with `MOVE.L A3,D0`. The structurally equivalent NEO 2013 handler behaves the same way.
+
+This return is an especially strong genealogical match to the original AS3000 interface. The 2000 `FileModule.h` prototype is:
+
+```c
+UInt8_p FileGetFileInfo(
+    UInt32_p file_size,
+    UInt32_p cursor,
+    UInt32_p max_size);
+```
+
+The historical implementation returns the active file's storage pointer. Modern A1C4 preserves that core contract while adding explicit file selection and an additional storage-pointer mirror.
+
+### Live-mirror binding
+
+On successful resolution A1C4 stores the four caller pointers in descriptor offsets:
 
 ```text
 +0x24 = storage_out
@@ -249,7 +268,7 @@ On successful resolution A1C4 stores the caller pointers in descriptor offsets:
 +0x30 = cursor_out
 ```
 
-It then immediately invokes a synchronization helper. That helper performs:
+It then immediately invokes a synchronization helper equivalent to:
 
 ```text
 if storage_out      != NULL: *storage_out      = descriptor->storage
@@ -258,28 +277,53 @@ if max_size_out     != NULL: *max_size_out     = descriptor->max_size
 if cursor_out       != NULL: *cursor_out       = descriptor->cursor
 ```
 
-The helper is byte-for-byte logically equivalent in AS3000 2005 and NEO 2005.
+The helper is logically equivalent in AS3000 2005 and NEO 2005. The same synchronization helper is invoked by neighboring file operations, including read/write and size/state-changing paths. These are therefore **persistent live bindings**, not merely one-shot outputs.
 
-### Persistent binding, not one-shot output
+### Binding lifetime and explicit unbind
 
-These four addresses remain stored in the descriptor. The same synchronization helper is called by multiple neighboring file operations, including write/read/state-changing paths and A1B8. Consequently the arguments are **live mirror bindings**: while installed, System 3 keeps the caller variables synchronized with changes to the backing file descriptor.
+NEO 2013 contains an internal System 3 sequence that provides direct lifecycle evidence. One A1C4 call registers a real stack address as a mirror for a file descriptor and stores the returned storage pointer. Before leaving that operation, System 3 invokes A1C4 again for the same file with all four mirror pointers set to `NULL`.
 
-This also explains why many official SmartApplets call A1C4 with four NULL values: they do not need live mirrors. Internal System 3 callers can provide real storage/size/capacity/cursor destinations when they need continuously synchronized state.
+Consequently, calling A1C4/FileGetFileInfo with `NULL` in a mirror slot clears that stored binding. This is important for SDK safety: a pointer to an automatic/local variable must be unregistered before that variable leaves scope, otherwise later file operations may write through a stale pointer.
 
-### Historical relationship
+Recommended pattern:
 
-The AS3000 source from 2000 contains `FileGetFileInfo()`, which returns the storage pointer and outputs current size, cursor and maximum size. A1C4 is clearly related to that information family, but the modern ABI adds an explicit file token and persistent pointer binding. Therefore the historical function name is useful genealogy but is not yet assigned automatically to A1C4.
+```c
+uint8_t *storage = NULL;
+uint32_t size = 0, max_size = 0, cursor = 0;
+
+uint8_t *base = FileGetFileInfo(id, &storage, &size, &max_size, &cursor);
+/* use live mirrors while their storage remains valid */
+FileGetFileInfo(id, NULL, NULL, NULL, NULL); /* unbind before scope ends */
+```
+
+The return value remains the storage pointer even when all mirror arguments are `NULL`, provided the file token resolves successfully.
+
+### Official callers
+
+A1C4 callers traced in the 2012 SmartApplets include:
+
+- AlphaWord Plus: 6
+- AlphaQuiz: 8
+- KeyWords: 4
+
+Many pass four NULL mirror arguments and use D0 directly as a pointer. AlphaQuiz includes a caller that simply returns A1C4's D0 value onward, consistent with the storage-pointer contract rather than an opaque descriptor object.
+
+### Naming decision
+
+The historical and modern contracts now overlap strongly enough to publish `FileGetFileInfo` while recording the distinction: the **ABI and behavior are confidence A**, while exact continuity of the textual name into later OS3K is confidence B because no later symbol-bearing source has been recovered.
+
+The modern function is not a byte-for-byte copy of the 2000 interface. Its explicit `file_id`, its `storage_out` argument and persistent mirror registrations are later extensions and are part of the public OS3K contract reconstructed here.
 
 ## Current naming decision
 
-`FileSetFolder` is now SDK-ready and can be exposed in `os3k.h`. A1C4's ABI is closed but its final public name is still held back. The observed A1C8/A1CC behavior strongly supports the inherited `FileOpen` / `FileClose` names and conflicts with treating A1C8 as a simple scalar-property query.
+`FileSetFolder` and `FileGetFileInfo` are now SDK-ready members of the reconstructed modern File API. The observed A1C8/A1CC behavior strongly supports the inherited `FileOpen` / `FileClose` names, but their public signatures remain held back pending the final `FileOpen` parameter/naming decision.
 
-The remaining work before publishing the rest of the File API as a coherent SDK family is mainly semantic naming of A1A0/A1B4/A1B8/A1C4 and validation of how the storage accounting selectors are presented by AlphaWord.
+The remaining work before publishing more of the File API is mainly semantic naming of A1A0/A1B4/A1B8 and finalization of A1C8/A1CC, plus validation of how the storage-accounting selectors are presented by AlphaWord.
 
 ## Next work
 
-1. Add the confirmed `FileSetFolder` prototype to `os3k.h` without inventing error/flag constants.
-2. Correlate A1B4 `0xFD`–`0xFF` with the AlphaWord storage/status UI before assigning accounting names.
-3. Find real non-NULL A1C4 callers and determine whether an original System 3 name can be recovered.
-4. Revisit A1A0 against official destructive-delete/recovery callers.
-5. Define emulator regressions for A1C8 selection/reset, A1C0 folder switching, A1C4 live mirrors and A1B8 size/recovery commands.
+1. Add `FileGetFileInfo` to `os3k.h` and rename syscall A1C4 accordingly.
+2. Add an emulator-first `FileGetFileInfo` regression that verifies returned storage, immediate mirrors and explicit unbind behavior.
+3. Revisit A1A0 against official destructive-delete/recovery callers.
+4. Correlate A1B4 `0xFD`–`0xFF` with the AlphaWord storage/status UI before assigning accounting names.
+5. Finalize `FileOpen`/`FileClose` public prototypes once the second-argument naming and remaining edge cases are closed.
