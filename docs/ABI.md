@@ -35,7 +35,7 @@ The dialog family is documented in detail in [`DIALOG_API.md`](DIALOG_API.md).
 | Trap | Name | Confidence summary |
 | --- | --- | --- |
 | `A0F0` | `DialogInit` | A — argument/state initialization confirmed in AS3000 and NEO firmware |
-| `A0F4` | `DialogAddItem` | A for six-argument ABI, `id`, `file_size`, 64-item capacity and 0/-1 return; shortcut details remain partial |
+| `A0F4` | `DialogAddItem` | A for six-argument ABI, `id`, `shortcut_key`, `file_size`, 64-item capacity and 0/-1 return |
 | `A0F8` | `DialogAddExitKey` | A — 15-key capacity, 0/-1 return confirmed |
 | `A0FC` | `DialogSetChoice` | A — writes current-choice byte directly |
 | `A100` | `DialogDraw` | B/A- — function role strong, rendering details still under execution validation |
@@ -52,7 +52,11 @@ DialogGetChoiceId() == DialogGetItemId(DialogGetChoice())
 
 for a valid current choice. `A10C` directly indexes the current-choice ID and does not bounds-check; `A110` checks `1 <= index <= item_count` and returns `0` otherwise.
 
-`file_size` is now directly characterized: it is a per-item **character count** used by `DialogDraw` to append a file-size annotation. `(size_t)-1` suppresses the annotation, `0` renders `" (empty)"`, `1` renders `" (1 char)"`, and larger values are rendered as grouped decimal `" (N chars)"`. The remaining later metadata uncertainty is concentrated in `shortcut_key` rendering/matching rules.
+Both later metadata fields are now directly characterized in the analyzed 2005 firmware.
+
+`shortcut_key` is a validated one-byte per-item shortcut. `A0F4` accepts keys for which `TranslateKeyToChar` yields a non-zero character, plus `KEY_FILE_1` through `KEY_FILE_8`; other values are normalized to `KEY_NONE`. `DialogDraw` generates the shortcut label automatically using the `"[ ]"` or `"[F ]"` templates. `DialogRun` selects and redraws the matching item but does not exit unless that same key is also present in the exit-key list. High-byte modifier flags do not participate in the raw shortcut-byte comparison, and duplicate shortcuts resolve to the last matching item.
+
+`file_size` is a per-item **character count** used by `DialogDraw` to append a file-size annotation. `(size_t)-1` suppresses the annotation, `0` renders `" (empty)"`, `1` renders `" (1 char)"`, and larger values are rendered as grouped decimal `" (N chars)"`.
 
 ## A25C special-key dispatcher
 
