@@ -233,6 +233,16 @@ char TranslateKeyToChar(KeyMod_e key);
 // negative System 3 status values indicate validation failure.
 int32_t FileSetFolder(uint32_t applet_index, uint32_t* applet_flags_out);
 
+// Returns the resolved file's storage/base pointer, or NULL if file_id cannot
+// be resolved. Non-NULL output pointers are persistent live mirrors: later file
+// operations may update them. Call again with NULL mirror pointers before local
+// mirror variables leave scope to unregister those addresses safely.
+uint8_t* FileGetFileInfo(uint16_t file_id,
+    uint8_t** storage_out,
+    uint32_t* current_size_out,
+    uint32_t* max_size_out,
+    uint32_t* cursor_out);
+
 // These functions return an index of 0 (system applet) if not found.
 uint8_t AppletFindByName(char* name, uint8_t start_index);
 uint8_t AppletFindById(uint16_t id);
