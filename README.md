@@ -12,9 +12,10 @@ Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
 * [FileDeleteChars ABI closure](docs/filedeletechars-closure.md) — closes A1A4 as the active-file deletion primitive, including EOF clamping, return semantics, clipboard caller evidence and historical lineage.
 * [File-space accounting](docs/file-space-accounting.md) — closes the mechanics of A1AC, A1B0 and A1BC, including 512-byte global accounting and the per-descriptor size/capacity invariant; original public names remain intentionally unresolved.
 * [FileOpen / FileClose ABI closure](docs/fileopen-fileclose-closure.md) — closes A1C8/A1CC, including exact token/cursor behavior, failed-open state preservation, and the fact that FileClose only detaches the active descriptor rather than committing or flushing it.
+* [File password/state ABI closure](docs/file-password-state-closure.md) — closes A1D0–A1DC mechanically: per-file state-bit mutation/query, bidirectional five-character file passwords, and the master-password-gated destructive reset to factory default `write`. The reconstructed trap prototypes are published in `os3k/file_password_state.h` without inventing semantic System 3 names.
 * `FileGetFileInfo` / A1C4 is now exposed in the SDK with persistent live-mirror semantics; `applets/FileGetFileInfoProbe/` provides a read-only regression specification and explicit unbind test.
 
-Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed.
+Interfaces described as provisional in the research notes are intentionally not promoted into `os3k.h` until their contracts are sufficiently closed. Mechanically closed traps whose original semantic names remain unrecovered may be published in focused reconstruction headers while retaining their `SYS_Axxx` names.
 
 Compiling
 ---------
