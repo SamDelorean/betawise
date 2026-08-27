@@ -69,6 +69,10 @@ validation status and concrete audit references.
 | A22C | selected SmartApplet runtime-index install after block-mask check | mechanically closed as `SYS_A22C`; original name open | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
 | A230 | clear selected SmartApplet runtime index to `-1` | mechanically closed as `SYS_A230`; deterministic `-1` result | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
 | A234 | selected runtime index to 16-bit SmartApplet ID | mechanically closed as `SYS_A234`; low-word contract | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
+| A238 | `AppletFindByName` | mechanically closed; prefix search, exclusive 32-bit start index, full runtime-index result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
+| A23C | `AppletFindById` | mechanically closed; exact 16-bit header-ID lookup, full runtime-index result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
+| A240 | `AppletGetName` | mechanically closed; 36-byte header-name copy plus NUL, low-byte 1/0 result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
+| A244 | `AppletSendMessage` | mechanically closed; target validation, synthetic/private message normalization, A5/current-applet context switch and restore | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
 
 ## Source layers used for reconstruction
 
@@ -101,6 +105,11 @@ globals, mask-table helper and applet-header table addresses. A22C relies on the
 normal runtime-index domain established by the surrounding applet machinery
 rather than performing its own explicit bounds test.
 
+A238–A244 are likewise structurally stable across all three compared ROMs.
+A238/A23C/A240 differ only in relocated table/library addresses, while A244 adds
+relocated current-applet state, selection-block helper and per-applet A5-context
+locations. The message-normalization and callback sequence are unchanged.
+
 ## Current File API usage path
 
 For application development, start with
@@ -113,6 +122,11 @@ single current-reference narrative.
 The A22C–A234 selected-applet context is documented separately in
 [`applet-selection-closure.md`](applet-selection-closure.md), because it belongs
 to dispatcher/SmartApplet state rather than the File or clipboard API.
+
+For cross-applet discovery and messaging, use
+[`applet-runtime-api-closure.md`](applet-runtime-api-closure.md). In particular,
+A238 is a prefix search rather than exact name equality, and A244 owns A5/current-
+applet context switching around the target `ProcessMessage` callback.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
