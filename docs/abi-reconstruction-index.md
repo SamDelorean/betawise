@@ -61,6 +61,11 @@ validation status and concrete audit references.
 | A20C | `ClipboardSet` | mechanically closed; raw errors, capacity limiting and shared tag state identified | [`clipboard-buffer-closure.md`](clipboard-buffer-closure.md), `os3k/file_clipboard_buffer.h` |
 | A210 | `ClipboardGet` | raw path closed and portable in compared ROMs; filtered selector 3 closed mechanically with documented 2005-vs-2013 firmware difference | [`clipboard-buffer-closure.md`](clipboard-buffer-closure.md), `os3k/file_clipboard_buffer.h` |
 | A214 | `ClipboardClear` | mechanically closed; logical/allocation-state clear, not secure erase | [`clipboard-buffer-closure.md`](clipboard-buffer-closure.md), `os3k/file_clipboard_buffer.h` |
+| A218 | shared clipboard-tag byte getter | mechanically closed as `SYS_A218`; low-byte return only; original enum/name open | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
+| A21C | raw/filtered clipboard logical-length query | mechanically closed as `SYS_A21C`; selector 3 computes filtered length | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
+| A220 | clipboard storage/base pointer query | mechanically closed as `SYS_A220`; original name open | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
+| A224 | clipboard maximum allocated-capacity query | mechanically closed as `SYS_A224`; original name open | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
+| A228 | allocator-backed clipboard logical-size set/resize | mechanically closed as `SYS_A228`; returns effective clamped size | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
 
 ## Source layers used for reconstruction
 
@@ -91,11 +96,11 @@ whereas NEO 2013 explicitly initializes the output limit from caller `count`.
 ## Current File API usage path
 
 For application development, start with
-[`file-api-current-reference.md`](file-api-current-reference.md). It covers
-namespace/token/descriptor lifecycle, `min_size`, live mirrors, password
-services, dynamic descriptor creation/deletion, filename/local-index identity,
-clipboard copy/cut/paste through A208, and the closed A20C/A210/A214 clipboard
-buffer operations.
+[`file-api-current-reference.md`](file-api-current-reference.md) for the core
+namespace/token/descriptor lifecycle, `min_size`, live mirrors, passwords,
+dynamic descriptors and A200–A208 clipboard editing. Use the focused clipboard
+closure documents for A20C–A228 until those later members are folded into the
+single current-reference narrative.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
