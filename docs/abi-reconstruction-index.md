@@ -73,6 +73,11 @@ validation status and concrete audit references.
 | A23C | `AppletFindById` | mechanically closed; exact 16-bit header-ID lookup, full runtime-index result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
 | A240 | `AppletGetName` | mechanically closed; 36-byte header-name copy plus NUL, low-byte 1/0 result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
 | A244 | `AppletSendMessage` | mechanically closed; target validation, synthetic/private message normalization, A5/current-applet context switch and restore | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
+| A248 | `SYS_A248` file-password-protection state getter | mechanically closed; raw low-byte state, original name open | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
+| A24C | `SYS_A24C(password)` master-password comparison | mechanically closed; non-interactive low-byte Boolean result, original name open | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
+| A250 | `SYS_A250(reserved,prompt)` interactive master-password gate | mechanically closed; first slot unused by compared handlers, native callers use 2 | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
+| A254 | `SYS_A254(token_group,name_out)` File API token-group/high-byte selector | mechanically closed; selector 0=current, explicit 1..4, optional 30-byte group-name copy | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/file_token_group.h` |
+| A258 | `SYS_A258(protection_state)` file-password-protection state setter | mechanically closed; raw byte store, no return contract or built-in authorization | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 
 ## Source layers used for reconstruction
 
@@ -110,6 +115,12 @@ A238/A23C/A240 differ only in relocated table/library addresses, while A244 adds
 relocated current-applet state, selection-block helper and per-applet A5-context
 locations. The message-normalization and callback sequence are unchanged.
 
+A248–A258 are also stable across the three compared ROMs. A248/A258 remain a
+byte getter/setter pair over the relocated file-password-protection global;
+A24C and A250 use the relocated master-password buffer but preserve comparison
+and UI control flow; A254 preserves the four 30-byte token-group name slots and
+returns the group byte used as the high byte by A1FC.
+
 ## Current File API usage path
 
 For application development, start with
@@ -127,6 +138,12 @@ For cross-applet discovery and messaging, use
 [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md). In particular,
 A238 is a prefix search rather than exact name equality, and A244 owns A5/current-
 applet context switching around the target `ProcessMessage` callback.
+
+For the immediately following runtime services, use
+[`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md).
+It separates the A248/A24C/A250/A258 master/file-password runtime state from the
+A254 File API token-group helper instead of treating numeric adjacency as one
+subsystem.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
