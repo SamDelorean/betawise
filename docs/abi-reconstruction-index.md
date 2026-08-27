@@ -79,6 +79,7 @@ validation status and concrete audit references.
 | A254 | `SYS_A254(token_group,name_out)` File API token-group/high-byte selector | mechanically closed; selector 0=current, explicit 1..4, optional 30-byte group-name copy | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/file_token_group.h` |
 | A258 | `SYS_A258(protection_state)` file-password-protection state setter | mechanically closed; raw byte store, no return contract or built-in authorization | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A25C | `SYS_A25C(action_mask,key)` global-service dispatcher | mechanically closed; 32-bit mask, independent bits 0–3, signed returns 0/8/-9 | [`system-service-dispatch-closure.md`](system-service-dispatch-closure.md), `os3k/os3k.h` |
+| A260–A270 | `SYS_A260`/`A264`/`A268`/`A26C`/`A270` selection-block masks | mechanically closed; 32-entry longword table, bit-0 and dynamic-reason mutations | [`applet-selection-mask-closure.md`](applet-selection-mask-closure.md), `os3k/applet_selection_mask.h` |
 | A274 | `SYS_A274(void)` printer-selection dialog | mechanically closed; no return contract; AS3000 has 7 printer records and StyleWriter validation, NEO has 5 | [`printer-selection-closure.md`](printer-selection-closure.md), `os3k/printer_selection.h` |
 
 ## Source layers used for reconstruction
@@ -127,6 +128,9 @@ A25C preserves the same 32-bit mask/key-slot ABI and 0/8/-9 return contract in
 the compared ROMs. NEO/System 3.15 adds one stage to the bit-0 service path
 without changing the public contract.
 
+A260–A270 retain the same 32-entry longword table model, per-service mutations
+and validation boundaries in all three compared ROMs.
+
 A274 is a deliberate example of a platform-visible difference that must not be
 normalized away: the AS3000 2005 handler enumerates seven printer records,
 including ImageWriter and StyleWriter, and contains an additional StyleWriter
@@ -160,6 +164,11 @@ subsystem.
 The A25C global-service dispatcher is documented in
 [`system-service-dispatch-closure.md`](system-service-dispatch-closure.md).
 Its neutral name and unresolved bit-0–2 service labels are intentional.
+
+The A260–A270 selection-block mask services are documented in
+[`applet-selection-mask-closure.md`](applet-selection-mask-closure.md). The
+32-bit aggregate mask and the distinct clear-all/clear-one operations are part
+of the contract.
 
 The A274 printer-selection UI is documented in
 [`printer-selection-closure.md`](printer-selection-closure.md). Its AS3000 and
