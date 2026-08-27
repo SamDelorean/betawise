@@ -78,6 +78,7 @@ validation status and concrete audit references.
 | A250 | `SYS_A250(reserved,prompt)` interactive master-password gate | mechanically closed; first slot unused by compared handlers, native callers use 2 | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A254 | `SYS_A254(token_group,name_out)` File API token-group/high-byte selector | mechanically closed; selector 0=current, explicit 1..4, optional 30-byte group-name copy | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/file_token_group.h` |
 | A258 | `SYS_A258(protection_state)` file-password-protection state setter | mechanically closed; raw byte store, no return contract or built-in authorization | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
+| A274 | `SYS_A274(void)` printer-selection dialog | mechanically closed; no return contract; AS3000 has 7 printer records and StyleWriter validation, NEO has 5 | [`printer-selection-closure.md`](printer-selection-closure.md), `os3k/printer_selection.h` |
 
 ## Source layers used for reconstruction
 
@@ -121,6 +122,12 @@ A24C and A250 use the relocated master-password buffer but preserve comparison
 and UI control flow; A254 preserves the four 30-byte token-group name slots and
 returns the group byte used as the high byte by A1FC.
 
+A274 is a deliberate example of a platform-visible difference that must not be
+normalized away: the AS3000 2005 handler enumerates seven printer records,
+including ImageWriter and StyleWriter, and contains an additional StyleWriter
+validation/warning path; the two compared NEO handlers enumerate five printer
+records and use the compact commit path.
+
 ## Current File API usage path
 
 For application development, start with
@@ -144,6 +151,11 @@ For the immediately following runtime services, use
 It separates the A248/A24C/A250/A258 master/file-password runtime state from the
 A254 File API token-group helper instead of treating numeric adjacency as one
 subsystem.
+
+The A274 printer-selection UI is documented in
+[`printer-selection-closure.md`](printer-selection-closure.md). Its AS3000 and
+NEO record sets are intentionally documented separately because they differ in
+both available printer families and validation flow.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
