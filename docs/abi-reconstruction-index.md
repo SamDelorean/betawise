@@ -58,6 +58,9 @@ validation status and concrete audit references.
 | A200 | copy active-file range to clipboard | mechanically closed as `SYS_A200`; original name/tag enum open | [`clipboard-edit-closure.md`](clipboard-edit-closure.md), `os3k/file_clipboard_edit.h` |
 | A204 | cut active-file range to clipboard | mechanically closed as `SYS_A204`; deletes only bytes actually copied | [`clipboard-edit-closure.md`](clipboard-edit-closure.md), `os3k/file_clipboard_edit.h` |
 | A208 | paste clipboard through A198 write modes | mechanically closed as `SYS_A208`; write modes known, read variant 3 is control-code-aware/filtered; original names open | [`clipboard-edit-closure.md`](clipboard-edit-closure.md), `os3k/file_clipboard_edit.h` |
+| A20C | `ClipboardSet` | mechanically closed; raw errors, capacity limiting and shared tag state identified | [`clipboard-buffer-closure.md`](clipboard-buffer-closure.md), `os3k/file_clipboard_buffer.h` |
+| A210 | `ClipboardGet` | raw path closed and portable in compared ROMs; filtered selector 3 closed mechanically with documented 2005-vs-2013 firmware difference | [`clipboard-buffer-closure.md`](clipboard-buffer-closure.md), `os3k/file_clipboard_buffer.h` |
+| A214 | `ClipboardClear` | mechanically closed; logical/allocation-state clear, not secure erase | [`clipboard-buffer-closure.md`](clipboard-buffer-closure.md), `os3k/file_clipboard_buffer.h` |
 
 ## Source layers used for reconstruction
 
@@ -81,18 +84,21 @@ Evidence is normally assembled from several independent layers:
 Claims shared by AlphaSmart 3000 and NEO require direct comparison of the
 relevant handler/data flow. Known generation differences remain explicit. For
 example, A1D0/A1D4 accept mask `0x0D` in the 2005 ROMs and add `0x10` in NEO
-2013.
+2013. A210 also demonstrates why this rule matters: the 2005 filtered-read path
+passes an uninitialized local as the filter helper's initial output limit,
+whereas NEO 2013 explicitly initializes the output limit from caller `count`.
 
 ## Current File API usage path
 
 For application development, start with
-[`file-api-current-reference.md`](file-api-current-reference.md). It now covers
+[`file-api-current-reference.md`](file-api-current-reference.md). It covers
 namespace/token/descriptor lifecycle, `min_size`, live mirrors, password
 services, dynamic descriptor creation/deletion, filename/local-index identity,
-and clipboard copy/cut/paste through A208.
+clipboard copy/cut/paste through A208, and the closed A20C/A210/A214 clipboard
+buffer operations.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
-addresses, raw errors, or safety edge cases matter.
+addresses, raw errors, generation-specific quirks, or safety edge cases matter.
 
 ## Traceability rule for future work
 
