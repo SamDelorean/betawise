@@ -288,11 +288,29 @@ uint8_t PasswordVerifyFileDialog(
 // return the raw negative System 3 status.
 int32_t PasswordChangeFileDialog(uint16_t file_id);
 
-// These functions return an index of 0 (system applet) if not found.
-uint8_t AppletFindByName(char* name, uint8_t start_index);
-uint8_t AppletFindById(uint16_t id);
-int AppletGetName(uint8_t index, char* name);
-int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t* status);
+// Prefix-searches installed SmartApplet names beginning after start_index.
+// Returns the matching runtime index (0..31), or 0 when no match is found.
+// name must be a valid NUL-terminated string. start_index is consumed as a
+// full 32-bit slot and is exclusive; normal runtime indices are 0..31.
+uint32_t AppletFindByName(const char* name, uint32_t start_index);
+
+// Searches runtime slots 0..31 for the exact 16-bit AppletHeader_t.id. Returns
+// the matching runtime index, or 0 when no match is found. Index 0 is also the
+// System applet, so a successful index-0 match is indistinguishable by return
+// value alone from not-found.
+uint32_t AppletFindById(uint16_t id);
+
+// Copies the installed applet's 36-byte header name field and NUL-terminates it.
+// Valid installed indices are 1..31. name_out should provide at least 37 bytes.
+// Only the low return byte is contractual: 1 on success, 0 on failure.
+uint8_t AppletGetName(uint32_t index, char* name_out);
+
+// Dispatches a message to a SmartApplet while installing/restoring its OS-owned
+// A5 context and current-applet runtime state. Except for raw messages 0x1C and
+// 0x1D, the handler delivers (message & 0x00FFFFFF) | MSG_MOD_SYNTHETIC.
+// Nonzero targets must be installed, in range and not selection-blocked. Only
+// the low return byte is contractual: 1 on successful dispatch, 0 on rejection.
+uint8_t AppletSendMessage(uint32_t index, Message_e message, uint32_t param, uint32_t* status);
 
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
