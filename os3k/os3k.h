@@ -269,6 +269,25 @@ uint16_t FileOpen(uint16_t file_id, uint8_t reset_position);
 // rewind, or otherwise mutate the descriptor's file metadata.
 void FileClose(void);
 
+// Interactive file-password verification. The normal accepted path matches the
+// master password or the selected file password. selected_file_out may be NULL;
+// when provided it is initialized to 0x00FF and receives the final canonical
+// file token on accepted completion. Exactly-1 flags enable their named paths;
+// non-zero allow_file_switching enables switching among eligible files.
+uint8_t PasswordVerifyFileDialog(
+    uint16_t file_id,
+    uint8_t try_once,
+    uint8_t allow_escape,
+    uint8_t allow_special_navigation,
+    uint8_t allow_file_switching,
+    uint16_t* selected_file_out);
+
+// Interactive password change for one resolved file. A resolved dialog exit,
+// including cancellation, returns the canonical token; therefore the return is
+// token/status, not a boolean saying the password changed. Resolver failures
+// return the raw negative System 3 status.
+int32_t PasswordChangeFileDialog(uint16_t file_id);
+
 // These functions return an index of 0 (system applet) if not found.
 uint8_t AppletFindByName(char* name, uint8_t start_index);
 uint8_t AppletFindById(uint16_t id);
