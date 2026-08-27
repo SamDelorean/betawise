@@ -1,110 +1,108 @@
 # System 3 / OS3K ABI reconstruction index
 
 This is the **canonical navigation and traceability index** for reconstructed
-System 3 / OS3K interfaces in this repository.  It answers two different
-questions that should not be confused:
+System 3 / OS3K interfaces in this repository. It answers two questions that
+must remain separate:
 
 1. **What is the current contract that a developer may rely on?**
 2. **Where is the evidence and research history that produced that contract?**
 
 The older `file-api-reconstruction.md` is intentionally retained as a
-**chronological research log**.  It contains provisional statements that were
-correctly superseded by later evidence.  Do not use an early provisional
-section from that log as the current SDK contract when a closure/current-reference
-document listed here exists.
+**chronological research log** and contains provisional statements later
+superseded by stronger evidence. When a closure/current-reference document
+exists, use it for the current SDK contract.
 
 ## Evidence and naming policy
 
 - **Mechanical confidence A**: argument width/order, return behavior, state
-  mutation, or control flow is established directly from firmware handlers or
-  equivalent primary evidence.
-- **Historical/name confidence** is tracked separately.  A behavior may be
-  mechanically closed while its original public System 3 symbol remains
-  unknown.
-- A recovered historical AS3000 name is reused only when the later System 3
-  operation is demonstrably the same conceptual API member.  ABI evolution is
-  documented rather than hidden.
+  mutation or control flow is established directly from firmware or equivalent
+  primary evidence.
+- Historical/name confidence is tracked separately from mechanical confidence.
+- A recovered historical AS3000 name is reused only when later System 3 clearly
+  implements the same conceptual API member; ABI evolution is documented.
 - When behavior is closed but the original modern name is not, the interface
-  remains `SYS_Axxx`.  Descriptive guesses are not promoted to API names.
-- A regression specification is **not** evidence that the test has been run.
-  Documents state explicitly whether emulator or hardware execution has
-  occurred.
+  remains `SYS_Axxx` rather than receiving a descriptive guess.
+- A regression specification is not evidence that the test has been run.
 
-Each closed block should document: purpose, prototype, arguments and returns,
-state effects, errors/sentinels, cross-ROM differences, caller/source evidence,
-safety constraints, validation status, and the commit or document that makes
-the result auditable.
+Each closed block documents purpose, prototype, arguments/returns, state effects,
+errors/sentinels, cross-ROM differences, caller/source evidence, safety,
+validation status and concrete audit references.
 
 ## Current reconstructed blocks
 
 | Trap/range | Current identity | Status | Canonical documentation |
 | --- | --- | --- | --- |
-| A0F0–A110 | Dialog API (`DialogInit` through `DialogGetItemId`) | mechanically closed for normal public behavior; internal event codes 0x64–0x67 remain unnamed | [`dialog-api-closure.md`](dialog-api-closure.md) |
-| A138 | `ShowBatteryPercentage(uint8_t time_seconds)` | ABI/parameter semantics closed; helper A120/A128/A130 names remain open | [`battery-api-closure.md`](battery-api-closure.md) |
+| A0F0–A110 | Dialog API (`DialogInit` through `DialogGetItemId`) | mechanically closed for normal public behavior; internal event codes remain unnamed | [`dialog-api-closure.md`](dialog-api-closure.md) |
+| A138 | `ShowBatteryPercentage(uint8_t time_seconds)` | ABI/parameter semantics closed | [`battery-api-closure.md`](battery-api-closure.md) |
 | A1A0 | `FileSmashFile` | closed; destructive | [`file-core-operations.md`](file-core-operations.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1A4 | `FileDeleteChars` | closed | [`filedeletechars-closure.md`](filedeletechars-closure.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1A8 | `FileGetCurrentFile` | closed | [`file-core-operations.md`](file-core-operations.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
-| A1AC | `SYS_A1AC` global allocator/reclaimable-space metric | mechanical contract closed; original name open | [`file-space-accounting.md`](file-space-accounting.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
+| A1AC | `SYS_A1AC` global allocator/reclaimable metric | mechanical contract closed; original name open; `+0x10` now identified as `min_size` | [`file-space-accounting.md`](file-space-accounting.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1B0 | `SYS_A1B0(file_id)` unused descriptor capacity | mechanical contract closed; original name open | [`file-space-accounting.md`](file-space-accounting.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
-| A1B4 | `SYS_A1B4(token_or_selector)` size/accounting query family | mechanical paths closed; selector names open | [`file-api-current-reference.md`](file-api-current-reference.md), research history in [`file-api-reconstruction.md`](file-api-reconstruction.md) |
-| A1B8 | `SYS_A1B8(size_or_command)` active-file resize/state family | mechanical paths closed; command names partly historical only | [`file-api-current-reference.md`](file-api-current-reference.md), research history in [`file-api-reconstruction.md`](file-api-reconstruction.md) |
+| A1B4 | `SYS_A1B4(token_or_selector)` size/accounting family | mechanical paths closed; selector names open; `0xFE/0xFF` account against `min_size` | [`file-api-current-reference.md`](file-api-current-reference.md) |
+| A1B8 | `SYS_A1B8(size_or_command)` resize/state family | mechanical paths closed; command names partly historical only; `-5` updates `min_size` | [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1BC | `SYS_A1BC(file_id)` descriptor maximum capacity | mechanical contract closed; original name open | [`file-space-accounting.md`](file-space-accounting.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1C0 | `FileSetFolder` | closed | [`filesetfolder-closure.md`](filesetfolder-closure.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
-| A1C4 | `FileGetFileInfo` | closed; live-mirror lifetime is part of the contract | [`file-api-current-reference.md`](file-api-current-reference.md), executable specification in `applets/FileGetFileInfoProbe/` |
+| A1C4 | `FileGetFileInfo` | closed; live-mirror lifetime is contractual | [`file-api-current-reference.md`](file-api-current-reference.md), `applets/FileGetFileInfoProbe/` |
 | A1C8/A1CC | `FileOpen` / `FileClose` | closed | [`fileopen-fileclose-closure.md`](fileopen-fileclose-closure.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
-| A1D0/A1D4 | per-file state-bit mutate/query | mechanically closed as `SYS_A1D0` / `SYS_A1D4`; individual flag names open | [`file-password-state-closure.md`](file-password-state-closure.md), `os3k/file_password_state.h` |
-| A1D8 | reset all file passwords to factory default `write` after master-password verification | mechanically closed; destructive; original name open | [`file-password-state-closure.md`](file-password-state-closure.md), `os3k/file_password_state.h` |
+| A1D0/A1D4 | per-file state-bit mutate/query | mechanically closed as `SYS_A1D0/A1D4`; bit names open | [`file-password-state-closure.md`](file-password-state-closure.md), `os3k/file_password_state.h` |
+| A1D8 | reset group passwords to factory `write` after master verification | mechanically closed; destructive; original name open | [`file-password-state-closure.md`](file-password-state-closure.md), `os3k/file_password_state.h` |
 | A1DC | bidirectional per-file password get/set | mechanically closed; original modern name open | [`file-password-state-closure.md`](file-password-state-closure.md), `os3k/file_password_state.h` |
+| A1E0 | `PasswordVerifyFileDialog` | mechanical A; historical/name continuity B+; modern six-argument ABI documented | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
+| A1E4 | `PasswordChangeFileDialog` | mechanical A; historical/name continuity B+; return is token/status, not changed boolean | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
+| A1E8 | dynamic descriptor/file creation | mechanically closed as `SYS_A1E8`; original name open; establishes descriptor `+0x10 = min_size` | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), `os3k/file_dynamic.h` |
+| A1EC | dynamic descriptor/file removal + allocator/table compaction | mechanically closed as `SYS_A1EC`; destructive; original name open | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), `os3k/file_dynamic.h` |
+| A1F0 | filename get/set (`+0x34`) | mechanically closed as `SYS_A1F0`; original name open | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), `os3k/file_dynamic.h` |
+| A1F4/A1F8 | local index (`+0x46`) get/set and reverse lookup | mechanically closed as `SYS_A1F4/A1F8`; original names open | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), `os3k/file_dynamic.h` |
+| A1FC | construct/validate 16-bit token | mechanically closed as `SYS_A1FC`; original name open | [`file-identity-dynamic-closure.md`](file-identity-dynamic-closure.md), `os3k/file_dynamic.h` |
+| A200 | copy active-file range to clipboard | mechanically closed as `SYS_A200`; original name/tag enum open | [`clipboard-edit-closure.md`](clipboard-edit-closure.md), `os3k/file_clipboard_edit.h` |
+| A204 | cut active-file range to clipboard | mechanically closed as `SYS_A204`; deletes only bytes actually copied | [`clipboard-edit-closure.md`](clipboard-edit-closure.md), `os3k/file_clipboard_edit.h` |
+| A208 | paste clipboard through A198 write modes | mechanically closed as `SYS_A208`; write modes known, read variant 3 is control-code-aware/filtered; original names open | [`clipboard-edit-closure.md`](clipboard-edit-closure.md), `os3k/file_clipboard_edit.h` |
 
 ## Source layers used for reconstruction
 
 Evidence is normally assembled from several independent layers:
 
 1. **Firmware handlers** from AS3000 System 3 November 2005, NEO System 3
-   November 2005, and NEO/System 3.15 July 2013.  These establish the actual
-   machine-level ABI and state mutation.
+   November 2005, and NEO/System 3.15 July 2013.
 2. **Official SmartApplet callers** such as AlphaWord Plus, AlphaQuiz, KeyWords,
-   Calculator and ControlPanel.  These establish real argument values, return
-   consumption, and expected sequencing.
-3. **System 3 internal callers and strings**, useful when an operation is
-   normally encapsulated rather than invoked directly by SmartApplets.
-4. **Original AS3000 source and object material (1998–2000)**, used for
-   genealogy and names.  It is not assumed ABI-identical to later System 3.
-5. **Independent reverse engineering** such as earlier BetaWise/Ghidra/neo-re
-   annotations, treated as comparative evidence rather than authority when it
-   conflicts with direct firmware behavior.
-6. **Emulator/hardware regression**, used to verify observable behavior after
-   the machine-level contract is known.  Tests are separated from discovery
-   when a call is destructive or unsafe.
+   Calculator and ControlPanel.
+3. **System 3 internal callers and strings**, especially when an operation is
+   encapsulated rather than directly invoked by SmartApplets.
+4. **Original AS3000 source/object material (1998–2000)** for genealogy and
+   names, without assuming ABI identity.
+5. **Independent reverse engineering** such as BetaWise/Ghidra/neo-re as
+   comparative evidence rather than authority over direct firmware behavior.
+6. **Emulator/hardware regression** as an observable verification layer after
+   the machine contract is known.
 
 ## Platform and generation rule
 
-A statement that applies to both AlphaSmart 3000 and NEO is only made when the
-relevant handlers/data flow have been compared.  Known generation differences
-are preserved explicitly.  For example, A1D0/A1D4 accept state-mask bits
-`0x01|0x04|0x08` in the 2005 ROMs and add `0x10` in NEO 2013.
+Claims shared by AlphaSmart 3000 and NEO require direct comparison of the
+relevant handler/data flow. Known generation differences remain explicit. For
+example, A1D0/A1D4 accept mask `0x0D` in the 2005 ROMs and add `0x10` in NEO
+2013.
 
 ## Current File API usage path
 
 For application development, start with
-[`file-api-current-reference.md`](file-api-current-reference.md).  That document
-contains the current descriptor model, token rules, active-file lifecycle,
-namespace switching, live-mirror lifetime rules, destructive-operation warnings,
-and a recommended call sequence.  The individual closure notes are then used
-when the evidence trail or edge cases matter.
+[`file-api-current-reference.md`](file-api-current-reference.md). It now covers
+namespace/token/descriptor lifecycle, `min_size`, live mirrors, password
+services, dynamic descriptor creation/deletion, filename/local-index identity,
+and clipboard copy/cut/paste through A208.
+
+Use the focused closure notes when exact evidence, historical genealogy, ROM
+addresses, raw errors, or safety edge cases matter.
 
 ## Traceability rule for future work
 
-When a new trap/block is closed, update all applicable layers in the same
-milestone:
+When a new block is closed, update all applicable layers in the same milestone:
 
-1. implementation/stub/header if the interface is ready for use;
-2. a closure or current-reference document containing the full contract;
+1. implementation/stub/header if ready for use;
+2. closure/current-reference document with the complete contract;
 3. this index;
-4. the repository README;
-5. the project ABI map and master bitacora in Google Drive.
+4. README;
+5. project ABI map and master bitacora in Google Drive.
 
-If later evidence corrects an earlier conclusion, preserve the historical note
+If later evidence corrects an earlier conclusion, preserve the research history
 where useful but make the canonical reference state the correction explicitly.
-This keeps the research reproducible without forcing future developers to infer
-which old statement is still current.
