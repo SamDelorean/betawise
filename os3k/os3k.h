@@ -312,8 +312,13 @@ uint8_t AppletGetName(uint32_t index, char* name_out);
 // the low return byte is contractual: 1 on successful dispatch, 0 on rejection.
 uint8_t AppletSendMessage(uint32_t index, Message_e message, uint32_t param, uint32_t* status);
 
-// mask=0x8 to process special key. mask=4,2,1 unknown.
-void SYS_A25C(uint8_t mask, KeyMod_e key);
+/*
+ * Pumps the global System 3 services selected by action_mask.
+ * Bits 0..3 are independent; key is consumed only by bit 3.
+ * Returns 0 without bit 3, 8 for a recognized special action and -9 otherwise.
+ * The original public symbol has not been recovered, so SYS_A25C is retained.
+ */
+int32_t SYS_A25C(uint32_t action_mask, KeyMod_e key);
 
 uint32_t CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
 
