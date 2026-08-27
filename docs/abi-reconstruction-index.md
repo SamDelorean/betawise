@@ -66,6 +66,9 @@ validation status and concrete audit references.
 | A220 | clipboard storage/base pointer query | mechanically closed as `SYS_A220`; original name open | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
 | A224 | clipboard maximum allocated-capacity query | mechanically closed as `SYS_A224`; original name open | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
 | A228 | allocator-backed clipboard logical-size set/resize | mechanically closed as `SYS_A228`; returns effective clamped size | [`clipboard-state-capacity-closure.md`](clipboard-state-capacity-closure.md), `os3k/file_clipboard_state.h` |
+| A22C | selected SmartApplet runtime-index install after block-mask check | mechanically closed as `SYS_A22C`; original name open | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
+| A230 | clear selected SmartApplet runtime index to `-1` | mechanically closed as `SYS_A230`; deterministic `-1` result | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
+| A234 | selected runtime index to 16-bit SmartApplet ID | mechanically closed as `SYS_A234`; low-word contract | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
 
 ## Source layers used for reconstruction
 
@@ -93,6 +96,11 @@ example, A1D0/A1D4 accept mask `0x0D` in the 2005 ROMs and add `0x10` in NEO
 passes an uninitialized local as the filter helper's initial output limit,
 whereas NEO 2013 explicitly initializes the output limit from caller `count`.
 
+A22C–A234 are stable across the compared ROMs apart from relocated runtime
+globals, mask-table helper and applet-header table addresses. A22C relies on the
+normal runtime-index domain established by the surrounding applet machinery
+rather than performing its own explicit bounds test.
+
 ## Current File API usage path
 
 For application development, start with
@@ -101,6 +109,10 @@ namespace/token/descriptor lifecycle, `min_size`, live mirrors, passwords,
 dynamic descriptors and A200–A208 clipboard editing. Use the focused clipboard
 closure documents for A20C–A228 until those later members are folded into the
 single current-reference narrative.
+
+The A22C–A234 selected-applet context is documented separately in
+[`applet-selection-closure.md`](applet-selection-closure.md), because it belongs
+to dispatcher/SmartApplet state rather than the File or clipboard API.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
