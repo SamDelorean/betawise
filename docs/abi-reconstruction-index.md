@@ -86,6 +86,7 @@ validation status and concrete audit references.
 | A280 | `SYS_A280(cursor,field_0,field_2,payload_size,payload)` packed-record writer | mechanically closed; five slots, three 16-bit header inputs, exact payload copy and even-byte cursor advance | [`packed-record-writer-closure.md`](packed-record-writer-closure.md), `os3k/record_writer.h` |
 | A284 | `SYS_A284(cursor,field_0,field_2,payload_size,payload)` packed-record search | mechanically closed; first exact pair, zero first-field sentinel, optional outputs, signed 0/-1 return | [`packed-record-search-closure.md`](packed-record-search-closure.md), `os3k/record_search.h` |
 | A288 | `SYS_A288(void)` transport payload-byte limit | mechanical A; no arguments; returns `(current limit - 6) mod 65536` in D0.W; upper D0 untouched; original name open | [`transport-payload-limit-closure.md`](transport-payload-limit-closure.md), `os3k/transport_payload.h` |
+| A28C | `SYS_A28C(primary_name,secondary_name,data_callback,event_callback)` IrDA state initializer | mechanical A; four 32-bit slots, byte 0/0x22 return, mandatory data callback, optional event callback; confirmed secondary-string bounds defect | [`irda-state-init-closure.md`](irda-state-init-closure.md), `os3k/irda_state_init.h` |
 
 ## Source layers used for reconstruction
 
@@ -171,6 +172,11 @@ internal send-path consumer in each ROM independently establishes the result as
 the admitted payload-byte limit; the original transport and vendor names remain
 unknown.
 
+A28C is likewise byte-identical after neutralizing seven relocated fields of
+one singleton IrDA state block. All three ROMs preserve the same four-slot ABI,
+callback shapes, byte return and unsafe second-string loop that tests the first
+string's counter. The defect is documented rather than normalized away.
+
 ## Current File API usage path
 
 For A000 display clearing and the distinction between the raw System 3 trap and
@@ -247,6 +253,11 @@ The A288 transport payload-limit getter is documented in
 16-bit return width, modular subtraction, dynamic default and neutral naming are
 part of the contract; the emulator-first regression remains specified but not
 executed.
+
+The A28C IrDA singleton-state initializer is documented in
+[`irda-state-init-closure.md`](irda-state-init-closure.md). Its mandatory and
+optional callbacks, partial mutation on error, byte return and cross-ROM
+secondary-string overflow are part of the current contract.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
