@@ -22,4 +22,10 @@ uint32_t SYS_A1AC(void);
  */
 uint32_t SYS_A1B0(uint16_t file_id);
 
+/*
+ * Resolves file_id in the current namespace and returns descriptor max_size.
+ * Resolution failure returns 0. The operation is read-only.
+ */
+uint32_t SYS_A1BC(uint16_t file_id);
+
 #endif
