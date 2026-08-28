@@ -231,6 +231,9 @@ uint8_t AppletFindById(uint16_t id);
 int AppletGetName(uint8_t index, char* name);
 int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t* status);
 
+// Returns the selection-block mask for the runtime applet index. No bounds check.
+uint32_t SYS_A260(uint32_t applet_index);
+
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
