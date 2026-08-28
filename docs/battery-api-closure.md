@@ -7,13 +7,42 @@ void ShowBatteryPercentage(uint8_t time_seconds);
 ```
 
 The operation is closed at ABI/parameter-semantics level with confidence **A**
-for the analyzed AS3000 and NEO System 3 generations.  Historical genealogy is
+for the analyzed AS3000 and NEO System 3 generations. Historical genealogy is
 also strong, but the historical implementation used a different parameter
 meaning and must not be treated as ABI-identical.
 
+## 0. SDK consolidation status
+
+A138 reached this SDK-consolidation pass **after** the reverse-engineering work
+had already closed its mechanical contract with confidence A. This pass does
+not repeat the ROM/disassembly investigation; it audits the result against the
+existing BetaWise public declaration and A-line stub and records the developer
+contract that should be used going forward.
+
+The existing BetaWise implementation already matches the reconstructed ABI:
+
+```c
+void ShowBatteryPercentage(uint8_t time_seconds);
+```
+
+and `os3k/syscall.c` maps A-line index 78 directly to
+`ShowBatteryPercentage`. No additional BetaWise wrapper is required: unlike
+`ClearScreen`, the public SDK symbol is itself the direct firmware service.
+
+Consolidation state:
+
+- mechanical contract: **A**, received from the reverse-engineering process;
+- SDK declaration/stub: **implemented and audited**;
+- canonical developer documentation: **this document**;
+- dynamic emulator/hardware regression: **pending**.
+
+If later primary evidence changes the upstream mechanical contract, this
+consolidated SDK contract must be reconciled rather than silently preserving an
+obsolete conclusion.
+
 ## 1. Purpose
 
-A138 presents battery status.  It has two user-visible modes selected by the
+A138 presents battery status. It has two user-visible modes selected by the
 single byte argument:
 
 - `time_seconds == 0`: show the full battery-status presentation and wait for a
@@ -37,12 +66,12 @@ and passes that value to the same implementation used by A0D4 /
 Therefore the public name `time_seconds` is not an inference from UI behavior;
 it follows directly from the handler's unit conversion.
 
-The effective input range is the natural `uint8_t` range.  Extreme durations
+The effective input range is the natural `uint8_t` range. Extreme durations
 are not required for normal regression coverage.
 
 ## 3. Full-status mode (`time_seconds == 0`)
 
-With zero, the routine does not take the timed-sleep exit.  Instead it builds
+With zero, the routine does not take the timed-sleep exit. Instead it builds
 the complete battery-status screen, obtains localized status text, presents the
 capacity/percentage information and ultimately calls `WaitForKey` before
 returning.
@@ -57,7 +86,7 @@ This mode corresponds to the normal interactive battery-information screen.
 
 ## 4. Percentage calculation and internal helpers
 
-A138 invokes internal routines associated with A120, A128 and A130.  The value
+A138 invokes internal routines associated with A120, A128 and A130. The value
 returned by the A128 path participates in a calculation equivalent to:
 
 ```text
@@ -65,7 +94,7 @@ percentage = 100 - value
 ```
 
 The individual public meanings/names of A120/A128/A130 are **not** sufficiently
-closed and remain intentionally unnamed.  A138's contract does not require
+closed and remain intentionally unnamed. A138's contract does not require
 inventing names for its internal helpers.
 
 ## 5. Cross-ROM evidence
@@ -80,7 +109,7 @@ reference firmware images:
 | NEO/System 3.15, Jul 2013 | `0x426EC0` |
 
 The same byte-argument and timed/full-mode logic is present across these
-versions.  The surrounding addresses and internal helper locations differ by
+versions. The surrounding addresses and internal helper locations differ by
 firmware and are not part of the portable ABI.
 
 The A-line tables used for identification were cross-checked against multiple
@@ -105,7 +134,7 @@ PowerShowBatteryPercentage
 
 This provides strong nominal and functional continuity with modern A138.
 However, the early implementation's parameter was used as a **display row**
-(`ubLine`), not a time in seconds.  The early simulator path positioned the
+(`ubLine`), not a time in seconds. The early simulator path positioned the
 cursor and displayed battery text rather than implementing the later timed
 behavior.
 
@@ -115,7 +144,7 @@ Therefore the correct historical conclusion is:
 PowerShowBatteryPercentage  ->  later A138 / ShowBatteryPercentage
 ```
 
-with an **evolved ABI**.  The old parameter meaning must not be copied into the
+with an **evolved ABI**. The old parameter meaning must not be copied into the
 modern SDK.
 
 ## 8. Developer usage
@@ -139,18 +168,29 @@ The firmware handles the delay internally through `SleepCentiseconds`.
 
 ## 9. Side effects and return
 
-The reconstructed public prototype is `void`.  No contractual return value is
+The reconstructed public prototype is `void`. No contractual return value is
 used by the analyzed callers/implementation.
 
 The routine owns the presentation flow while active and, in zero mode, consumes
-a key through `WaitForKey`.  Application code should therefore treat it as a UI
+a key through `WaitForKey`. Application code should therefore treat it as a UI
 operation rather than as a pure battery-percentage query.
 
 A138 should not be used when the application only needs a numeric battery value;
 its internal A120/A128/A130 helpers require separate reconstruction before such
 a lower-level API can be documented safely.
 
-## 10. Regression status
+## 10. Relationship to C and the BetaWise runtime
+
+`ShowBatteryPercentage` is **not** an ISO C or hosted-libc facility. BetaWise
+exposes it because `libos3k.a` maps the C call directly to the System 3 A-line
+trap. There is no standard-C equivalent that preserves the same firmware UI,
+keyboard wait, timing path or hardware-specific presentation semantics.
+
+Accordingly, application code should call the SDK service directly rather than
+substituting terminal escape sequences, `stdio` output or a host-side battery
+API. Such alternatives would describe a different runtime contract.
+
+## 11. Regression status
 
 A BatteryProbe baseline was created during the reconstruction work with the
 safe known call:
