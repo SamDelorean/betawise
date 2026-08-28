@@ -231,6 +231,9 @@ uint8_t AppletFindById(uint16_t id);
 int AppletGetName(uint8_t index, char* name);
 int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t* status);
 
+// Resolve current or explicit File API token group; optionally copy its name.
+uint8_t SYS_A254(uint8_t token_group, char *group_name_out);
+
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
