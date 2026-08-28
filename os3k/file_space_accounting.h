@@ -23,6 +23,12 @@ uint32_t SYS_A1AC(void);
 uint32_t SYS_A1B0(uint16_t file_id);
 
 /*
+ * Ordinary 16-bit tokens return current_size. Selectors 0xFC..0xFF access
+ * confirmed active/global accounting variants documented by the SDK notes.
+ */
+uint32_t SYS_A1B4(uint16_t file_id_or_selector);
+
+/*
  * Resolves file_id in the current namespace and returns descriptor max_size.
  * Resolution failure returns 0. The operation is read-only.
  */
