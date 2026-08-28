@@ -9,7 +9,7 @@ uint8_t g_CurCol;
 uint8_t g_MaxRow;
 uint8_t g_MaxCol;
 
-void _OS3K_ClearScreen();
+void _OS3K_ClearScreen(void);
 void _OS3K_SetCursor(uint8_t row, uint8_t col, CursorMode_e cursor_mode);
 char _OS3K_TranslateKeyToChar(KeyMod_e key);
 uint32_t _OS3K_CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
@@ -78,7 +78,10 @@ void BwProcessMessage(Message_e message, uint32_t param, uint32_t* status) {
     ProcessMessage(message, param, status);
 }
 
-void ClearScreen() {
+void ClearScreen(void) {
+    // Raw A000 clears System 3 display/cursor state but does not promise to
+    // normalize the NEO LCD start-line. Keep BetaWise's private logical state
+    // and scrolling state synchronized when the extended font path is active.
     _OS3K_ClearScreen();
     if(g_pCurFont) {
         g_CurRow = g_CurCol = 1;
