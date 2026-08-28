@@ -173,7 +173,10 @@ typedef enum _SysInt_e {
 } SysInt_e;
 
 // System functions.
-void ClearScreen();
+// Public BetaWise wrapper over raw A000. A000 clears the System 3 display,
+// hides the OS cursor and restores its logical position to 1,1. In the extended
+// BetaWise font path this wrapper also resets BetaWise scroll/start-line state.
+void ClearScreen(void);
 void SetCursor(uint8_t row, uint8_t col, CursorMode_e cursor_mode);
 void GetCursorPos(uint8_t* row, uint8_t* col);
 void PutStringCentered(uint8_t row, const char *str);
