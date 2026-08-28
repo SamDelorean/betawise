@@ -226,7 +226,7 @@ int DialogGetItemId(uint8_t index);
 char TranslateKeyToChar(KeyMod_e key);
 
 // These functions return an index of 0 (system applet) if not found.
-uint8_t AppletFindByName(char* name, uint8_t start_index);
+uint32_t AppletFindByName(const char* name, uint32_t start_index);
 uint8_t AppletFindById(uint16_t id);
 int AppletGetName(uint8_t index, char* name);
 int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t* status);
