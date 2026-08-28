@@ -74,7 +74,7 @@ validation status and concrete audit references.
 | A23C | `AppletFindById` | mechanical A; SDK consolidated/audited; exact 16-bit header-ID lookup; full 32-bit runtime-index result; old 8-bit return superseded; regression pending | [`appletfindbyid-closure.md`](appletfindbyid-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A240 | `AppletGetName` | mechanical A; SDK consolidated/audited; validated 32-bit runtime index; bounded 36-byte header-name copy plus NUL; byte-only 1/0 return; old `int` return superseded; regression pending | [`appletgetname-closure.md`](appletgetname-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A244 | `AppletSendMessage` | mechanical A; SDK consolidated/audited; 32-bit runtime target; target validation; synthetic/private message normalization; OS-owned A5/current-applet context switch and restore; byte-only 1/0 return; regression emulator-first pending | [`appletsendmessage-closure.md`](appletsendmessage-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
-| A248 | `SYS_A248` file-password-protection state getter | mechanically closed; raw low-byte state, original name open | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
+| A248 | `SYS_A248` file-password-protection state getter | mechanical A; SDK consolidated/audited; no arguments; read-only raw low-byte runtime state; original name open; regression pending | [`sys-a248-closure.md`](sys-a248-closure.md), [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A24C | `SYS_A24C(password)` master-password comparison | mechanically closed; non-interactive low-byte Boolean result, original name open | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A250 | `SYS_A250(reserved,prompt)` interactive master-password gate | mechanically closed; first slot unused by compared handlers, native callers use 2 | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A254 | `SYS_A254(token_group,name_out)` File API token-group/high-byte selector | mechanically closed; selector 0=current, explicit 1..4, optional 30-byte group-name copy | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/file_token_group.h` |
@@ -202,7 +202,9 @@ For the immediately following runtime services, use
 [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md).
 It separates the A248/A24C/A250/A258 master/file-password runtime state from the
 A254 File API token-group helper instead of treating numeric adjacency as one
-subsystem.
+subsystem. A248's SDK-facing consolidation, byte-only return contract and
+neutral-name policy are recorded separately in
+[`sys-a248-closure.md`](sys-a248-closure.md).
 
 The A25C global-service dispatcher is documented in
 [`system-service-dispatch-closure.md`](system-service-dispatch-closure.md).
