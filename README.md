@@ -9,6 +9,7 @@ Active System 3 / OS3K ABI reconstruction notes are kept under `docs/`.
 Start here when using or auditing the reconstructed ABI:
 
 * [ABI reconstruction index](docs/abi-reconstruction-index.md) — canonical map of reconstructed blocks, confidence/naming policy, evidence layers, current-vs-historical documentation, and traceability rules.
+* [ClearScreen closure](docs/clear-screen-closure.md) — closes A000 mechanically across AS3000 and NEO, including the no-argument/void raw syscall, cursor reset, generation-specific display clearing, and the additional scroll/start-line work performed by the public BetaWise wrapper.
 * [Current File API reference](docs/file-api-current-reference.md) — current developer-facing contract for namespaces, tokens, descriptors, `min_size`, live mirrors, open/close lifecycle, deletion, accounting, passwords, dynamic files and clipboard editing. Prefer this over early provisional File API notes when deciding how to call the API.
 * [Dialog API closure](docs/dialog-api-closure.md) — consolidated A0F0–A110 menu/dialog contract: item metadata, marker/shortcut/file-size behavior, layout, navigation, exit ordering and getter invariants.
 * [Battery API closure](docs/battery-api-closure.md) — A138 / `ShowBatteryPercentage`, including zero-vs-timed modes, units, cross-ROM evidence and historical ABI evolution.
