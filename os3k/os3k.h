@@ -234,6 +234,9 @@ int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
+// Clear all applet selection-block reasons for the runtime index.
+void SYS_A268(uint32_t applet_index);
+
 uint32_t CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
 
 // Standard library functions.
