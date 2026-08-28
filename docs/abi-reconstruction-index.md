@@ -82,6 +82,7 @@ validation status and concrete audit references.
 | A260–A270 | `SYS_A260`/`A264`/`A268`/`A26C`/`A270` selection-block masks | mechanically closed; 32-entry longword table, bit-0 and dynamic-reason mutations | [`applet-selection-mask-closure.md`](applet-selection-mask-closure.md), `os3k/applet_selection_mask.h` |
 | A274 | `SYS_A274(void)` printer-selection dialog | mechanically closed; no return contract; AS3000 has 7 printer records and StyleWriter validation, NEO has 5 | [`printer-selection-closure.md`](printer-selection-closure.md), `os3k/printer_selection.h` |
 | A27C | `SYS_A27C(cursor,field_0,field_2,payload_size,payload)` packed-record cursor | mechanically closed; five pointer slots, three 16-bit header outputs, payload pointer and conditional even-byte cursor advance | [`packed-record-cursor-closure.md`](packed-record-cursor-closure.md), `os3k/record_cursor.h` |
+| A280 | `SYS_A280(cursor,field_0,field_2,payload_size,payload)` packed-record writer | mechanically closed; five slots, three 16-bit header inputs, exact payload copy and even-byte cursor advance | [`packed-record-writer-closure.md`](packed-record-writer-closure.md), `os3k/record_writer.h` |
 
 ## Source layers used for reconstruction
 
@@ -143,6 +144,11 @@ three structurally equivalent internal callers that pass five pointer slots and
 ignore the return register. The two leading 16-bit record fields remain neutral;
 the third word is the payload byte count used for even-byte cursor progression.
 
+A280 preserves the same mechanical writer contract in all three ROMs. The only
+handler-byte difference is the relocated address of an identical forward-copy
+helper. Two equivalent internal callers per ROM pass five slots, allocate six
+plus the even-rounded payload size, and ignore the residual return register.
+
 ## Current File API usage path
 
 For application development, start with
@@ -185,6 +191,11 @@ The A27C packed-record cursor is documented in
 [`packed-record-cursor-closure.md`](packed-record-cursor-closure.md). Its
 five-pointer contract is closed, while the original symbol and the semantic
 names of the first two record fields intentionally remain unresolved.
+
+The complementary A280 packed-record writer is documented in
+[`packed-record-writer-closure.md`](packed-record-writer-closure.md). It shares
+the neutral field labels, writes exact payload bytes, leaves odd padding
+untouched, and advances the cursor with 16-bit even rounding.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
