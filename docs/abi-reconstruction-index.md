@@ -85,6 +85,7 @@ validation status and concrete audit references.
 | A27C | `SYS_A27C(cursor,field_0,field_2,payload_size,payload)` packed-record cursor | mechanically closed; five pointer slots, three 16-bit header outputs, payload pointer and conditional even-byte cursor advance | [`packed-record-cursor-closure.md`](packed-record-cursor-closure.md), `os3k/record_cursor.h` |
 | A280 | `SYS_A280(cursor,field_0,field_2,payload_size,payload)` packed-record writer | mechanically closed; five slots, three 16-bit header inputs, exact payload copy and even-byte cursor advance | [`packed-record-writer-closure.md`](packed-record-writer-closure.md), `os3k/record_writer.h` |
 | A284 | `SYS_A284(cursor,field_0,field_2,payload_size,payload)` packed-record search | mechanically closed; first exact pair, zero first-field sentinel, optional outputs, signed 0/-1 return | [`packed-record-search-closure.md`](packed-record-search-closure.md), `os3k/record_search.h` |
+| A288 | `SYS_A288(void)` transport payload-byte limit | mechanical A; no arguments; returns `(current limit - 6) mod 65536` in D0.W; upper D0 untouched; original name open | [`transport-payload-limit-closure.md`](transport-payload-limit-closure.md), `os3k/transport_payload.h` |
 
 ## Source layers used for reconstruction
 
@@ -164,6 +165,12 @@ caller per ROM passes five slots and tests the full 32-bit 0/-1 return. Its
 alternate path invokes A27C on the same record sequence, independently
 correlating the shared layout and cursor semantics.
 
+A288 is mechanically identical across all three compared ROMs after relocating
+one 16-bit global. It returns that global minus six in D0.W. An equivalent
+internal send-path consumer in each ROM independently establishes the result as
+the admitted payload-byte limit; the original transport and vendor names remain
+unknown.
+
 ## Current File API usage path
 
 For A000 display clearing and the distinction between the raw System 3 trap and
@@ -234,6 +241,12 @@ The A284 packed-record search is documented in
 [`packed-record-search-closure.md`](packed-record-search-closure.md). It searches
 for the first exact neutral-field pair, exposes optional size/payload outputs,
 and documents the zero sentinel, cursor-on-failure, and 16-bit wrap behavior.
+
+The A288 transport payload-limit getter is documented in
+[`transport-payload-limit-closure.md`](transport-payload-limit-closure.md). Its
+16-bit return width, modular subtraction, dynamic default and neutral naming are
+part of the contract; the emulator-first regression remains specified but not
+executed.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
