@@ -29,6 +29,12 @@ uint32_t SYS_A1B0(uint16_t file_id);
 uint32_t SYS_A1B4(uint16_t file_id_or_selector);
 
 /*
+ * Operates on the active descriptor. Non-negative values request a new size;
+ * negative values select confirmed state-management commands.
+ */
+uint32_t SYS_A1B8(int32_t size_or_command);
+
+/*
  * Resolves file_id in the current namespace and returns descriptor max_size.
  * Resolution failure returns 0. The operation is read-only.
  */
