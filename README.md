@@ -16,6 +16,7 @@ Start here when using or auditing the reconstructed ABI:
 * [AppletFindByName consolidation](docs/appletfindbyname-closure.md) — A238 developer-facing SDK contract: prefix-name lookup, exclusive 32-bit start index, full 32-bit runtime-index return, const input string and supersession of the old 8-bit index/return declaration.
 * [AppletGetName consolidation](docs/appletgetname-closure.md) — A240 developer-facing SDK contract: validated 32-bit runtime index, bounded 36-byte header-name copy plus NUL, byte-only 1/0 return contract and supersession of the old `int` return declaration.
 * [AppletSendMessage consolidation](docs/appletsendmessage-closure.md) — A244 developer-facing SDK contract: 32-bit runtime target, synthetic/private message normalization, target validation, OS-owned A5/current-applet context switching, byte-only 1/0 return and emulator-first regression guidance.
+* [SYS_A248 consolidation](docs/sys-a248-closure.md) — A248 developer-facing SDK contract: read-only global file-password-protection state getter, byte-only return contract, neutral-name policy, direct A-line exposure and regression guidance.
 * [Dialog API closure](docs/dialog-api-closure.md) — consolidated A0F0–A110 menu/dialog contract: item metadata, marker/shortcut/file-size behavior, layout, navigation, exit ordering and getter invariants.
 * [Battery API closure](docs/battery-api-closure.md) — A138 / `ShowBatteryPercentage`, including zero-vs-timed modes, units, cross-ROM evidence and historical ABI evolution.
 
