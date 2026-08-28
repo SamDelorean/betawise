@@ -32,6 +32,7 @@ validation status and concrete audit references.
 
 | Trap/range | Current identity | Status | Canonical documentation |
 | --- | --- | --- | --- |
+| A000 | raw `_OS3K_ClearScreen(void)` / public `ClearScreen(void)` | mechanical A; clears display, hides OS cursor and restores OS cursor to 1,1; BetaWise wrapper additionally resets its private scroll/start-line state | [`clear-screen-closure.md`](clear-screen-closure.md), `os3k/os3k.h` |
 | A0F0–A110 | Dialog API (`DialogInit` through `DialogGetItemId`) | mechanically closed for normal public behavior; internal event codes remain unnamed | [`dialog-api-closure.md`](dialog-api-closure.md) |
 | A138 | `ShowBatteryPercentage(uint8_t time_seconds)` | ABI/parameter semantics closed | [`battery-api-closure.md`](battery-api-closure.md) |
 | A1A0 | `FileSmashFile` | closed; destructive | [`file-core-operations.md`](file-core-operations.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
@@ -111,6 +112,14 @@ example, A1D0/A1D4 accept mask `0x0D` in the 2005 ROMs and add `0x10` in NEO
 passes an uninitialized local as the filter helper's initial output limit,
 whereas NEO 2013 explicitly initializes the output limit from caller `count`.
 
+A000 preserves one public display/cursor contract across AS3000 and NEO while
+using generation-specific hardware paths. AS3000 issues clear-display commands
+to its two character-LCD halves. NEO explicitly clears both graphical LCD
+controllers and its character shadow. Both hide the OS cursor and restore
+logical position 1,1; raw A000 does not promise to normalize the NEO LCD
+start-line, which remains a BetaWise-wrapper responsibility in extended-font
+mode.
+
 A22C–A234 are stable across the compared ROMs apart from relocated runtime
 globals, mask-table helper and applet-header table addresses. A22C relies on the
 normal runtime-index domain established by the surrounding applet machinery
@@ -156,6 +165,10 @@ alternate path invokes A27C on the same record sequence, independently
 correlating the shared layout and cursor semantics.
 
 ## Current File API usage path
+
+For A000 display clearing and the distinction between the raw System 3 trap and
+the BetaWise scrolling wrapper, use
+[`clear-screen-closure.md`](clear-screen-closure.md).
 
 For application development, start with
 [`file-api-current-reference.md`](file-api-current-reference.md) for the core
