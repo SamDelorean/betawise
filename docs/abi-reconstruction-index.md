@@ -73,7 +73,7 @@ validation status and concrete audit references.
 | A238 | `AppletFindByName` | mechanical A; SDK consolidated/audited; prefix-name lookup; exclusive 32-bit start index; full 32-bit runtime-index result; const input; old 8-bit index/return superseded; regression pending | [`appletfindbyname-closure.md`](appletfindbyname-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A23C | `AppletFindById` | mechanical A; SDK consolidated/audited; exact 16-bit header-ID lookup; full 32-bit runtime-index result; old 8-bit return superseded; regression pending | [`appletfindbyid-closure.md`](appletfindbyid-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A240 | `AppletGetName` | mechanical A; SDK consolidated/audited; validated 32-bit runtime index; bounded 36-byte header-name copy plus NUL; byte-only 1/0 return; old `int` return superseded; regression pending | [`appletgetname-closure.md`](appletgetname-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
-| A244 | `AppletSendMessage` | mechanically closed; target validation, synthetic/private message normalization, A5/current-applet context switch and restore | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
+| A244 | `AppletSendMessage` | mechanical A; SDK consolidated/audited; 32-bit runtime target; target validation; synthetic/private message normalization; OS-owned A5/current-applet context switch and restore; byte-only 1/0 return; regression emulator-first pending | [`appletsendmessage-closure.md`](appletsendmessage-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A248 | `SYS_A248` file-password-protection state getter | mechanically closed; raw low-byte state, original name open | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A24C | `SYS_A24C(password)` master-password comparison | mechanically closed; non-interactive low-byte Boolean result, original name open | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
 | A250 | `SYS_A250(reserved,prompt)` interactive master-password gate | mechanically closed; first slot unused by compared handlers, native callers use 2 | [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md), `os3k/password_runtime.h` |
@@ -193,8 +193,10 @@ start-index/return correction are recorded separately in
 consolidation and the supersession of the old 8-bit return are recorded in
 [`appletfindbyid-closure.md`](appletfindbyid-closure.md). A240's validated
 runtime-index rules, 36-byte name-field copy and byte-only return contract are
-recorded in [`appletgetname-closure.md`](appletgetname-closure.md). A244 owns
-A5/current-applet context switching around the target `ProcessMessage` callback.
+recorded in [`appletgetname-closure.md`](appletgetname-closure.md). A244's SDK
+consolidation, target validation, message normalization, byte-only return and
+OS-owned A5/current-applet context transition are recorded in
+[`appletsendmessage-closure.md`](appletsendmessage-closure.md).
 
 For the immediately following runtime services, use
 [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md).
