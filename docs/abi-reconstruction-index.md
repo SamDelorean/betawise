@@ -70,7 +70,7 @@ validation status and concrete audit references.
 | A22C | selected SmartApplet runtime-index install after block-mask check | mechanically closed as `SYS_A22C`; original name open | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
 | A230 | clear selected SmartApplet runtime index to `-1` | mechanically closed as `SYS_A230`; deterministic `-1` result | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
 | A234 | selected runtime index to 16-bit SmartApplet ID | mechanically closed as `SYS_A234`; low-word contract | [`applet-selection-closure.md`](applet-selection-closure.md), `os3k/applet_selection.h` |
-| A238 | `AppletFindByName` | mechanically closed; prefix search, exclusive 32-bit start index, full runtime-index result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
+| A238 | `AppletFindByName` | mechanical A; SDK consolidated/audited; prefix-name lookup; exclusive 32-bit start index; full 32-bit runtime-index result; const input; old 8-bit index/return superseded; regression pending | [`appletfindbyname-closure.md`](appletfindbyname-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A23C | `AppletFindById` | mechanical A; SDK consolidated/audited; exact 16-bit header-ID lookup; full 32-bit runtime-index result; old 8-bit return superseded; regression pending | [`appletfindbyid-closure.md`](appletfindbyid-closure.md), [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md), `os3k/os3k.h` |
 | A240 | `AppletGetName` | mechanically closed; 36-byte header-name copy plus NUL, low-byte 1/0 result | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
 | A244 | `AppletSendMessage` | mechanically closed; target validation, synthetic/private message normalization, A5/current-applet context switch and restore | [`applet-runtime-api-closure.md`](applet-runtime-api-closure.md) |
@@ -186,12 +186,13 @@ The A22C–A234 selected-applet context is documented separately in
 to dispatcher/SmartApplet state rather than the File or clipboard API.
 
 For cross-applet discovery and messaging, use
-[`applet-runtime-api-closure.md`](applet-runtime-api-closure.md). A23C's
-SDK-facing consolidation and the supersession of the old 8-bit return are
-recorded separately in
-[`appletfindbyid-closure.md`](appletfindbyid-closure.md). A238 is a prefix search
-rather than exact name equality, and A244 owns A5/current-applet context
-switching around the target `ProcessMessage` callback.
+[`applet-runtime-api-closure.md`](applet-runtime-api-closure.md). A238's
+SDK-facing consolidation, prefix-search semantics, const input and 32-bit
+start-index/return correction are recorded separately in
+[`appletfindbyname-closure.md`](appletfindbyname-closure.md). A23C's SDK-facing
+consolidation and the supersession of the old 8-bit return are recorded in
+[`appletfindbyid-closure.md`](appletfindbyid-closure.md). A244 owns A5/current-
+applet context switching around the target `ProcessMessage` callback.
 
 For the immediately following runtime services, use
 [`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md).
