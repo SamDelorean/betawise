@@ -14,6 +14,7 @@ Start here when using or auditing the reconstructed ABI:
 * [FileGetCurrentFile consolidation](docs/filegetcurrentfile-closure.md) — A1A8 developer-facing SDK contract: no arguments, read-only active-descriptor query, canonical 16-bit token return, direct A-line exposure, historical ABI evolution and regression status.
 * [AppletFindById consolidation](docs/appletfindbyid-closure.md) — A23C developer-facing SDK contract: exact 16-bit SmartApplet ID lookup, full 32-bit runtime-index return, index-0 ambiguity, direct A-line exposure and supersession of the old 8-bit return declaration.
 * [AppletFindByName consolidation](docs/appletfindbyname-closure.md) — A238 developer-facing SDK contract: prefix-name lookup, exclusive 32-bit start index, full 32-bit runtime-index return, const input string and supersession of the old 8-bit index/return declaration.
+* [AppletGetName consolidation](docs/appletgetname-closure.md) — A240 developer-facing SDK contract: validated 32-bit runtime index, bounded 36-byte header-name copy plus NUL, byte-only 1/0 return contract and supersession of the old `int` return declaration.
 * [Dialog API closure](docs/dialog-api-closure.md) — consolidated A0F0–A110 menu/dialog contract: item metadata, marker/shortcut/file-size behavior, layout, navigation, exit ordering and getter invariants.
 * [Battery API closure](docs/battery-api-closure.md) — A138 / `ShowBatteryPercentage`, including zero-vs-timed modes, units, cross-ROM evidence and historical ABI evolution.
 
