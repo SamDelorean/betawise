@@ -37,7 +37,7 @@ validation status and concrete audit references.
 | A138 | `ShowBatteryPercentage(uint8_t time_seconds)` | ABI/parameter semantics closed | [`battery-api-closure.md`](battery-api-closure.md) |
 | A1A0 | `FileSmashFile` | closed; destructive | [`file-core-operations.md`](file-core-operations.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1A4 | `FileDeleteChars` | closed | [`filedeletechars-closure.md`](filedeletechars-closure.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
-| A1A8 | `FileGetCurrentFile` | closed | [`file-core-operations.md`](file-core-operations.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
+| A1A8 | `FileGetCurrentFile` | mechanical A; SDK consolidated/audited; read-only canonical-token query; regression pending | [`filegetcurrentfile-closure.md`](filegetcurrentfile-closure.md), [`file-core-operations.md`](file-core-operations.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1AC | `SYS_A1AC` global allocator/reclaimable metric | mechanical contract closed; original name open; `+0x10` now identified as `min_size` | [`file-space-accounting.md`](file-space-accounting.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1B0 | `SYS_A1B0(file_id)` unused descriptor capacity | mechanical contract closed; original name open | [`file-space-accounting.md`](file-space-accounting.md), [`file-api-current-reference.md`](file-api-current-reference.md) |
 | A1B4 | `SYS_A1B4(token_or_selector)` size/accounting family | mechanical paths closed; selector names open; `0xFE/0xFF` account against `min_size` | [`file-api-current-reference.md`](file-api-current-reference.md) |
@@ -173,7 +173,11 @@ the BetaWise scrolling wrapper, use
 For application development, start with
 [`file-api-current-reference.md`](file-api-current-reference.md) for the core
 namespace/token/descriptor lifecycle, `min_size`, live mirrors, passwords,
-dynamic descriptors and A200–A208 clipboard editing. Use the focused clipboard
+dynamic descriptors and A200–A208 clipboard editing. The A1A8 SDK consolidation
+is recorded separately in
+[`filegetcurrentfile-closure.md`](filegetcurrentfile-closure.md), while the deeper
+A1A0/A1A8 research evidence remains in
+[`file-core-operations.md`](file-core-operations.md). Use the focused clipboard
 closure documents for A20C–A228 until those later members are folded into the
 single current-reference narrative.
 
