@@ -81,6 +81,7 @@ validation status and concrete audit references.
 | A25C | `SYS_A25C(action_mask,key)` global-service dispatcher | mechanically closed; 32-bit mask, independent bits 0–3, signed returns 0/8/-9 | [`system-service-dispatch-closure.md`](system-service-dispatch-closure.md), `os3k/os3k.h` |
 | A260–A270 | `SYS_A260`/`A264`/`A268`/`A26C`/`A270` selection-block masks | mechanically closed; 32-entry longword table, bit-0 and dynamic-reason mutations | [`applet-selection-mask-closure.md`](applet-selection-mask-closure.md), `os3k/applet_selection_mask.h` |
 | A274 | `SYS_A274(void)` printer-selection dialog | mechanically closed; no return contract; AS3000 has 7 printer records and StyleWriter validation, NEO has 5 | [`printer-selection-closure.md`](printer-selection-closure.md), `os3k/printer_selection.h` |
+| A27C | `SYS_A27C(cursor,field_0,field_2,payload_size,payload)` packed-record cursor | mechanically closed; five pointer slots, three 16-bit header outputs, payload pointer and conditional even-byte cursor advance | [`packed-record-cursor-closure.md`](packed-record-cursor-closure.md), `os3k/record_cursor.h` |
 
 ## Source layers used for reconstruction
 
@@ -137,6 +138,11 @@ including ImageWriter and StyleWriter, and contains an additional StyleWriter
 validation/warning path; the two compared NEO handlers enumerate five printer
 records and use the compact commit path.
 
+A27C is byte-identical across all three compared ROMs. Each image also contains
+three structurally equivalent internal callers that pass five pointer slots and
+ignore the return register. The two leading 16-bit record fields remain neutral;
+the third word is the payload byte count used for even-byte cursor progression.
+
 ## Current File API usage path
 
 For application development, start with
@@ -174,6 +180,11 @@ The A274 printer-selection UI is documented in
 [`printer-selection-closure.md`](printer-selection-closure.md). Its AS3000 and
 NEO record sets are intentionally documented separately because they differ in
 both available printer families and validation flow.
+
+The A27C packed-record cursor is documented in
+[`packed-record-cursor-closure.md`](packed-record-cursor-closure.md). Its
+five-pointer contract is closed, while the original symbol and the semantic
+names of the first two record fields intentionally remain unresolved.
 
 Use the focused closure notes when exact evidence, historical genealogy, ROM
 addresses, raw errors, generation-specific quirks, or safety edge cases matter.
