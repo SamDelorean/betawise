@@ -321,6 +321,9 @@ uint8_t SYS_A250(uint32_t reserved, const char *prompt);
 // Resolve current or explicit File API token group; optionally copy its name.
 uint8_t SYS_A254(uint8_t token_group, char *group_name_out);
 
+// Set the global file password protection state. System 3 normally uses 0/1.
+void SYS_A258(uint8_t protection_state);
+
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
