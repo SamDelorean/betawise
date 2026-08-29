@@ -315,6 +315,9 @@ uint8_t AppletSendMessage(uint32_t index, Message_e message, uint32_t param, uin
 // Non-interactive master-password comparison. Only the low byte is contractual.
 uint8_t SYS_A24C(const char *password);
 
+// Interactive master-password gate. Native callers pass 2 for reserved; prompt may be NULL.
+uint8_t SYS_A250(uint32_t reserved, const char *prompt);
+
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
