@@ -229,7 +229,7 @@ char TranslateKeyToChar(KeyMod_e key);
 uint8_t AppletFindByName(char* name, uint8_t start_index);
 uint8_t AppletFindById(uint16_t id);
 int AppletGetName(uint8_t index, char* name);
-int AppletSendMessage(uint8_t index, Message_e message, uint32_t param, uint32_t* status);
+uint8_t AppletSendMessage(uint32_t index, Message_e message, uint32_t param, uint32_t* status);
 
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
