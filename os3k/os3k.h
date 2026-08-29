@@ -324,8 +324,8 @@ uint8_t SYS_A254(uint8_t token_group, char *group_name_out);
 // Set the global file password protection state. System 3 normally uses 0/1.
 void SYS_A258(uint8_t protection_state);
 
-// mask=0x8 to process special key. mask=4,2,1 unknown.
-void SYS_A25C(uint8_t mask, KeyMod_e key);
+// action_mask bits are dispatched independently; bit 3 handles special keys.
+int32_t SYS_A25C(uint32_t action_mask, KeyMod_e key);
 
 uint32_t CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
 
