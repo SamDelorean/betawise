@@ -12,7 +12,7 @@ uint8_t g_MaxCol;
 void _OS3K_ClearScreen(void);
 void _OS3K_SetCursor(uint8_t row, uint8_t col, CursorMode_e cursor_mode);
 char _OS3K_TranslateKeyToChar(KeyMod_e key);
-uint32_t _OS3K_CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
+uint8_t _OS3K_CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
 int _OS3K_fputc(int c, FILE* stream);
 
 struct Cursor_t {
