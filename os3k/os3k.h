@@ -312,6 +312,9 @@ uint8_t AppletGetName(uint32_t index, char* name_out);
 // the low return byte is contractual: 1 on successful dispatch, 0 on rejection.
 uint8_t AppletSendMessage(uint32_t index, Message_e message, uint32_t param, uint32_t* status);
 
+// Non-interactive master-password comparison. Only the low byte is contractual.
+uint8_t SYS_A24C(const char *password);
+
 // mask=0x8 to process special key. mask=4,2,1 unknown.
 void SYS_A25C(uint8_t mask, KeyMod_e key);
 
