@@ -12,10 +12,10 @@ match this contract, so no source/header change is required.
 
 ## Mechanical evidence
 
-The A354 handler is 0x30 bytes in AS3000 2005, NEO 2005 and NEO 2013. Each version
-contains 14 instructions, one call to the common scan engine, no conditional branch,
-and a single terminal `RTS` at +0x2E. After neutralizing the two callback addresses
-and the scan-engine address, all three handlers have the same SHA-256:
+The A354 handler is 0x30 bytes / 15 decoded instructions in AS3000 2005, NEO 2005
+and NEO 2013. Each version contains one call to the common scan engine, no conditional
+branch, and a single terminal `RTS` at +0x2E. After neutralizing the two callback
+addresses and the scan-engine address, all three handlers have the same SHA-256:
 `08d173ab919600a629e4ba0416e60b5cd40d29dc3deac238f981696f447b3db3`.
 
 Stack dataflow independently establishes the fixed ABI. The first physical slot is
