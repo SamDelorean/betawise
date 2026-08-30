@@ -42,6 +42,7 @@ corpus. Original vendor names are not invented.
 | A2F8 | two physical pointer inputs; destination initialization and source-field transfer reconstructed; D0 mechanically retains `source+0x12` and all observed callers ignore it | **blocked / contractual return intent unknown**; `void` is a very strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
 | A2FC | `uint8_t SYS_A2FC(void *state, uint32_t selector, void *arg3, uint32_t *out_value, void *unused_arg5)` | mechanical A; published; five physical slots, fifth unused; exact final D0 domain 0/1; official callers consume D0.B | [`sys-a2fc-closure.md`](sys-a2fc-closure.md), `os3k/sys_a2fc.h` |
 | A300 | one physical pointer input; state-relative update chain terminating in A2F0; D0 mechanically propagates the A2F0 result | **blocked / contractual return intent unknown**; `void` is a very strong inference only; no callable contract published | [`sys-a300-blocked.md`](sys-a300-blocked.md); private primary evidence retained in Drive |
+| A304 | `uint8_t SYS_A304(void *state, uint16_t value, const char *string)` | mechanical A; published; three physical slots; byte 0/1 return consumed with `TST.B`; generation difference retained | [`sys-a304-closure.md`](sys-a304-closure.md), `os3k/sys_a304.h` |
 
 ## A2E8 publication checkpoint
 
@@ -91,6 +92,19 @@ correlation, and adversarial correction of the return width. Although D0.L is
 mechanically defined as 0 or 1, both official callers consume the result with a
 byte-sized test, so the neutral public interface exposes `uint8_t` rather than
 inventing a wider contract.
+
+## A304 publication checkpoint
+
+A304 was published on `sdk/abi-automation` as:
+
+- `os3k/sys_a304.h`: commit `4fe0df98d475967c7eb1e4a5e7d72f66cf196616`
+- `docs/sys-a304-closure.md`: commit `0307f83bffa464a6f69f9c584dc4d04c6034705b`
+
+The private static regression executed with OVERALL PASS after the complete
+41/41 official SmartApplet caller sweep. AS3000 retains an eight-byte mechanical
+difference from the NEO implementations; NEO 2005 and NEO 2013 normalize to the
+same handler after relocations. The public contract therefore preserves that
+generational difference rather than normalizing it away.
 
 ## Validation policy
 
