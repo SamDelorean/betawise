@@ -67,7 +67,6 @@ Before publication the branch was 88 commits ahead and zero behind `master`,
 with merge-base `a1306c113d5861e7cbed09595d58ec114d30d1b1`. The closure publishes only
 neutral contract and synthetic documentation; ROM bytes and extensive
 workpapers remain private in Drive.
-
 ## A2F4 publication checkpoint
 
 A2F4 was published on `sdk/abi-automation` as:
@@ -106,7 +105,7 @@ difference from the NEO implementations; NEO 2005 and NEO 2013 normalize to the
 same handler after relocations. The public contract therefore preserves that
 generational difference rather than normalizing it away.
 
-## A308–A338 continuation checkpoint
+## A308–A33C continuation checkpoint
 
 | Trap/range | Neutral/current contract | Status | Public evidence |
 | --- | --- | --- | --- |
@@ -116,6 +115,7 @@ generational difference rather than normalizing it away.
 | A330 | `int32_t _OS3K_getchar(void)` | mechanical A; published raw trap; result values 1..255; corrected corpus 12 callers / 41 | [`getchar-closure.md`](getchar-closure.md), `os3k/sys_a330.h` |
 | A334 | `int32_t SYS_A334(void)` | mechanical A; published; blocking character input echoed to stdout; original byte sign-extended to D0.L; callers 0/41 | [`sys-a334-closure.md`](sys-a334-closure.md), `os3k/sys_a334.h` |
 | A338 | handler consumes no caller stack data; abort-like transfer has no ordinary return; exact C prototype unresolved because both observed callers pass an ignored zero longword while historical BetaWise says `abort(void)` | **mechanical A / exact C prototype blocked** | [`sys-a338-blocked.md`](sys-a338-blocked.md) |
+| A33C | `int atoi(const char *str)`; one pointer input, 32-bit D0.L result | mechanical A; published; 67 callers / 41 | [`atoi-closure.md`](atoi-closure.md) |
 
 The null run was not closed by inheritance: indices 195 through 202 were checked
 individually. The 30 official SmartApplets that materialize the relevant A-line
@@ -165,6 +165,18 @@ historical `void abort(void)` prototype, no new callable header is published.
 A338 blocked disposition:
 
 - `docs/sys-a338-blocked.md`: commit `7e6a77abdb3a42ea8fa1593db93581396a41496d`
+
+A33C is a decimal signed string parser. The complete 0x8E-byte handler is equivalent
+across all three canonical ROMs after relocation of two ctype-table references.
+The exhaustive official corpus contains 67 callers across four NEO applets; simple
+sites push one string pointer, clean four bytes, and consume D0.L. A340 is mechanically
+identical, so the nominal A33C=`atoi` / A340=`atol` distinction is retained from the
+historical consecutive syscall mapping rather than invented from nonexistent firmware
+differences.
+
+A33C publication:
+
+- `docs/atoi-closure.md`: commit `d7b9170b0c7e80830a7e0868d750ed456145f987`
 
 ## Validation policy
 
