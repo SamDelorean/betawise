@@ -27,6 +27,7 @@ remains private in Drive.
 | A384 | `char *strchr(const char *str, int c)` | mechanical A / published; NUL-inclusive byte search with pointer/NULL return | [`strchr-closure.md`](strchr-closure.md) |
 | A388 | `int strcmp(const char *str1, const char *str2)` | mechanical A / published; exact unsigned-byte difference return | [`strcmp-closure.md`](strcmp-closure.md) |
 | A38C | `char *strcpy(char *dst, const char *src)` | mechanical A / published; NUL-terminated copy with explicit destination return | [`strcpy-closure.md`](strcpy-closure.md) |
+| A390 | `size_t strlen(const char *str)` | mechanical A / published; 32-bit NUL-terminated string length | [`strlen-closure.md`](strlen-closure.md) |
 
 ## Evidence discipline
 
@@ -174,6 +175,16 @@ executable callers in 24 table-bearing applets; six table-bearing and 11
 structural applets are negative. Direct firmware JSR counts are 25/25/27 for
 AS3000 2005 / NEO 2005 / NEO 2013. `memcpy`, `strncpy`, `memmove`, `strcat` and
 a void-only copy are mechanically incompatible alternatives.
+
+A390 is a byte-identical 0x12-byte string-length primitive across all three
+canonical ROMs. It consumes one string pointer, preserves the start, walks
+through the terminating NUL and returns `cursor_after_nul - start - 1` in
+`D0.L`. The complete official corpus finds 477 executable callers in 26
+ table-bearing applets; four table-bearing and 11 structural applets are
+negative. Representative callers clean one 32-bit argument slot and consume the
+full longword result. Direct firmware JSR counts are 36/37/53 for AS3000 2005 /
+NEO 2005 / NEO 2013. Character search, `strnlen`, void scanning and a 16-bit
+length contract are mechanically incompatible alternatives.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
