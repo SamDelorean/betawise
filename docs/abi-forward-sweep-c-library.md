@@ -14,6 +14,7 @@ remains private in Drive.
 | A350 | `int _OS3K_fputc(int c, FILE *stream)` | mechanical A / published raw trap; public `fputc()` remains a separate BetaWise wrapper | [`fputc-closure.md`](fputc-closure.md), `../os3k/sys_a350.h` |
 | A354 | `int fscanf(FILE *stream, const char *fmt, ...)` | mechanical A / published; same scan engine as A344 with stream adapters | [`fscanf-closure.md`](fscanf-closure.md) |
 | A358 | `void *memchr(const void *ptr, int value, size_t num)` | mechanical A / published; bounded byte scan confirmed independently | [`memchr-closure.md`](memchr-closure.md) |
+| A35C | `int memcmp(const void *ptr1, const void *ptr2, size_t num)` | mechanical A / published; ordered unsigned-byte comparison | [`memcmp-closure.md`](memcmp-closure.md) |
 
 ## Evidence discipline
 
@@ -44,6 +45,12 @@ uses three physical slots, compares the low byte of the second against each byte
 in the half-open range `[ptr, ptr + num)`, and returns the first matching address
 or NULL. Four official NEO callers independently confirm the three-slot ABI and
 consume D0.L as a pointer/NULL result.
+
+A35C is also byte-identical across the three canonical ROMs. Its 0x30-byte
+handler consumes two pointers and a full 32-bit count, compares bytes in unsigned
+order, and returns normalized `-1`, `0`, or `+1`. Five direct ROM callers per
+generation and three executable Wireless Update callers independently confirm
+the three-slot ABI and consume the full comparison result.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
