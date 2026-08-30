@@ -24,7 +24,9 @@ The firmware also references the same current-applet runtime state already corre
 
 ## Caller survey
 
-The official SmartApplet corpus was exhausted: 30 applets with the relevant A-line table plus 11 structural negatives without it. Exactly three executable A330 callers were found, all in Accelerated Reader. One propagates D0 directly to its own return, one tests D0 with `TST.L`, and one later overwrites it. No caller-side cleanup occurs, matching zero arguments.
+The official SmartApplet corpus was exhausted with the corrected PC-index detector: 30 applets with the relevant A-line table plus 11 structural negatives without it. The exhaustive scan finds **12 executable A330 callers across seven NEO applets** and none in the AS3000 table-bearing cohort: Accelerated Reader (3), Keywords Wireless (3), MathFacts in a Flash (2), MathFacts Offline (1), Responder (1), Text2Speech Update (1), and Wireless File Transfer (1).
+
+Several sites provide independent contractual evidence: multiple callers propagate D0 directly through an immediate `RTS`, Accelerated Reader also tests the result with `TST.L`, while other sites overwrite or clobber D0 later. No caller-side cleanup occurs, matching zero arguments. This supersedes the earlier partial count of three callers in Accelerated Reader; the ABI conclusion itself is unchanged.
 
 This caller evidence independently rejects a `void` contract and confirms that the full longword result is observable at the ABI boundary.
 
@@ -40,6 +42,6 @@ AS3000 2005, NEO 2005, and NEO 2013 have the same control flow and result behavi
 - The `getchar` functional identity is retained because the historical raw-stub name, reconstructed firmware behavior, neighboring C-library block, official callers, and independent wrapper behavior all converge.
 - Standard-C `EOF == -1` behavior is **not** asserted for these ROMs because no negative path is present in the reconstructed handler.
 
-Private workpapers retain ROM hashes, exact offsets and handler hashes, the 41/41 caller scan, correlated helper details, and static regression.
+Private workpapers retain ROM hashes, exact offsets and handler hashes, the corrected 41/41 caller scan, correlated helper details, and static regression.
 
 Static regression: **OVERALL PASS**. Dynamic regression: **not executed**.
