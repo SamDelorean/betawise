@@ -106,7 +106,7 @@ difference from the NEO implementations; NEO 2005 and NEO 2013 normalize to the
 same handler after relocations. The public contract therefore preserves that
 generational difference rather than normalizing it away.
 
-## A308–A334 continuation checkpoint
+## A308–A338 continuation checkpoint
 
 | Trap/range | Neutral/current contract | Status | Public evidence |
 | --- | --- | --- | --- |
@@ -115,6 +115,7 @@ generational difference rather than normalizing it away.
 | A32C | `uint32_t SYS_A32C(void)` | mechanical A; published; zero arguments; full-long getter result | [`sys-a32c-closure.md`](sys-a32c-closure.md), `os3k/sys_a32c.h` |
 | A330 | `int32_t _OS3K_getchar(void)` | mechanical A; published raw trap; result values 1..255; corrected corpus 12 callers / 41 | [`getchar-closure.md`](getchar-closure.md), `os3k/sys_a330.h` |
 | A334 | `int32_t SYS_A334(void)` | mechanical A; published; blocking character input echoed to stdout; original byte sign-extended to D0.L; callers 0/41 | [`sys-a334-closure.md`](sys-a334-closure.md), `os3k/sys_a334.h` |
+| A338 | handler consumes no caller stack data; abort-like transfer has no ordinary return; exact C prototype unresolved because both observed callers pass an ignored zero longword while historical BetaWise says `abort(void)` | **mechanical A / exact C prototype blocked** | [`sys-a338-blocked.md`](sys-a338-blocked.md) |
 
 The null run was not closed by inheritance: indices 195 through 202 were checked
 individually. The 30 official SmartApplets that materialize the relevant A-line
@@ -153,10 +154,23 @@ A334 publication:
 - `os3k/sys_a334.h`: commit `8f6c49c023901849d1748095207159cbef244f14`
 - `docs/sys-a334-closure.md`: commit `6258d5b3a5f3644311fdc396330b074eee436752`
 
+A338 sets bit 7 in the current-applet runtime state and enters the same stack-
+replacing control-transfer trampoline used by A330's KEY_APPLETS path. The
+trampoline clears A6 and jumps onward after replacing A7, so ordinary return is
+abandoned. The exhaustive official corpus finds two A338 callers, one AS3000 and
+one NEO; both pass and then clean one zero longword even though the handler never
+reads caller stack data. Because that primary caller evidence conflicts with the
+historical `void abort(void)` prototype, no new callable header is published.
+
+A338 blocked disposition:
+
+- `docs/sys-a338-blocked.md`: commit `7e6a77abdb3a42ea8fa1593db93581396a41496d`
+
 ## Validation policy
 
 All entries marked mechanical A were reconstructed from primary firmware and
 correlated evidence under the project methodology. A regression marked
 "specified" in a closure document is not reported as executed unless that
-closure explicitly records execution. Blocks A2B0, A2E4, A2EC, A2F8, A300 and
-A308 remain deliberately blocked rather than receiving guessed return types.
+closure explicitly records execution. Blocks A2B0, A2E4, A2EC, A2F8, A300,
+A308 and A338 remain deliberately blocked rather than receiving guessed
+contractual prototypes or return types.
