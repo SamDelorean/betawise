@@ -29,6 +29,7 @@ remains private in Drive.
 | A38C | `char *strcpy(char *dst, const char *src)` | mechanical A / published; NUL-terminated copy with explicit destination return | [`strcpy-closure.md`](strcpy-closure.md) |
 | A390 | `size_t strlen(const char *str)` | mechanical A / published; 32-bit NUL-terminated string length | [`strlen-closure.md`](strlen-closure.md) |
 | A394 | `char *strncat(char *dst, const char *src, size_t num)` | mechanical A / published; bounded append, zero-count read-before-buffer quirk documented | [`strncat-closure.md`](strncat-closure.md) |
+| A398 | `int strncmp(const char *str1, const char *str2, size_t num)` | mechanical A / published; bounded unsigned-byte comparison with zero-count no-read path | [`strncmp-closure.md`](strncmp-closure.md) |
 
 ## Evidence discipline
 
@@ -198,6 +199,16 @@ counts are 1/1/1. A zero count preserves the visible destination but the common
 epilogue still tests `-1(A1)`; when the destination is empty this reads one byte
 before `dst`. The read-before-buffer edge case is documented as an implementation
 quirk, not as required API behavior.
+
+A398 is a byte-identical 0x3A-byte bounded string comparator across all three
+canonical ROMs. Its count gate runs before the first string read, so `num==0`
+returns zero without dereferencing either input. For positive counts it compares
+NUL-terminated bytes until mismatch, terminator or count exhaustion. A mismatch
+returns the exact difference of zero-extended bytes; exhausting the count after
+equal bytes returns zero without reading the next byte. The official corpus
+finds 48 executable callers in eight applets and direct firmware JSR counts are
+2/2/2. Representative callers use a 32-bit count, clean 12 bytes and consume the
+full `D0.L` result.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
