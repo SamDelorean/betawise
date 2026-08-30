@@ -20,6 +20,7 @@ remains private in Drive.
 | A368 | `void *memset(void *ptr, int value, size_t num)` | mechanical A / published; exact byte fill and explicit destination return | [`memset-closure.md`](memset-closure.md) |
 | A36C | `int printf(const char *fmt, ...)` | mechanical A / published; stdout wrapper over the common formatter | [`printf-closure.md`](printf-closure.md) |
 | A370 | `int rand(void)` | mechanical A / published; 32-bit LCG and 15-bit result confirmed cross-ROM | [`rand-closure.md`](rand-closure.md) |
+| A374 | `int scanf(const char *fmt, ...)` | mechanical A / published; stdin wrapper over the common scan engine | [`scanf-closure.md`](scanf-closure.md) |
 
 ## Evidence discipline
 
@@ -97,6 +98,15 @@ mechanical seed-state correlation without relying on the historical symbol map.
 The official SmartApplet sweep is 0/41 and direct ROM xrefs are negative; the
 same corrected detector finds 99 A36C calls and 598 A378 calls as positive
 controls.
+
+A374 is the stdin-specific member of the common scan-wrapper family. It treats
+entry `S+4` as `fmt`, forms `&S+8` for the variadic tail, installs the same
+A348/fgetc and A3B0 unget callbacks used by A354/fscanf, supplies the stream
+descriptor whose stored value is `0`, sets scan mode 0, and calls the exact same
+scan engine as A354. A354 differs only by accepting the stream externally and
+therefore shifting `fmt`/varargs one slot. A344/sscanf uses string adapters and
+mode 1. A374 preserves the engine's D0.L return. The official sweep is 0/41;
+positive controls from the same detector are A36C=99 and A378=598.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
