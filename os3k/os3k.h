@@ -337,7 +337,7 @@ void abort(void);
 int atoi(const char *str);
 long atol(const char *str);
 int sscanf(const char* str, const char* fmt, ...);
-char* fgets(char* str, int num, FILE* stream);
+int fgetc(FILE* stream);
 int fprintf(FILE* stream, const char* fmt, ...);
 int fputc(int c, FILE* stream);
 int fscanf(FILE* stream, const char* fmt, ...);
