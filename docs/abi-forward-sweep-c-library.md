@@ -24,6 +24,7 @@ remains private in Drive.
 | A378 | `int sprintf(char *str, const char *fmt, ...)` | mechanical A / published; string-output wrapper over the common formatter | [`sprintf-closure.md`](sprintf-closure.md) |
 | A37C | `void srand(unsigned int seed)` | mechanical A / published; verbatim setter for the A370/`rand` 32-bit state | [`srand-closure.md`](srand-closure.md) |
 | A380 | `char *strcat(char *dst, const char *src)` | mechanical A / published; NUL-terminated append with explicit destination return | [`strcat-closure.md`](strcat-closure.md) |
+| A384 | `char *strchr(const char *str, int c)` | mechanical A / published; NUL-inclusive byte search with pointer/NULL return | [`strchr-closure.md`](strchr-closure.md) |
 
 ## Evidence discipline
 
@@ -138,6 +139,17 @@ argument or bounds check is present. The complete official corpus finds 130
 executable callers in 16 applets; 14 table-bearing applets and the 11 applets
 without an A-line table are negative. Direct firmware JSR counts are 9/9/9.
 `strcpy`, `strncat` and `memcpy` are mechanically incompatible alternatives.
+
+A384 is a byte-identical 0x1A-byte NUL-terminated search primitive across all
+three canonical ROMs. It consumes a string pointer and a 32-bit character slot,
+compares only the low byte, and performs the character comparison before testing
+the current byte for NUL. Consequently `c == 0` returns the terminator address;
+a missing nonzero byte returns NULL; and a match returns the current string
+pointer in `D0.L`. The complete official corpus finds 24 executable callers in
+three NEO applets, with concrete promoted character arguments and pointer/NULL
+return consumption. Direct firmware JSR counts are 5/5/11 for AS3000 2005 /
+NEO 2005 / NEO 2013. `memchr`, boolean-only search and NUL-excluding search are
+mechanically incompatible alternatives.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
