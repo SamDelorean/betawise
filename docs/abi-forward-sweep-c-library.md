@@ -12,6 +12,7 @@ remains private in Drive.
 | A348 | `int fgetc(FILE *stream)` | mechanical A / published; historical `fgets` mapping corrected as ABI-incompatible | [`fgetc-closure.md`](fgetc-closure.md) |
 | A34C | `int fprintf(FILE *stream, const char *fmt, ...)` | mechanical A / published | [`fprintf-closure.md`](fprintf-closure.md) |
 | A350 | `int _OS3K_fputc(int c, FILE *stream)` | mechanical A / published raw trap; public `fputc()` remains a separate BetaWise wrapper | [`fputc-closure.md`](fputc-closure.md), `../os3k/sys_a350.h` |
+| A354 | `int fscanf(FILE *stream, const char *fmt, ...)` | mechanical A / published; same scan engine as A344 with stream adapters | [`fscanf-closure.md`](fscanf-closure.md) |
 
 ## Evidence discipline
 
@@ -28,6 +29,14 @@ failure, is called directly from A334, and is used as the output callback by
 A34C's formatter wrapper. The official SmartApplet sweep is a validated negative
 0/41 for direct A350 trap callers; OS-internal use supplies the positive ABI
 correlation.
+
+A354 is the stream-input counterpart of the already closed A344 scan wrapper.
+Its 0x30-byte handler forms the first-vararg pointer, forwards the format slot,
+installs A348 and A3B0 as stream adapters, passes the stream context with mode 0,
+and calls the exact same common scan engine used by A344/`sscanf` with its
+string adapters and mode 1. The engine's full D0 result is returned unchanged.
+The official SmartApplet sweep is a validated negative 0/41; the same detector
+reproduces the canonical A330 and A33C positive controls.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
