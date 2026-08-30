@@ -39,9 +39,9 @@ corpus. Original vendor names are not invented.
 | A2EC | mechanics, stack accesses, optional pointer outputs and cross-generation control flow reconstructed; D0 mechanically propagates from a terminal helper but no observed caller consumes it | **blocked / contractual return intent unknown**; `void` is strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
 | A2F0 | `uint32_t SYS_A2F0(uint32_t arg1_slot, void *state, uint32_t arg3_slot)` | mechanical A; published; three physical slots; low16/ptr/low8 consumption; raw D0.L status | [`sys-a2f0-closure.md`](sys-a2f0-closure.md), `os3k/sys_a2f0.h` |
 | A2F4 | `uint32_t SYS_A2F4(void *state, uint32_t message, uint32_t param, void *arg4, uint32_t *out_value)` | mechanical A; published; five physical slots; writable output; contractual raw D0.L 0/1 | [`sys-a2f4-closure.md`](sys-a2f4-closure.md), `os3k/sys_a2f4.h` |
-| A2F8 | two physical pointer inputs; destination initialization and source-field transfer reconstructed; D0 mechanically retains `source+0x12` and all observed callers ignore it | **blocked / contractual return intent unknown**; `void` is a very strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
+| A2F8 | two physical pointer inputs; destination initialization and source-field transfer reconstructed; D0 mechanically retains `source+0x12` and all observed callers ignore it | **blocked / contractual return unknown**; `void` is a very strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
 | A2FC | `uint8_t SYS_A2FC(void *state, uint32_t selector, void *arg3, uint32_t *out_value, void *unused_arg5)` | mechanical A; published; five physical slots, fifth unused; exact final D0 domain 0/1; official callers consume D0.B | [`sys-a2fc-closure.md`](sys-a2fc-closure.md), `os3k/sys_a2fc.h` |
-| A300 | one physical pointer input; state-relative update chain terminating in A2F0; D0 mechanically propagates the A2F0 result | **blocked / contractual return intent unknown**; `void` is a very strong inference only; no callable contract published | [`sys-a300-blocked.md`](sys-a300-blocked.md); private primary evidence retained in Drive |
+| A300 | one physical pointer input; state-relative update chain terminating in A2F0; D0 mechanically propagates the A2F0 result | **blocked / contractual return unknown**; `void` is a very strong inference only; no callable contract published | [`sys-a300-blocked.md`](sys-a300-blocked.md); private primary evidence retained in Drive |
 | A304 | `uint8_t SYS_A304(void *state, uint16_t value, const char *string)` | mechanical A; published; three physical slots; byte 0/1 return consumed with `TST.B`; generation difference retained | [`sys-a304-closure.md`](sys-a304-closure.md), `os3k/sys_a304.h` |
 
 ## A2E8 publication checkpoint
@@ -106,13 +106,14 @@ difference from the NEO implementations; NEO 2005 and NEO 2013 normalize to the
 same handler after relocations. The public contract therefore preserves that
 generational difference rather than normalizing it away.
 
-## A308–A32C continuation checkpoint
+## A308–A330 continuation checkpoint
 
 | Trap/range | Neutral/current contract | Status | Public evidence |
 | --- | --- | --- | --- |
 | A308 | one physical pointer input; contractual return intent unresolved | **blocked / contractual return unknown**; `void` remains a very strong inference only | [`sys-a308-blocked.md`](sys-a308-blocked.md) |
 | A30C–A328 | no callable contract; each A-line vector is `0x00000000` in all three canonical ROMs | mechanical A; each index individually verified as a confirmed null vector | [`sys-a30c-null-vector.md`](sys-a30c-null-vector.md), [`sys-a310-null-vector.md`](sys-a310-null-vector.md), [`sys-a314-null-vector.md`](sys-a314-null-vector.md), [`sys-a318-null-vector.md`](sys-a318-null-vector.md), [`sys-a31c-null-vector.md`](sys-a31c-null-vector.md), [`sys-a320-null-vector.md`](sys-a320-null-vector.md), [`sys-a324-null-vector.md`](sys-a324-null-vector.md), [`sys-a328-null-vector.md`](sys-a328-null-vector.md) |
 | A32C | `uint32_t SYS_A32C(void)` | mechanical A; published; zero arguments; full-long getter result | [`sys-a32c-closure.md`](sys-a32c-closure.md), `os3k/sys_a32c.h` |
+| A330 | `int32_t _OS3K_getchar(void)` | mechanical A; published raw trap; result values 1..255; no EOF path observed | [`getchar-closure.md`](getchar-closure.md), `os3k/sys_a330.h` |
 
 The null run was not closed by inheritance: indices 195 through 202 were checked
 individually. The 30 official SmartApplets that materialize the relevant A-line
@@ -126,6 +127,17 @@ A32C publication:
 
 - `os3k/sys_a32c.h`: commit `46b4759e57239800b7ced44ceba8b58bb9069e74`
 - `docs/sys-a32c-closure.md`: commit `79bdfa82c1bac32030aaabe46adea8dd64b2036b`
+
+A330 is the next real C-library entry. Its firmware handler and official callers
+confirm a blocking character getter. BetaWise's raw trap `_OS3K_getchar` and its
+separate public `getchar()` wrapper are intentionally documented as distinct
+layers. The handler returns a nonzero character zero-extended to D0.L and has no
+observed negative/EOF path.
+
+A330 publication:
+
+- corrected `docs/getchar-closure.md`: commit `96641fb8936c545f52363248a0d9513da3705082`
+- `os3k/sys_a330.h`: commit `b7401a5fe43d2b1af0b57810a0afc42483b193e6`
 
 ## Validation policy
 
