@@ -37,6 +37,7 @@ corpus. Original vendor names are not invented.
 | A2E4 | two mandatory pointer inputs; confirmed memset/copy effects; D0 mechanically retains destination pointer | **blocked / contractual return intent unknown**; no public callable contract | no public contract; private evidence retained in Drive |
 | A2E8 | `uint8_t SYS_A2E8(void *state, uint32_t selector, void *arg3, uint32_t *out_value, void *unused_arg5)` | mechanical A; published; five physical slots, fifth unused by all compared handlers; exact final D0 domain 0/1 and official callers consume D0.B | [`sys-a2e8-closure.md`](sys-a2e8-closure.md), `os3k/sys_a2e8.h` |
 | A2EC | mechanics, stack accesses, optional pointer outputs and cross-generation control flow reconstructed; D0 mechanically propagates from a terminal helper but no observed caller consumes it | **blocked / contractual return intent unknown**; `void` is strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
+| A2F0 | `uint32_t SYS_A2F0(uint32_t arg1_slot, void *state, uint32_t arg3_slot)` | mechanical A; published; three physical slots; low16/ptr/low8 consumption; raw D0.L status | [`sys-a2f0-closure.md`](sys-a2f0-closure.md), `os3k/sys_a2f0.h` |
 
 ## A2E8 publication checkpoint
 
@@ -49,6 +50,18 @@ The authoritative branch comparison before and after publication was linear with
 `master`: merge-base `a1306c113d5861e7cbed09595d58ec114d30d1b1`,
 zero commits behind. No firmware, ROM bytes or extensive disassembly are stored
 in this public supplement.
+
+## A2F0 publication checkpoint
+
+A2F0 was published on `sdk/abi-automation` as:
+
+- `os3k/sys_a2f0.h`: commit `5b1d30d7ceea32bc4b15524cafe744ff61158f61`
+- `docs/sys-a2f0-closure.md`: commit `db12a3877ff57a5b399c49c94973cb0b3ccce743`
+
+Before publication the branch was 88 commits ahead and zero behind `master`,
+with merge-base `a1306c113d5861e7cbed09595d58ec114d30d1b1`. The closure publishes only
+neutral contract and synthetic documentation; ROM bytes and extensive
+workpapers remain private in Drive.
 
 ## Validation policy
 
