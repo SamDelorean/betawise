@@ -106,10 +106,31 @@ difference from the NEO implementations; NEO 2005 and NEO 2013 normalize to the
 same handler after relocations. The public contract therefore preserves that
 generational difference rather than normalizing it away.
 
+## A308–A32C continuation checkpoint
+
+| Trap/range | Neutral/current contract | Status | Public evidence |
+| --- | --- | --- | --- |
+| A308 | one physical pointer input; contractual return intent unresolved | **blocked / contractual return unknown**; `void` remains a very strong inference only | [`sys-a308-blocked.md`](sys-a308-blocked.md) |
+| A30C–A328 | no callable contract; each A-line vector is `0x00000000` in all three canonical ROMs | mechanical A; each index individually verified as a confirmed null vector | [`sys-a30c-null-vector.md`](sys-a30c-null-vector.md), [`sys-a310-null-vector.md`](sys-a310-null-vector.md), [`sys-a314-null-vector.md`](sys-a314-null-vector.md), [`sys-a318-null-vector.md`](sys-a318-null-vector.md), [`sys-a31c-null-vector.md`](sys-a31c-null-vector.md), [`sys-a320-null-vector.md`](sys-a320-null-vector.md), [`sys-a324-null-vector.md`](sys-a324-null-vector.md), [`sys-a328-null-vector.md`](sys-a328-null-vector.md) |
+| A32C | `uint32_t SYS_A32C(void)` | mechanical A; published; zero arguments; full-long getter result | [`sys-a32c-closure.md`](sys-a32c-closure.md), `os3k/sys_a32c.h` |
+
+The null run was not closed by inheritance: indices 195 through 202 were checked
+individually. The 30 official SmartApplets that materialize the relevant A-line
+table omit those null slots physically and go directly from A308 to A32C; the
+remaining 11 applets are structural negatives. A32C is the first non-null entry
+after that run. Its complete implementation is a full-long global load into D0
+followed by `RTS`. Writers strongly correlate the global with C-library error
+state, but `errno` remains an inference rather than a recovered vendor symbol.
+
+A32C publication:
+
+- `os3k/sys_a32c.h`: commit `46b4759e57239800b7ced44ceba8b58bb9069e74`
+- `docs/sys-a32c-closure.md`: commit `79bdfa82c1bac32030aaabe46adea8dd64b2036b`
+
 ## Validation policy
 
 All entries marked mechanical A were reconstructed from primary firmware and
 correlated evidence under the project methodology. A regression marked
 "specified" in a closure document is not reported as executed unless that
-closure explicitly records execution. Blocks A2B0, A2E4, A2EC, A2F8 and A300
-remain deliberately blocked rather than receiving guessed return types.
+closure explicitly records execution. Blocks A2B0, A2E4, A2EC, A2F8, A300 and
+A308 remain deliberately blocked rather than receiving guessed return types.
