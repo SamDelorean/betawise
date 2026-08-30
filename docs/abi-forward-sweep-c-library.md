@@ -28,6 +28,7 @@ remains private in Drive.
 | A388 | `int strcmp(const char *str1, const char *str2)` | mechanical A / published; exact unsigned-byte difference return | [`strcmp-closure.md`](strcmp-closure.md) |
 | A38C | `char *strcpy(char *dst, const char *src)` | mechanical A / published; NUL-terminated copy with explicit destination return | [`strcpy-closure.md`](strcpy-closure.md) |
 | A390 | `size_t strlen(const char *str)` | mechanical A / published; 32-bit NUL-terminated string length | [`strlen-closure.md`](strlen-closure.md) |
+| A394 | `char *strncat(char *dst, const char *src, size_t num)` | mechanical A / published; bounded append, zero-count read-before-buffer quirk documented | [`strncat-closure.md`](strncat-closure.md) |
 
 ## Evidence discipline
 
@@ -180,11 +181,23 @@ A390 is a byte-identical 0x12-byte string-length primitive across all three
 canonical ROMs. It consumes one string pointer, preserves the start, walks
 through the terminating NUL and returns `cursor_after_nul - start - 1` in
 `D0.L`. The complete official corpus finds 477 executable callers in 26
- table-bearing applets; four table-bearing and 11 structural applets are
+table-bearing applets; four table-bearing and 11 structural applets are
 negative. Representative callers clean one 32-bit argument slot and consume the
 full longword result. Direct firmware JSR counts are 36/37/53 for AS3000 2005 /
 NEO 2005 / NEO 2013. Character search, `strnlen`, void scanning and a 16-bit
 length contract are mechanically incompatible alternatives.
+
+A394 is a byte-identical 0x3E-byte bounded string-append primitive across all
+three canonical ROMs. It consumes destination, source and a 32-bit count, finds
+the destination terminator, copies up to the count while respecting source NUL,
+adds a terminator when the count is exhausted on a non-NUL byte, and returns the
+original destination. The complete official corpus has five executable callers
+in three applets; AlphaQuiz derives a count as `60 - strlen(...)`, strongly
+confirming the third slot as a remaining-capacity count. Direct firmware JSR
+counts are 1/1/1. A zero count preserves the visible destination but the common
+epilogue still tests `-1(A1)`; when the destination is empty this reads one byte
+before `dst`. The read-before-buffer edge case is documented as an implementation
+quirk, not as required API behavior.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
