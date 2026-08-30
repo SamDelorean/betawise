@@ -13,6 +13,7 @@ remains private in Drive.
 | A34C | `int fprintf(FILE *stream, const char *fmt, ...)` | mechanical A / published | [`fprintf-closure.md`](fprintf-closure.md) |
 | A350 | `int _OS3K_fputc(int c, FILE *stream)` | mechanical A / published raw trap; public `fputc()` remains a separate BetaWise wrapper | [`fputc-closure.md`](fputc-closure.md), `../os3k/sys_a350.h` |
 | A354 | `int fscanf(FILE *stream, const char *fmt, ...)` | mechanical A / published; same scan engine as A344 with stream adapters | [`fscanf-closure.md`](fscanf-closure.md) |
+| A358 | `void *memchr(const void *ptr, int value, size_t num)` | mechanical A / published; bounded byte scan confirmed independently | [`memchr-closure.md`](memchr-closure.md) |
 
 ## Evidence discipline
 
@@ -37,6 +38,12 @@ and calls the exact same common scan engine used by A344/`sscanf` with its
 string adapters and mode 1. The engine's full D0 result is returned unchanged.
 The official SmartApplet sweep is a validated negative 0/41; the same detector
 reproduces the canonical A330 and A33C positive controls.
+
+A358 is byte-identical across all three canonical ROMs. Its 0x26-byte handler
+uses three physical slots, compares the low byte of the second against each byte
+in the half-open range `[ptr, ptr + num)`, and returns the first matching address
+or NULL. Four official NEO callers independently confirm the three-slot ABI and
+consume D0.L as a pointer/NULL result.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
