@@ -41,6 +41,7 @@ corpus. Original vendor names are not invented.
 | A2F4 | `uint32_t SYS_A2F4(void *state, uint32_t message, uint32_t param, void *arg4, uint32_t *out_value)` | mechanical A; published; five physical slots; writable output; contractual raw D0.L 0/1 | [`sys-a2f4-closure.md`](sys-a2f4-closure.md), `os3k/sys_a2f4.h` |
 | A2F8 | two physical pointer inputs; destination initialization and source-field transfer reconstructed; D0 mechanically retains `source+0x12` and all observed callers ignore it | **blocked / contractual return intent unknown**; `void` is a very strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
 | A2FC | `uint8_t SYS_A2FC(void *state, uint32_t selector, void *arg3, uint32_t *out_value, void *unused_arg5)` | mechanical A; published; five physical slots, fifth unused; exact final D0 domain 0/1; official callers consume D0.B | [`sys-a2fc-closure.md`](sys-a2fc-closure.md), `os3k/sys_a2fc.h` |
+| A300 | one physical pointer input; state-relative update chain terminating in A2F0; D0 mechanically propagates the A2F0 result | **blocked / contractual return intent unknown**; `void` is a very strong inference only; no callable contract published | [`sys-a300-blocked.md`](sys-a300-blocked.md); private primary evidence retained in Drive |
 
 ## A2E8 publication checkpoint
 
@@ -96,5 +97,5 @@ inventing a wider contract.
 All entries marked mechanical A were reconstructed from primary firmware and
 correlated evidence under the project methodology. A regression marked
 "specified" in a closure document is not reported as executed unless that
-closure explicitly records execution. Blocks A2B0, A2E4, A2EC and A2F8 remain
-deliberately blocked rather than receiving guessed return types.
+closure explicitly records execution. Blocks A2B0, A2E4, A2EC, A2F8 and A300
+remain deliberately blocked rather than receiving guessed return types.
