@@ -25,6 +25,7 @@ remains private in Drive.
 | A37C | `void srand(unsigned int seed)` | mechanical A / published; verbatim setter for the A370/`rand` 32-bit state | [`srand-closure.md`](srand-closure.md) |
 | A380 | `char *strcat(char *dst, const char *src)` | mechanical A / published; NUL-terminated append with explicit destination return | [`strcat-closure.md`](strcat-closure.md) |
 | A384 | `char *strchr(const char *str, int c)` | mechanical A / published; NUL-inclusive byte search with pointer/NULL return | [`strchr-closure.md`](strchr-closure.md) |
+| A388 | `int strcmp(const char *str1, const char *str2)` | mechanical A / published; exact unsigned-byte difference return | [`strcmp-closure.md`](strcmp-closure.md) |
 
 ## Evidence discipline
 
@@ -150,6 +151,18 @@ three NEO applets, with concrete promoted character arguments and pointer/NULL
 return consumption. Direct firmware JSR counts are 5/5/11 for AS3000 2005 /
 NEO 2005 / NEO 2013. `memchr`, boolean-only search and NUL-excluding search are
 mechanically incompatible alternatives.
+
+A388 is a byte-identical 0x24-byte string comparator across all three canonical
+ROMs. It advances two pointers while current bytes are equal and nonzero. At the
+first mismatch or shared terminator it zero-extends both current bytes and
+returns their exact difference in `D0.L`. Therefore the implementation has the
+standard `strcmp` zero/sign semantics with unsigned-byte lexical ordering, plus
+a reproducible implementation-specific magnitude in the range -255..255. The
+complete official corpus finds 244 executable callers in 16 applets. Most use
+equality/inequality, while an AcceleratedReader caller consumes the sign with
+`BLE`, independently proving an ordering contract. Direct firmware JSR counts
+are 7/6/7 for AS3000 2005 / NEO 2005 / NEO 2013. `strncmp`, `memcmp`, a
+case-insensitive comparator and a boolean-only predicate are incompatible.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
