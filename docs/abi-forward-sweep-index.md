@@ -38,6 +38,7 @@ corpus. Original vendor names are not invented.
 | A2E8 | `uint8_t SYS_A2E8(void *state, uint32_t selector, void *arg3, uint32_t *out_value, void *unused_arg5)` | mechanical A; published; five physical slots, fifth unused by all compared handlers; exact final D0 domain 0/1 and official callers consume D0.B | [`sys-a2e8-closure.md`](sys-a2e8-closure.md), `os3k/sys_a2e8.h` |
 | A2EC | mechanics, stack accesses, optional pointer outputs and cross-generation control flow reconstructed; D0 mechanically propagates from a terminal helper but no observed caller consumes it | **blocked / contractual return intent unknown**; `void` is strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
 | A2F0 | `uint32_t SYS_A2F0(uint32_t arg1_slot, void *state, uint32_t arg3_slot)` | mechanical A; published; three physical slots; low16/ptr/low8 consumption; raw D0.L status | [`sys-a2f0-closure.md`](sys-a2f0-closure.md), `os3k/sys_a2f0.h` |
+| A2F4 | `uint32_t SYS_A2F4(void *state, uint32_t message, uint32_t param, void *arg4, uint32_t *out_value)` | mechanical A; published; five physical slots; writable output; contractual raw D0.L 0/1 | [`sys-a2f4-closure.md`](sys-a2f4-closure.md), `os3k/sys_a2f4.h` |
 
 ## A2E8 publication checkpoint
 
@@ -62,6 +63,17 @@ Before publication the branch was 88 commits ahead and zero behind `master`,
 with merge-base `a1306c113d5861e7cbed09595d58ec114d30d1b1`. The closure publishes only
 neutral contract and synthetic documentation; ROM bytes and extensive
 workpapers remain private in Drive.
+
+## A2F4 publication checkpoint
+
+A2F4 was published on `sdk/abi-automation` as:
+
+- `os3k/sys_a2f4.h`: commit `2cf5740e581440ac55f7ac747033a9c8f92b54b2`
+- `docs/sys-a2f4-closure.md`: commit `89ed3b1f2b9e47848dbe2ee3920bbbddfe0735fc`
+
+The corrected static regression passed after the exhaustive 41/41 official
+SmartApplet caller sweep. The public material contains only the neutral ABI and
+functional closure; ROM bytes and extensive disassembly remain private in Drive.
 
 ## Validation policy
 
