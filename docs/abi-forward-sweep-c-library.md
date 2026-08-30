@@ -18,6 +18,7 @@ remains private in Drive.
 | A360 | `void *memcpy(void *dst, const void *src, size_t num)` | mechanical A / published; forward bounded copy with explicit destination return | [`memcpy-closure.md`](memcpy-closure.md) |
 | A364 | `void *memmove(void *dst, const void *src, size_t num)` | mechanical A / published; forward/backward overlap-safe move | [`memmove-closure.md`](memmove-closure.md) |
 | A368 | `void *memset(void *ptr, int value, size_t num)` | mechanical A / published; exact byte fill and explicit destination return | [`memset-closure.md`](memset-closure.md) |
+| A36C | `int printf(const char *fmt, ...)` | mechanical A / published; stdout wrapper over the common formatter | [`printf-closure.md`](printf-closure.md) |
 
 ## Evidence discipline
 
@@ -78,6 +79,14 @@ write exactly the requested number of bytes. The original destination is
 explicitly returned in D0.L. The complete official sweep finds 100 executable
 callers in 21 table-bearing applets, and direct firmware JSR counts are 22/30/34
 for AS3000 2005 / NEO 2005 / NEO 2013.
+
+A36C is a thin stdout formatter wrapper. It has one fixed external argument,
+forms a pointer to the variadic tail, supplies the OS stream descriptor whose
+stored value is `1`, installs A350 / `_OS3K_fputc` as the output callback, and
+calls the same common formatter used by A34C / `fprintf`. The formatter's
+`D0.L` result is returned unchanged. The validated official sweep finds 99
+callers in 13 applets; direct firmware JSR counts are 7/7/11 across AS3000 2005,
+NEO 2005 and NEO 2013.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
