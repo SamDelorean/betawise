@@ -106,14 +106,15 @@ difference from the NEO implementations; NEO 2005 and NEO 2013 normalize to the
 same handler after relocations. The public contract therefore preserves that
 generational difference rather than normalizing it away.
 
-## A308–A330 continuation checkpoint
+## A308–A334 continuation checkpoint
 
 | Trap/range | Neutral/current contract | Status | Public evidence |
 | --- | --- | --- | --- |
 | A308 | one physical pointer input; contractual return intent unresolved | **blocked / contractual return unknown**; `void` remains a very strong inference only | [`sys-a308-blocked.md`](sys-a308-blocked.md) |
 | A30C–A328 | no callable contract; each A-line vector is `0x00000000` in all three canonical ROMs | mechanical A; each index individually verified as a confirmed null vector | [`sys-a30c-null-vector.md`](sys-a30c-null-vector.md), [`sys-a310-null-vector.md`](sys-a310-null-vector.md), [`sys-a314-null-vector.md`](sys-a314-null-vector.md), [`sys-a318-null-vector.md`](sys-a318-null-vector.md), [`sys-a31c-null-vector.md`](sys-a31c-null-vector.md), [`sys-a320-null-vector.md`](sys-a320-null-vector.md), [`sys-a324-null-vector.md`](sys-a324-null-vector.md), [`sys-a328-null-vector.md`](sys-a328-null-vector.md) |
 | A32C | `uint32_t SYS_A32C(void)` | mechanical A; published; zero arguments; full-long getter result | [`sys-a32c-closure.md`](sys-a32c-closure.md), `os3k/sys_a32c.h` |
-| A330 | `int32_t _OS3K_getchar(void)` | mechanical A; published raw trap; result values 1..255; no EOF path observed | [`getchar-closure.md`](getchar-closure.md), `os3k/sys_a330.h` |
+| A330 | `int32_t _OS3K_getchar(void)` | mechanical A; published raw trap; result values 1..255; corrected corpus 12 callers / 41 | [`getchar-closure.md`](getchar-closure.md), `os3k/sys_a330.h` |
+| A334 | `int32_t SYS_A334(void)` | mechanical A; published; blocking character input echoed to stdout; original byte sign-extended to D0.L; callers 0/41 | [`sys-a334-closure.md`](sys-a334-closure.md), `os3k/sys_a334.h` |
 
 The null run was not closed by inheritance: indices 195 through 202 were checked
 individually. The 30 official SmartApplets that materialize the relevant A-line
@@ -132,12 +133,25 @@ A330 is the next real C-library entry. Its firmware handler and official callers
 confirm a blocking character getter. BetaWise's raw trap `_OS3K_getchar` and its
 separate public `getchar()` wrapper are intentionally documented as distinct
 layers. The handler returns a nonzero character zero-extended to D0.L and has no
-observed negative/EOF path.
+observed negative/EOF path. The corrected exhaustive caller scan finds 12 A330
+calls across seven NEO applets; this supersedes the earlier partial count of
+three without changing the ABI conclusion.
 
 A330 publication:
 
-- corrected `docs/getchar-closure.md`: commit `96641fb8936c545f52363248a0d9513da3705082`
+- corrected `docs/getchar-closure.md`: commit `ff671f937a536b176102c898a4f6d8ae8958dbab`
 - `os3k/sys_a330.h`: commit `b7401a5fe43d2b1af0b57810a0afc42483b193e6`
+
+A334 composes A330 with A350 / `_OS3K_fputc`: it reads a character, writes that
+character to stream 1 (`stdout`), discards the fputc result, and returns the
+original byte after explicit sign extension to D0.L. The official SmartApplet
+caller corpus is negative 0/41; the deliberate result construction, not caller
+absence, establishes the non-void raw ABI.
+
+A334 publication:
+
+- `os3k/sys_a334.h`: commit `8f6c49c023901849d1748095207159cbef244f14`
+- `docs/sys-a334-closure.md`: commit `6258d5b3a5f3644311fdc396330b074eee436752`
 
 ## Validation policy
 
