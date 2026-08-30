@@ -17,6 +17,7 @@ remains private in Drive.
 | A35C | `int memcmp(const void *ptr1, const void *ptr2, size_t num)` | mechanical A / published; ordered unsigned-byte comparison | [`memcmp-closure.md`](memcmp-closure.md) |
 | A360 | `void *memcpy(void *dst, const void *src, size_t num)` | mechanical A / published; forward bounded copy with explicit destination return | [`memcpy-closure.md`](memcpy-closure.md) |
 | A364 | `void *memmove(void *dst, const void *src, size_t num)` | mechanical A / published; forward/backward overlap-safe move | [`memmove-closure.md`](memmove-closure.md) |
+| A368 | `void *memset(void *ptr, int value, size_t num)` | mechanical A / published; exact byte fill and explicit destination return | [`memset-closure.md`](memset-closure.md) |
 
 ## Evidence discipline
 
@@ -69,6 +70,14 @@ the pointers and chooses either a forward byte loop or a backward byte loop from
 the range ends. It explicitly returns the original destination in D0.L. The
 validated official sweep finds 95 callers in 13 table-bearing applets; direct
 firmware JSR counts are 27/31/32 across AS3000 2005 / NEO 2005 / NEO 2013.
+
+A368 is a byte-identical 0x28-byte fill primitive across all three canonical
+ROMs. It consumes a destination pointer, the low byte of the second 32-bit slot,
+and a full 32-bit byte count; `num == 0` performs no store, while nonzero counts
+write exactly the requested number of bytes. The original destination is
+explicitly returned in D0.L. The complete official sweep finds 100 executable
+callers in 21 table-bearing applets, and direct firmware JSR counts are 22/30/34
+for AS3000 2005 / NEO 2005 / NEO 2013.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
