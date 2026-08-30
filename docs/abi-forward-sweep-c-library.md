@@ -22,6 +22,7 @@ remains private in Drive.
 | A370 | `int rand(void)` | mechanical A / published; 32-bit LCG and 15-bit result confirmed cross-ROM | [`rand-closure.md`](rand-closure.md) |
 | A374 | `int scanf(const char *fmt, ...)` | mechanical A / published; stdin wrapper over the common scan engine | [`scanf-closure.md`](scanf-closure.md) |
 | A378 | `int sprintf(char *str, const char *fmt, ...)` | mechanical A / published; string-output wrapper over the common formatter | [`sprintf-closure.md`](sprintf-closure.md) |
+| A37C | `void srand(unsigned int seed)` | mechanical A / published; verbatim setter for the A370/`rand` 32-bit state | [`srand-closure.md`](srand-closure.md) |
 
 ## Evidence discipline
 
@@ -117,6 +118,16 @@ maintains a trailing NUL. No capacity argument or bounds check exists. The
 formatter's full D0.L result is preserved. The official sweep finds 598
 executable callers in 25 table-bearing applets, and direct firmware JSR counts
 are 18/18/35 across AS3000 2005 / NEO 2005 / NEO 2013.
+
+A37C is the seed setter paired with A370. Its 0x0A-byte handler copies the full
+longword at entry `SP+4` verbatim into the exact persistent state global used by
+`rand`. It does not write `D0`, so preserved incoming register contents are not
+interpreted as a return value. A fresh 30-file table-bearing SmartApplet sweep
+finds no executable A37C callers, and the eleven remaining official applets are
+structural negatives; the same run reproduces A36C=99 and A378=598 exactly as
+positive detector controls. Direct firmware JSR/JMP/BSR xrefs are negative in
+all three canonical ROMs. The existing independent BetaWise mapping and header
+already identify the contract as `void srand(unsigned int seed)`.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
