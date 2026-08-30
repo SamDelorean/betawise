@@ -21,6 +21,7 @@ remains private in Drive.
 | A36C | `int printf(const char *fmt, ...)` | mechanical A / published; stdout wrapper over the common formatter | [`printf-closure.md`](printf-closure.md) |
 | A370 | `int rand(void)` | mechanical A / published; 32-bit LCG and 15-bit result confirmed cross-ROM | [`rand-closure.md`](rand-closure.md) |
 | A374 | `int scanf(const char *fmt, ...)` | mechanical A / published; stdin wrapper over the common scan engine | [`scanf-closure.md`](scanf-closure.md) |
+| A378 | `int sprintf(char *str, const char *fmt, ...)` | mechanical A / published; string-output wrapper over the common formatter | [`sprintf-closure.md`](sprintf-closure.md) |
 
 ## Evidence discipline
 
@@ -107,6 +108,15 @@ scan engine as A354. A354 differs only by accepting the stream externally and
 therefore shifting `fmt`/varargs one slot. A344/sscanf uses string adapters and
 mode 1. A374 preserves the engine's D0.L return. The official sweep is 0/41;
 positive controls from the same detector are A36C=99 and A378=598.
+
+A378 is the string-output member of the common formatter family. It consumes a
+destination string and format pointer, forms `&S+12` for the variadic tail,
+initializes the destination to the empty string, and installs a private callback
+that appends the low byte of each formatted character, advances the cursor, and
+maintains a trailing NUL. No capacity argument or bounds check exists. The
+formatter's full D0.L result is preserved. The official sweep finds 598
+executable callers in 25 table-bearing applets, and direct firmware JSR counts
+are 18/18/35 across AS3000 2005 / NEO 2005 / NEO 2013.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
