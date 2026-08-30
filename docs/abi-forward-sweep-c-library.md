@@ -26,6 +26,7 @@ remains private in Drive.
 | A380 | `char *strcat(char *dst, const char *src)` | mechanical A / published; NUL-terminated append with explicit destination return | [`strcat-closure.md`](strcat-closure.md) |
 | A384 | `char *strchr(const char *str, int c)` | mechanical A / published; NUL-inclusive byte search with pointer/NULL return | [`strchr-closure.md`](strchr-closure.md) |
 | A388 | `int strcmp(const char *str1, const char *str2)` | mechanical A / published; exact unsigned-byte difference return | [`strcmp-closure.md`](strcmp-closure.md) |
+| A38C | `char *strcpy(char *dst, const char *src)` | mechanical A / published; NUL-terminated copy with explicit destination return | [`strcpy-closure.md`](strcpy-closure.md) |
 
 ## Evidence discipline
 
@@ -163,6 +164,16 @@ equality/inequality, while an AcceleratedReader caller consumes the sign with
 `BLE`, independently proving an ordering contract. Direct firmware JSR counts
 are 7/6/7 for AS3000 2005 / NEO 2005 / NEO 2013. `strncmp`, `memcmp`, a
 case-insensitive comparator and a boolean-only predicate are incompatible.
+
+A38C is a byte-identical 0x16-byte NUL-terminated copy primitive across all three
+canonical ROMs. It consumes destination and source pointers, copies source bytes
+through and including the first NUL byte, deliberately preserves the original
+destination and returns it in `D0.L`. No count, capacity, overlap handling,
+helper or global state is present. The complete official corpus finds 302
+executable callers in 24 table-bearing applets; six table-bearing and 11
+structural applets are negative. Direct firmware JSR counts are 25/25/27 for
+AS3000 2005 / NEO 2005 / NEO 2013. `memcpy`, `strncpy`, `memmove`, `strcat` and
+a void-only copy are mechanically incompatible alternatives.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
