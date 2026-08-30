@@ -15,6 +15,7 @@ remains private in Drive.
 | A354 | `int fscanf(FILE *stream, const char *fmt, ...)` | mechanical A / published; same scan engine as A344 with stream adapters | [`fscanf-closure.md`](fscanf-closure.md) |
 | A358 | `void *memchr(const void *ptr, int value, size_t num)` | mechanical A / published; bounded byte scan confirmed independently | [`memchr-closure.md`](memchr-closure.md) |
 | A35C | `int memcmp(const void *ptr1, const void *ptr2, size_t num)` | mechanical A / published; ordered unsigned-byte comparison | [`memcmp-closure.md`](memcmp-closure.md) |
+| A360 | `void *memcpy(void *dst, const void *src, size_t num)` | mechanical A / published; forward bounded copy with explicit destination return | [`memcpy-closure.md`](memcpy-closure.md) |
 
 ## Evidence discipline
 
@@ -51,6 +52,15 @@ handler consumes two pointers and a full 32-bit count, compares bytes in unsigne
 order, and returns normalized `-1`, `0`, or `+1`. Five direct ROM callers per
 generation and three executable Wireless Update callers independently confirm
 the three-slot ABI and consume the full comparison result.
+
+A360's contractual entry point is the first 0x4A bytes of the larger code region
+before A364. Those bytes are identical across all three canonical ROMs. The
+handler consumes destination, source, and a full 32-bit byte count, copies
+forward using aligned longword moves where possible and byte moves otherwise,
+and explicitly returns the original destination in D0.L. No overlap test or
+backward-copy path exists, distinguishing this service from `memmove`. The
+validated official sweep finds 233 callers in 26 table-bearing applets, while
+direct firmware JSR counts are 19/22/33 for AS3000 2005 / NEO 2005 / NEO 2013.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
