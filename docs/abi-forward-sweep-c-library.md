@@ -19,6 +19,7 @@ remains private in Drive.
 | A364 | `void *memmove(void *dst, const void *src, size_t num)` | mechanical A / published; forward/backward overlap-safe move | [`memmove-closure.md`](memmove-closure.md) |
 | A368 | `void *memset(void *ptr, int value, size_t num)` | mechanical A / published; exact byte fill and explicit destination return | [`memset-closure.md`](memset-closure.md) |
 | A36C | `int printf(const char *fmt, ...)` | mechanical A / published; stdout wrapper over the common formatter | [`printf-closure.md`](printf-closure.md) |
+| A370 | `int rand(void)` | mechanical A / published; 32-bit LCG and 15-bit result confirmed cross-ROM | [`rand-closure.md`](rand-closure.md) |
 
 ## Evidence discipline
 
@@ -87,6 +88,15 @@ calls the same common formatter used by A34C / `fprintf`. The formatter's
 `D0.L` result is returned unchanged. The validated official sweep finds 99
 callers in 13 applets; direct firmware JSR counts are 7/7/11 across AS3000 2005,
 NEO 2005 and NEO 2013.
+
+A370 is the standard no-argument PRNG entry. All three canonical ROMs update a
+32-bit persistent state with `state = state * 0x41C64E6D + 0x3039` modulo 2^32
+and return `(state >> 16) & 0x7FFF`. The adjacent A37C/index223 handler writes
+its single 32-bit argument to the same state global, providing independent
+mechanical seed-state correlation without relying on the historical symbol map.
+The official SmartApplet sweep is 0/41 and direct ROM xrefs are negative; the
+same corrected detector finds 99 A36C calls and 598 A378 calls as positive
+controls.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
