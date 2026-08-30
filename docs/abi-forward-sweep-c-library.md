@@ -23,6 +23,7 @@ remains private in Drive.
 | A374 | `int scanf(const char *fmt, ...)` | mechanical A / published; stdin wrapper over the common scan engine | [`scanf-closure.md`](scanf-closure.md) |
 | A378 | `int sprintf(char *str, const char *fmt, ...)` | mechanical A / published; string-output wrapper over the common formatter | [`sprintf-closure.md`](sprintf-closure.md) |
 | A37C | `void srand(unsigned int seed)` | mechanical A / published; verbatim setter for the A370/`rand` 32-bit state | [`srand-closure.md`](srand-closure.md) |
+| A380 | `char *strcat(char *dst, const char *src)` | mechanical A / published; NUL-terminated append with explicit destination return | [`strcat-closure.md`](strcat-closure.md) |
 
 ## Evidence discipline
 
@@ -128,6 +129,15 @@ structural negatives; the same run reproduces A36C=99 and A378=598 exactly as
 positive detector controls. Direct firmware JSR/JMP/BSR xrefs are negative in
 all three canonical ROMs. The existing independent BetaWise mapping and header
 already identify the contract as `void srand(unsigned int seed)`.
+
+A380 is a byte-identical 0x1C-byte NUL-terminated append primitive across the
+three canonical ROMs. It consumes two pointer slots, walks the first string to
+its terminator, copies the second string including its terminator at that point,
+and deliberately returns the original first pointer in `D0.L`. No capacity
+argument or bounds check is present. The complete official corpus finds 130
+executable callers in 16 applets; 14 table-bearing applets and the 11 applets
+without an A-line table are negative. Direct firmware JSR counts are 9/9/9.
+`strcpy`, `strncat` and `memcpy` are mechanically incompatible alternatives.
 
 Private static regressions for every mechanically closed entry in this segment
 executed with **OVERALL PASS**. Dynamic emulator-first regression remains
