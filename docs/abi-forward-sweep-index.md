@@ -36,6 +36,7 @@ corpus. Original vendor names are not invented.
 | A2E0 | `uint32_t SYS_A2E0(void *state)` | mechanical A; published; NEO 2013 preparation difference retained | [`sys-a2e0-closure.md`](sys-a2e0-closure.md), `os3k/sys_a2e0.h` |
 | A2E4 | two mandatory pointer inputs; confirmed memset/copy effects; D0 mechanically retains destination pointer | **blocked / contractual return intent unknown**; no public callable contract | no public contract; private evidence retained in Drive |
 | A2E8 | `uint8_t SYS_A2E8(void *state, uint32_t selector, void *arg3, uint32_t *out_value, void *unused_arg5)` | mechanical A; published; five physical slots, fifth unused by all compared handlers; exact final D0 domain 0/1 and official callers consume D0.B | [`sys-a2e8-closure.md`](sys-a2e8-closure.md), `os3k/sys_a2e8.h` |
+| A2EC | mechanics, stack accesses, optional pointer outputs and cross-generation control flow reconstructed; D0 mechanically propagates from a terminal helper but no observed caller consumes it | **blocked / contractual return intent unknown**; `void` is strong inference only; no callable contract published | no public callable contract; private evidence retained in Drive |
 
 ## A2E8 publication checkpoint
 
@@ -54,5 +55,5 @@ in this public supplement.
 All entries marked mechanical A were reconstructed from primary firmware and
 correlated evidence under the project methodology. A regression marked
 "specified" in a closure document is not reported as executed unless that
-closure explicitly records execution. Blocks A2B0 and A2E4 remain deliberately
-blocked rather than receiving guessed return types.
+closure explicitly records execution. Blocks A2B0, A2E4 and A2EC remain
+deliberately blocked rather than receiving guessed return types.
