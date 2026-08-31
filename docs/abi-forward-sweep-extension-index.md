@@ -25,6 +25,7 @@ original checkpoints. Firmware bytes and extensive disassembly remain private.
 | A4E0 | 312 | `NO_CONTRATO_CALLABLE / HUECO ABI` | 82/82 PASS | [`abi-trace-a4e0.md`](abi-trace-a4e0.md) |
 | A4E4 | 313 | `NO_CONTRATO_CALLABLE / HUECO ABI` | 82/82 PASS | [`abi-trace-a4e4.md`](abi-trace-a4e4.md) |
 | A4E8 | 314 | `NO_CONTRATO_CALLABLE / HUECO ABI` | 82/82 PASS | [`abi-trace-a4e8.md`](abi-trace-a4e8.md) |
+| A4EC | 315 | `NO_CONTRATO_CALLABLE / HUECO ABI` | 86/86 PASS | [`abi-trace-a4ec.md`](abi-trace-a4ec.md) |
 
 `abi-forward-sweep-extension-a4a0-a4b4.md` is retained as the immutable
 checkpoint created when index 301 was closed. This file is the forward-maintained
