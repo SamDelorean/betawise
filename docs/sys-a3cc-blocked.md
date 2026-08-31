@@ -4,7 +4,7 @@ A3CC has been reconstructed to the maximum level justified by the current primar
 
 ## Platform availability
 
-- AlphaSmart 3000 (2005): raw index-243 slot `0x5A0E004E`, not a demonstrated code pointer.
+- AlphaSmart 3000 (2005): raw index-243 slot `0x5AB6004E`, not a demonstrated code pointer.
 - NEO (2005): raw index-243 slot `0x7FC0005E`, not a demonstrated code pointer.
 - NEO (2013): real handler at runtime `0x0043EFE8`, file offset `0x02EFE8`.
 
