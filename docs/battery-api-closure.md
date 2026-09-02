@@ -1,215 +1,87 @@
 # System 3 / OS3K battery display API — A138 closure
 
-This note records the current contract for A138, exposed by BetaWise as:
+Status: **MECHANICALLY CLOSED / SOURCE-FIRST / STATIC REGRESSION EXECUTED**
+
+## Recovered contract
 
 ```c
 void ShowBatteryPercentage(uint8_t time_seconds);
 ```
 
-The operation is closed at ABI/parameter-semantics level with confidence **A**
-for the analyzed AS3000 and NEO System 3 generations. Historical genealogy is
-also strong, but the historical implementation used a different parameter
-meaning and must not be treated as ABI-identical.
+`ShowBatteryPercentage` is the direct A-line service at index 78 (`A138`). BetaWise does not add a separate C wrapper.
 
-## 0. SDK consolidation status
+## Source-first correlation
 
-A138 reached this SDK-consolidation pass **after** the reverse-engineering work
-had already closed its mechanical contract with confidence A. This pass does
-not repeat the ROM/disassembly investigation; it audits the result against the
-existing BetaWise public declaration and A-line stub and records the developer
-contract that should be used going forward.
+The modern BetaWise header supplies the prototype and the historical syscall table labels A138 as the battery-graphic service. Independent early AlphaSmart material preserves the symbol `PowerShowBatteryPercentage`, establishing nominal/functional genealogy.
 
-The existing BetaWise implementation already matches the reconstructed ABI:
+The historical function is **not ABI-identical** to modern A138: its argument was used as a display row, whereas all three canonical 2005/2013 System 3 handlers consume the modern argument as an 8-bit time in seconds.
 
-```c
-void ShowBatteryPercentage(uint8_t time_seconds);
-```
+An official ControlPanel caller supplies `0`, independently confirming the interactive Battery Status mode. Historical `BatteryLife/BatteryTester.c` also anchors the battery-acquisition lineage used by the lower-level A120 reconstruction.
 
-and `os3k/syscall.c` maps A-line index 78 directly to
-`ShowBatteryPercentage`. No additional BetaWise wrapper is required: unlike
-`ClearScreen`, the public SDK symbol is itself the direct firmware service.
+## Public modes
 
-Consolidation state:
+### `time_seconds == 0`
 
-- mechanical contract: **A**, received from the reverse-engineering process;
-- SDK declaration/stub: **implemented and audited**;
-- canonical developer documentation: **this document**;
-- dynamic emulator/hardware regression: **pending**.
+A138 builds the complete Battery Status presentation and ultimately invokes `WaitForKey` before returning. Zero is therefore a distinct interactive mode, not a degenerate timer value.
 
-If later primary evidence changes the upstream mechanical contract, this
-consolidated SDK contract must be reconciled rather than silently preserving an
-obsolete conclusion.
+### `time_seconds > 0`
 
-## 1. Purpose
-
-A138 presents battery status. It has two user-visible modes selected by the
-single byte argument:
-
-- `time_seconds == 0`: show the full battery-status presentation and wait for a
-  key before returning;
-- `time_seconds > 0`: show the battery graphic/status transiently for the
-  requested number of seconds, then return.
-
-The argument is read as an **8-bit value** by the firmware.
-
-## 2. Timed mode (`time_seconds > 0`)
-
-The firmware converts the byte argument to centiseconds:
+A138 converts the byte argument to centiseconds:
 
 ```text
 sleep_time = time_seconds * 100
 ```
 
-and passes that value to the same implementation used by A0D4 /
-`SleepCentiseconds` after building/displaying the battery indicator.
+and calls `SleepCentiseconds` (`A0D4`) before returning. This directly confirms the modern `time_seconds` parameter meaning.
 
-Therefore the public name `time_seconds` is not an inference from UI behavior;
-it follows directly from the handler's unit conversion.
+## Battery-data pipeline
 
-The effective input range is the natural `uint8_t` range. Extreme durations
-are not required for normal regression coverage.
+The sequential source-first reconstruction now closes the helpers that earlier versions of this note intentionally left unnamed:
 
-## 3. Full-status mode (`time_seconds == 0`)
+1. `A120 / SYS_A120` refreshes the calibrated battery measurement.
+2. `A124 / SYS_A124` selects the NiMH/Alkaline battery profile.
+3. `A128 / SYS_A128` maps the measurement through the selected private curve into a 0..100 curve percentage/coordinate.
+4. `A138` explicitly computes `100 - A128()` for the user-visible remaining-capacity presentation.
 
-With zero, the routine does not take the timed-sleep exit. Instead it builds
-the complete battery-status screen, obtains localized status text, presents the
-capacity/percentage information and ultimately calls `WaitForKey` before
-returning.
+That fourth step is important: `A128` must not be described unqualified as the remaining-capacity percentage. Its raw result is the complementary curve coordinate (usefully described as a depletion/used-capacity percentage in the A138 UI path), while A138 presents the complement as remaining capacity.
 
-In the analyzed NEO 2013 firmware, the localized string used by this path is:
+A130 is also now closed independently as the board-revision getter; A138 uses it to select/support the appropriate presentation path.
 
-```text
-The battery capacity is at 
-```
+## Cross-ROM evidence
 
-This mode corresponds to the normal interactive battery-information screen.
+| Firmware | Handler | Length |
+| --- | ---: | ---: |
+| AS3000 System 3, Nov 2005 | `0x004D1A32` | `0x1EA` |
+| NEO System 3, Nov 2005 | `0x005D5A60` | `0x1BA` |
+| NEO/System 3.15, Jul 2013 | `0x00426EC0` | `0x1BA` |
 
-## 4. Percentage calculation and internal helpers
+All three read the low byte of the first ABI slot, consult A130, execute the A120→A128 battery pipeline on the supported path, distinguish zero/nonzero time, and use `time_seconds * 100` for timed sleep.
 
-A138 invokes internal routines associated with A120, A128 and A130. The value
-returned by the A128 path participates in a calculation equivalent to:
+AS3000 has a longer internal graphics construction than the NEO implementations. This is a real implementation difference but does not alter the portable ABI or public mode semantics.
 
-```text
-percentage = 100 - value
-```
+## Caller evidence
 
-The individual public meanings/names of A120/A128/A130 are **not** sufficiently
-closed and remain intentionally unnamed. A138's contract does not require
-inventing names for its internal helpers.
+Each canonical ROM contains two direct `JSR` callers of the A138 handler. The public contract is `void`; no stable return value is consumed as part of this API.
 
-## 5. Cross-ROM evidence
+The official ControlPanel caller that pushes `0` selects the full interactive status mode.
 
-The A138 handler was identified through validated A-line tables in all three
-reference firmware images:
+## Side effects
 
-| Firmware | Handler |
-| --- | ---: |
-| AS3000 System 3, Nov 2005 | `0x4D1A32` |
-| NEO System 3, Nov 2005 | `0x5D5A60` |
-| NEO/System 3.15, Jul 2013 | `0x426EC0` |
+A138 is a UI operation, not a numeric getter. It refreshes battery state, performs display composition, and either sleeps internally or consumes a key through `WaitForKey`.
 
-The same byte-argument and timed/full-mode logic is present across these
-versions. The surrounding addresses and internal helper locations differ by
-firmware and are not part of the portable ABI.
+Application code that only needs battery data should not substitute A138 for the lower-level battery-state functions.
 
-The A-line tables used for identification were cross-checked against multiple
-known traps rather than accepted from a single structural match.
+## Regression status
 
-## 6. Official caller evidence
+Static contractual regression: **EXECUTED — 60/60 PASS**.
 
-Official ControlPanel code contains an A138 call that pushes a zero argument.
-That exactly selects the interactive full-status path described above and is
-consistent with the native battery-status shortcut behavior.
+It verifies canonical hashes, index-78 vector resolution, handler boundaries, byte argument access, A130 gating, both `*100 -> A0D4` timed paths, A120/A128 call ordering, zero/nonzero mode split, `WaitForKey`, presentation helpers, direct-caller counts, and the three ROM epilogues.
 
-This caller evidence independently confirms that zero is an intentional public
-mode, not merely a degenerate timer value.
+Dynamic visual/keyboard regression: **SPECIFIED / NOT EXECUTED**. Minimum future cases are `0` for full status + key exit, and `1`/`2` for 100/200-centisecond timed paths on AS3000 and NEO.
 
-## 7. Historical genealogy
+## Confidence
 
-Original AS3000 object/source material contains the symbol:
+- **CONFIRMED:** identity/index, `void(uint8_t)` ABI, zero interactive mode, nonzero seconds mode, A0D4 conversion, A120→A128 pipeline, `100 - A128()` remaining-capacity orientation, A130 gating, callers 2/2/2, and generation-specific graphics differences.
+- **UNKNOWN:** private names of several internal graphics-composition helpers; these do not affect the public ABI.
 
-```text
-PowerShowBatteryPercentage
-```
-
-This provides strong nominal and functional continuity with modern A138.
-However, the early implementation's parameter was used as a **display row**
-(`ubLine`), not a time in seconds. The early simulator path positioned the
-cursor and displayed battery text rather than implementing the later timed
-behavior.
-
-Therefore the correct historical conclusion is:
-
-```text
-PowerShowBatteryPercentage  ->  later A138 / ShowBatteryPercentage
-```
-
-with an **evolved ABI**. The old parameter meaning must not be copied into the
-modern SDK.
-
-## 8. Developer usage
-
-For the full interactive status screen:
-
-```c
-ShowBatteryPercentage(0);
-```
-
-The call waits for a key before returning, so do not use this mode in a path
-that must remain non-blocking.
-
-For a transient display, for example two seconds:
-
-```c
-ShowBatteryPercentage(2);
-```
-
-The firmware handles the delay internally through `SleepCentiseconds`.
-
-## 9. Side effects and return
-
-The reconstructed public prototype is `void`. No contractual return value is
-used by the analyzed callers/implementation.
-
-The routine owns the presentation flow while active and, in zero mode, consumes
-a key through `WaitForKey`. Application code should therefore treat it as a UI
-operation rather than as a pure battery-percentage query.
-
-A138 should not be used when the application only needs a numeric battery value;
-its internal A120/A128/A130 helpers require separate reconstruction before such
-a lower-level API can be documented safely.
-
-## 10. Relationship to C and the BetaWise runtime
-
-`ShowBatteryPercentage` is **not** an ISO C or hosted-libc facility. BetaWise
-exposes it because `libos3k.a` maps the C call directly to the System 3 A-line
-trap. There is no standard-C equivalent that preserves the same firmware UI,
-keyboard wait, timing path or hardware-specific presentation semantics.
-
-Accordingly, application code should call the SDK service directly rather than
-substituting terminal escape sequences, `stdio` output or a host-side battery
-API. Such alternatives would describe a different runtime contract.
-
-## 11. Regression status
-
-A BatteryProbe baseline was created during the reconstruction work with the
-safe known call:
-
-```c
-ShowBatteryPercentage(0);
-```
-
-The existence of that probe is an executable specification, not an assertion
-that all emulator/hardware tests have already passed.
-
-Minimum useful regressions are:
-
-- `0` -> full status presentation and WaitForKey exit;
-- `1` -> transient display followed by approximately one second of firmware
-  sleep;
-- `2` -> same path with two-second sleep;
-- trace confirms the `time_seconds * 100` value passed to A0D4;
-- AS3000 and NEO render/return without ABI divergence for the same public mode.
-
-Further characterization of A120/A128/A130 is a separate milestone and must not
-be conflated with the already closed A138 interface.
+Raw firmware, private disassembly, exact corpus offsets, and proprietary resources remain outside the public repository.
