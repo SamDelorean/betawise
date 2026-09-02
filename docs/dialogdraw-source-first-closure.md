@@ -1,6 +1,6 @@
 # A100 / index64 — DialogDraw — source-first closure
 
-Status: **CORE MECHANICS CLOSED / SOURCE-FIRST / CORRELATED-CORPUS REVALIDATED**
+Status: **MECHANICALLY CLOSED / SOURCE-FIRST / STATIC REGRESSION EXECUTED**
 
 ## Recovered contract
 
@@ -51,9 +51,9 @@ The render path consumes the metadata accumulated by `DialogAddItem`. The privat
 
 ## Cross-generation result
 
-The correlated canonical AS3000 2005, NEO 2005 and NEO 2013 maps delimit the A100 handler with the same `0x7E` span, and direct prior analysis of those implementations recovers the same public core geometry described above.
+The canonical AS3000 2005, NEO 2005 and NEO 2013 ROMs were freshly recovered and rehashed during the closure audit. Their A100 handlers are each exactly `0x7E` bytes long. Twenty byte positions differ across the three implementations; every difference is confined to relocated state/helper operands. After normalizing only those relocation operands, the complete handlers are identical.
 
-Equal span does **not** imply byte-for-byte identity, and this closure deliberately does not claim that.
+Direct absolute firmware callers found during the audit are 4 in AS3000 2005, 5 in NEO 2005 and 6 in NEO 2013. In each ROM, the only additional raw reference to the A100 handler is its A-line vector entry.
 
 ## Historical continuity
 
@@ -61,11 +61,21 @@ An older `DialogModule` object independently uses the same conceptual family of 
 
 A System 3 internal caller also invokes the sequence containing `DialogDraw` between `DialogSetChoice` and `DialogRun`, independently confirming its position in the dialog subsystem.
 
-## Validation boundary
+## Static regression
 
-This pass revalidated the source signature, syscall index, three-generation correlated handler map, subsystem state relationships, and previously recovered core geometry.
+Static regression: **EXECUTED — 87/87 PASS**.
 
-The raw ROM binaries were not freshly re-exported/rehashed in this publication pass, so no new byte-level regression count is claimed here. Dynamic visual/keyboard regression is also **not executed**.
+The harness verifies:
+
+- exact canonical ROM sizes and SHA-256 hashes;
+- the A-line vector neighborhood from indices 60 through 65;
+- A100/index64 resolution and the A104 boundary;
+- complete `0x7E` handler extraction in all three ROMs;
+- mechanical anchors for the empty-dialog path, width scan, `+3` width adjustment, explicit/automatic column decision, division-result store, render/viewport helper sequence, and epilogue;
+- exact cross-generation relocation-difference positions and normalized handler equality;
+- direct caller and total-reference counts.
+
+Dynamic visual/keyboard regression remains **SPECIFIED / NOT EXECUTED**.
 
 Still outside the closed public core contract:
 
@@ -77,7 +87,7 @@ Still outside the closed public core contract:
 
 ## Confidence
 
-- **CONFIRMED:** A100/index64 identity; no-argument `void` contract; empty-dialog early return; maximum rendered width plus three; explicit-vs-automatic column behavior; row-major arrangement; inclusive visible-row range; 1-based `first_visible`; viewport normalization; render-before-`DialogRun` role; same recovered core contract across the three canonical generations.
+- **CONFIRMED:** A100/index64 identity; no-argument `void` contract; empty-dialog early return; maximum rendered width plus three; explicit-vs-automatic column behavior; row-major arrangement; inclusive visible-row range; 1-based `first_visible`; viewport normalization; render-before-`DialogRun` role; three-ROM byte-level revalidation; normalized semantic equivalence; caller counts.
 - **STRONG INFERENCE:** conceptual continuity with the older DialogModule implementation.
 - **OPEN FOR DYNAMIC REGRESSION:** exact visual presentation and pathological/invalid-state behavior.
 
