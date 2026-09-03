@@ -215,3 +215,46 @@ Minimum regression matrix:
    handler does not bounds-check before reading the mask table.
 
 No emulator or hardware regression is claimed as already executed by this note.
+
+## 8. 2026 source-first revalidation of A22C
+
+A22C/index139 was independently re-audited from the canonical ROMs after the
+project restarted at A000. The older A22C–A234 reconstruction above was treated
+as a hypothesis/correlation source rather than primary proof.
+
+The three canonical ROM SHA-256 values were rechecked, then A22C was re-extracted
+at `0x4E0DA2`, `0x5E36FE` and `0x439B00`. In all three images A230 begins exactly
+`0x26` bytes later. The handler SHA-256 values are:
+
+- AS3000 2005: `c715bfa28dddd6f952126be11706a3ea33d257d397f65f2ee1c48e8287c53b12`
+- NEO 2005: `d75eeb98245a3655f7c500968fe9ebace9b80fe46f882f3b1166f5ed5b80f48a`
+- NEO 2013: `512bb68e7ac6f8722e2a6734dfd9f07664c281df7f3f62a7be7dda37faf048a2`
+
+The private mask getter was also re-extracted independently in each image. Each
+18-byte helper is exactly `table_base + 4 * applet_index -> longword`, with no
+bounds check. This directly confirms that A22C is not a range validator.
+
+A renewed full-ROM absolute-JSR search found `0 / 0 / 1` direct callers in
+AS3000 2005 / NEO 2005 / NEO 2013. The NEO 2013 caller passes one longword
+runtime index in a path that has already observed a zero mask. The two negative
+2005 searches are retained as negative evidence rather than replaced with
+inferred callers.
+
+Static source-first regression was **EXECUTED: 45/45 PASS** (15 independent
+checks per ROM), covering canonical ROM identity, handler boundary, argument
+shape, helper target, condition and branch, selection-global store/readback,
+helper table indexing, direct-JSR counts, and A230's immediate `-1` reset of the
+same global. Dynamic emulator/hardware regression remains **SPECIFIED / NOT
+EXECUTED**.
+
+Confidence after the renewed audit:
+
+- **CONFIRMED:** `uint32_t(uint32_t)` ABI; zero-mask acceptance; nonzero-mask
+  rejection with selection preservation; stored/returned index; no bounds check;
+  exact `0x26` handler in all three ROMs; `0/0/1` direct-JSR count; A230 reset of
+  the same global.
+- **STRONG INFERENCE:** the neutral semantic labels `selection_block_mask` and
+  `selected_applet_index`, supported by the independently correlated A260–A270
+  mask family and A230/A234 context family.
+- **UNKNOWN:** original vendor symbol, private meaning of every mask bit, and
+  whether runtime index 0 is intentionally used as an accepted selected context.
