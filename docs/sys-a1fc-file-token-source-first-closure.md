@@ -1,58 +1,30 @@
-# SYS_A1FC — source-first closure
+# SYS_A1FC — independent source-first verification note
 
-Status: **CONFIRMED / mechanical confidence A**.
+This file is retained solely to reconcile an overlapping audit run without rewriting repository history.
+
+The canonical dedicated closure is:
+
+- `docs/sys-a1fc-token-source-first-closure.md`
+- originating commit `52aa69086060d2ef4ee91341f724151d587908f4`
+
+This independent pass reached the **same contract and regression result** and therefore does not define a competing ABI description.
+
+Verified independently:
 
 ```c
 int32_t SYS_A1FC(uint8_t token_low, uint8_t token_high);
 ```
 
-`SYS_A1FC` constructs a 16-bit file token from two byte-valued ABI slots, validates the resulting token through the common File API resolver, and returns either the validated token or the resolver status.
+- constructs `(token_high << 8) | token_low`;
+- validates the constructed token through the common File API resolver;
+- returns the complete token on successful resolution;
+- otherwise propagates the resolver status;
+- performs no descriptor mutation;
+- preserves the same semantics across AS3000 2005, NEO 2005 and NEO 2013;
+- direct-call correlation is `10/10/10`, with observed callers obtaining the effective high-byte group from `SYS_A254` immediately beforehand;
+- static regression independently reproduced **59/59 PASS**;
+- dynamic regression remains **SPECIFIED / NOT EXECUTED**.
 
-## Contract
+No alternative vendor name is introduced. `SYS_A1FC` remains the neutral identifier.
 
-The handler computes:
-
-```c
-uint16_t token = ((uint16_t)token_high << 8) | token_low;
-```
-
-It then calls the shared File API resolver with that token. If resolution succeeds, the token is returned zero-extended in `D0.L`. If resolution fails, the resolver status is propagated unchanged.
-
-The routine does not mask, remap, normalize, or otherwise reinterpret either input byte and does not mutate the resolved descriptor.
-
-## Evidence
-
-The canonical handlers are stable across the three audited ROMs:
-
-| ROM | handler entry | length |
-| --- | ---: | ---: |
-| AlphaSmart 3000 (2005) | `0x004E2992` | `0x40` |
-| NEO (2005) | `0x005E52EE` | `0x40` |
-| NEO/System 3.15 (2013) | `0x0043B6F0` | `0x40` |
-
-The NEO 2005 and NEO 2013 handlers are byte-identical; the AlphaSmart 3000 form differs only in relocation-sensitive resolver call bytes.
-
-Direct-call correlation gives **10/10/10 callers**. At every observed call site, `SYS_A254` is called immediately beforehand; its returned effective token-group byte is passed as `token_high`, while the companion byte is passed as `token_low`. This independently confirms both argument order and the build-and-validate role.
-
-## Refutation checks
-
-The firmware rejects several plausible alternatives:
-
-- argument order is **low, high**, not high, low;
-- this is not mere byte concatenation, because the constructed token is passed through the common resolver;
-- success does not return a boolean or status-only value; it returns the complete token;
-- `SYS_A1FC` does not apply `& 0x7F` to the high byte. Any such group policy belongs upstream (notably `SYS_A254`).
-
-## Classification
-
-- **CONFIRMED:** two-byte ABI, `high << 8 | low`, resolver validation, token-on-success, resolver-status-on-failure, no descriptor mutation, cross-ROM equivalence.
-- **STRONG INFERENCE:** public semantic description as “build and validate canonical file token.”
-- **UNKNOWN:** original vendor symbol/name; therefore the neutral `SYS_A1FC` identifier is retained.
-
-## Regression
-
-Static regression: **59/59 PASS**.
-
-Dynamic regression remains **SPECIFIED / NOT EXECUTED**. It should cover valid low/high pairs, high-byte values obtained from `SYS_A254`, invalid combinations, known special tokens, and verification of token-vs-status return behavior.
-
-No ROM bytes, firmware image, or extended disassembly is published here.
+For the normative source-first audit record, use the canonical closure named above. This note contains no ROM image, firmware bytes, or extended disassembly.
