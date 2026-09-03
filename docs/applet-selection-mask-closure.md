@@ -3,17 +3,14 @@
 ## Current audit status
 
 The historical family reconstruction is retained as context, but the current
-source-first audit closes services individually. The following members have now
-been revalidated directly against the three canonical ROMs with **confidence A**:
+source-first audit closes services individually. All five members have now been
+revalidated directly against the three canonical ROMs with **confidence A**:
 
 - `A260` — source-first closed
 - `A264` — source-first closed
 - `A268` — source-first closed
 - `A26C` — source-first closed
-
-`A270` retains its earlier mechanical reconstruction only and remains pending
-under the restarted source-first audit. It must not be treated as freshly closed
-merely because the older family analysis grouped it here.
+- `A270` — source-first closed
 
 Reliable original public/vendor symbols have not been recovered, so the neutral
 `SYS_Axxx` names remain.
@@ -41,8 +38,8 @@ void SYS_A270(uint32_t applet_index);
 - `A268` clears the complete 32-bit entry. It performs no range check.
 - `A26C` accepts only indexes 1 through 31 and ORs one dynamically selected bit
   into the existing aggregate entry.
-- `A270` retains the signature above as a prior reconstruction anchor pending
-  its individual source-first reaudit.
+- `A270` accepts only indexes 1 through 31 and clears only the dynamically
+  selected bit while preserving every other bit.
 
 ## A268 source-first closure
 
@@ -91,9 +88,8 @@ if (applet_index != 0 && applet_index < 32)
     mask_table[applet_index] |= (1u << selector_byte);
 ```
 
-This is not another bit-0 setter and not a whole-entry clear. Existing mask bits
-are preserved. No helper call or semantic return exists in the handler; the
-return type is therefore `void`.
+Existing mask bits are preserved. No helper call or semantic return exists in
+the handler; the return type is therefore `void`.
 
 Complete direct absolute-JSR scanning of the three System 3 ROMs finds no direct
 calls to A26C (0/0/0). This negative result does not imply that the service is
@@ -101,10 +97,46 @@ unused: the earlier reproducible linked-applet survey identifies paired
 A26C/A270 use in AlphaQuiz and AlphaWord Plus. Applet syscall-table entries are
 kept distinct from call sites in the evidence model.
 
-Static regression for the A26C re-audit is **63/63 PASS (executed)**. It covers
-all three canonical hashes, handler bounds, longword argument handling, the
-1..31 range guards, relocated selector/table references, dynamic shift, index
-scaling, OR semantics, epilogue, absence of helper calls, and normalized
+Static regression for the A26C re-audit is **63/63 PASS (executed)**. Dynamic
+regression is specified but not executed.
+
+## A270 source-first closure
+
+`A270/index156` is confirmed as:
+
+```c
+void SYS_A270(uint32_t applet_index);
+```
+
+The canonical AS3000 2005, NEO 2005 and NEO 2013 handlers are each 0x2E bytes
+and are mechanically equivalent except for the same relocated selector/table
+addresses used by A26C. The handler loads the complete longword argument,
+rejects index zero and every index greater than or equal to 32, constructs
+`1u << selector_byte`, complements the longword mask, scales the runtime applet
+index by four, and ANDs the result into the selected table entry.
+
+The raw operation is therefore:
+
+```c
+if (applet_index != 0 && applet_index < 32)
+    mask_table[applet_index] &= ~(1u << selector_byte);
+```
+
+A270 is thus the selective mechanical inverse of A26C for the active selector:
+it removes only that selected bit and preserves every other accumulated bit. It
+is not an alias of A268 and does not clear the whole entry. No helper call or
+semantic return exists in the handler; the return type is `void`.
+
+Complete direct absolute-JSR scanning of the three System 3 ROMs finds no direct
+calls to A270 (0/0/0). Raw byte coincidences with `A270` inside two ROM images
+were inspected and are not validated call/trap sites; they occur within other
+code/data encodings. Historical linked-applet evidence remains secondary and
+identifies paired A26C/A270 use in AlphaQuiz and AlphaWord Plus.
+
+Static regression for the A270 re-audit is **72/72 PASS (executed)**. It covers
+the three canonical hashes, exact handler bounds, longword argument handling,
+1..31 guards, relocated selector/table references, dynamic shift, complement,
+index scaling, AND semantics, epilogue, negative direct-JSR search and normalized
 cross-ROM equivalence. Dynamic regression is specified but not executed.
 
 ## Semantic confidence
@@ -115,24 +147,26 @@ supplied runtime SmartApplet index, with no internal range validation.
 **CONFIRMED:** A26C accepts runtime indexes 1..31 and adds exactly one bit chosen
 by a byte-sized OS-global selector while preserving all previously set bits.
 
-**STRONG INFERENCE:** the A26C selector is a dynamic blocking-reason/context
-index shared with A270. A22C/A260 establish that a nonzero aggregate mask blocks
-selection, but the original vendor name and the semantic enumeration of selector
-values have not been recovered.
+**CONFIRMED:** A270 accepts the same range and removes exactly that dynamically
+selected bit while preserving all other bits. A26C/A270 are mechanically paired.
 
-**UNKNOWN:** the original vendor symbols for A268/A26C and vendor names for the
-shared mask table and A26C/A270 selector byte.
+**STRONG INFERENCE:** the shared selector is a dynamic blocking-reason/context
+index. A22C/A260 establish that a nonzero aggregate mask blocks selection, but
+the original vendor name and semantic enumeration of selector values have not
+been recovered.
+
+**UNKNOWN:** the original vendor symbols for A268/A26C/A270 and vendor names for
+the shared mask table and A26C/A270 selector byte.
 
 ## Safety and validation
 
 A260, A264 and A268 do not validate `applet_index`; callers must keep it within
-the 32-entry runtime table. A26C does validate and silently ignores index 0 and
-indexes >=32. A268 clears every accumulated blocking/state reason in the entry,
-whereas A26C preserves the aggregate and adds one selected reason bit.
+the 32-entry runtime table. A26C and A270 validate and silently ignore index 0
+and indexes >=32. A268 clears every accumulated reason in the entry; A26C adds
+one selected reason bit; A270 removes only that same selected reason bit.
 
 ## Publication boundary
 
-This specification and the generic header contain only the reconstructed
-contract and reproducible high-level evidence. ROM bytes, verbatim extensive
-disassembly, complete private xrefs and workpapers remain outside the public
-repository.
+This specification contains only the reconstructed contract and reproducible
+high-level evidence. ROM bytes, verbatim extensive disassembly, complete private
+xrefs and workpapers remain outside the public repository.
