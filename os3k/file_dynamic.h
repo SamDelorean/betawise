@@ -27,9 +27,11 @@ int32_t SYS_A1E8(uint8_t token_group, const char *name,
 int32_t SYS_A1EC(uint16_t file_id);
 
 /* Get or set descriptor filename (+0x34, maximum 15 chars plus NUL).
- * set_name == 0: optional copy to name_buffer and return internal name pointer.
- * set_name != 0: validate/normalize/duplicate-check new name; return internal
- * pointer on success or NULL on failure. Resolver failure also returns NULL.
+ * set_name == 0: name_buffer may be NULL; otherwise receives a copied name.
+ * set_name != 0: name_buffer must be non-NULL. Input longer than 15 chars is
+ * truncated to 15 and NUL-terminated before validation/duplicate checking.
+ * Success returns the internal descriptor name pointer; resolver, validation or
+ * duplicate failure returns NULL without replacing the requested new name.
  */
 char *SYS_A1F0(uint16_t file_id, char *name_buffer, uint8_t set_name);
 
