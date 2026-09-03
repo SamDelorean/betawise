@@ -16,12 +16,13 @@ uint8_t SYS_A248(void);
 uint8_t SYS_A24C(const char *password);
 
 /*
- * A250: interactive master-password gate. The first 32-bit slot is unused by
- * the compared handlers; native System 3 callers pass 2. prompt may be NULL.
- * Correct password returns low-byte 1; Escape/cancel returns 0; a wrong
- * password displays an error, delays two seconds and retries.
+ * A250: interactive master-password gate. Firmware reads the low byte of the
+ * first ABI slot and passes it into the prompt/UI setup path; all six native
+ * direct callers in each canonical ROM pass 2. optional_text may be NULL.
+ * Correct password returns low-byte 1; cancel/non-affirmative exit returns 0;
+ * a wrong password displays an error/delay sequence and retries.
  */
-uint8_t SYS_A250(uint32_t reserved, const char *prompt);
+uint8_t SYS_A250(uint8_t prompt_variant, const char *optional_text);
 
 /*
  * A258: writes the low byte directly to the same global returned by A248.
