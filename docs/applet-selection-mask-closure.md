@@ -1,9 +1,19 @@
-# A260–A270 SmartApplet selection-block mask closure
+# A260–A270 SmartApplet selection-block mask family
 
-## Status
+## Current audit status
 
-`A260`, `A264`, `A268`, `A26C` and `A270` are mechanically closed with
-**confidence A** across the compared AlphaSmart 3000 and NEO System 3 ROMs.
+The historical family reconstruction is retained as context, but the current
+source-first audit closes services individually. The following members have now
+been revalidated directly against the three canonical ROMs with **confidence A**:
+
+- `A260` — source-first closed
+- `A264` — source-first closed
+- `A268` — source-first closed
+
+`A26C` and `A270` retain their earlier mechanical reconstruction only and remain
+pending under the restarted source-first audit. They must not be treated as
+freshly closed merely because the older family analysis grouped them here.
+
 Reliable original public/vendor symbols have not been recovered, so the neutral
 `SYS_Axxx` names remain.
 
@@ -28,33 +38,66 @@ void SYS_A270(uint32_t applet_index);
 - `A264` sets bit 0 of the selected entry and preserves every other bit. It
   performs no range check.
 - `A268` clears the complete 32-bit entry. It performs no range check.
-- `A26C` accepts runtime indexes 1 through 31, selects a bit from a global
-  reason/selector value and ORs `1 << selector` into the entry.
-- `A270` uses the same validation and selector, then clears only that bit with
-  an AND mask.
+- `A26C` and `A270` retain the signatures above as prior reconstruction anchors
+  pending their individual source-first reaudits.
 
-The exact private name and higher-level meaning of the global selector used by
-A26C/A270 remain unresolved.
+## A268 source-first closure
 
-## Cross-ROM and caller evidence
+`A268/index154` is confirmed as:
 
-The table shape and all five contracts are stable in the three compared ROMs.
-A260 is called by AlphaQuiz, AlphaWord Plus, ControlPanel and KeyWords; A264 and
-A268 appear in ControlPanel enable/disable paths; A26C and A270 occur as a pair
-in AlphaQuiz and AlphaWord Plus. Later System 3 callers also associate these
-paths with known SmartApplet IDs such as SpellCheck and Calculator.
+```c
+void SYS_A268(uint32_t applet_index);
+```
+
+Direct firmware verification on the canonical AS3000 2005, NEO 2005 and NEO
+2013 images shows the same 0x12-byte handler shape in all three generations:
+the full 32-bit argument is loaded, multiplied by four, added to the relocated
+mask-table base, the complete selected longword is cleared, and the routine
+returns. There is no bounds check, helper call, branch, Boolean normalization,
+or semantic return value; D0 is address scratch.
+
+The handler therefore implements:
+
+```c
+mask_table[applet_index] = 0;
+```
+
+not a single-bit clear. This distinction matters because A26C/A270 can place
+additional blocking-reason bits in the same aggregate entry.
+
+The three canonical handlers are mechanically equivalent except for the
+relocated RAM table base. Complete direct-JSR scanning finds 2/2/2 native
+callers across AS3000 2005 / NEO 2005 / NEO 2013. Both caller sites pass the
+runtime SmartApplet index as a longword and occur in the complementary
+SmartApplet enable path previously correlated with A264's disable path.
+
+Static regression for the A268 re-audit is **33/33 PASS (executed)**. Dynamic
+emulator/hardware regression remains specified but not executed and is not
+claimed by this closure.
+
+## Semantic confidence
+
+**CONFIRMED:** A268 clears the whole aggregate selection-block entry for the
+supplied runtime SmartApplet index, with no internal range validation.
+
+**STRONG INFERENCE:** in the System 3 enable/disable workflow, clearing the
+aggregate entry corresponds to the enabling path. This inference is supported
+by the paired native callers, A260/A264/A22C data-flow, and the documented
+SmartApplet enable/disable behavior; it is intentionally kept separate from the
+raw primitive contract.
+
+**UNKNOWN:** the original vendor symbol for A268 and any vendor name for the
+shared mask table.
 
 ## Safety and validation
 
 A260, A264 and A268 do not validate `applet_index`; callers must keep it within
-the 32-entry runtime table. A26C and A270 reject indexes outside 1–31 internally.
-A268 clears every accumulated blocking reason, whereas A270 clears only the
-currently selected reason bit.
-
-No emulator/hardware regression is claimed by this closure.
+the 32-entry runtime table. A268 clears every accumulated blocking/state reason
+in the selected entry rather than merely undoing A264 bit 0.
 
 ## Publication boundary
 
 This specification and the generic header contain only the reconstructed
-contract. ROM bytes, verbatim disassembly, complete xrefs and private workpapers
-remain outside the public repository.
+contract and reproducible high-level evidence. ROM bytes, verbatim extensive
+disassembly, complete private xrefs and workpapers remain outside the public
+repository.
