@@ -1,6 +1,6 @@
 # SYS_A1B4 / A1B4 — file size/accounting query family
 
-Status: mechanically and semantically closed from the three canonical System 3 generations. The original vendor symbol and original selector names were not recovered, so the neutral `SYS_A1B4` name and numeric selectors are retained.
+Status: mechanically and semantically closed from the three canonical System 3 generations. This file is a reconciliation companion to `docs/sys-a1b4-size-accounting-source-first-closure.md`, which is the primary closure record. The original vendor symbol and selector names were not recovered, so the neutral `SYS_A1B4` name and numeric selectors are retained.
 
 ## Contract
 
@@ -8,39 +8,41 @@ Status: mechanically and semantically closed from the three canonical System 3 g
 uint32_t SYS_A1B4(uint16_t file_id_or_selector);
 ```
 
-The low 16 bits of the ABI slot are interpreted either as an ordinary File API token or as one of four reserved selectors.
+For an ordinary resolvable token, the call returns `descriptor.current_size`. The reserved selectors provide additional read-only accounting views:
 
-For an ordinary token, the call resolves the descriptor and returns `descriptor.current_size`. Resolution failure returns `0`.
-
-Reserved selectors implement aggregate/accounting queries:
-
-- `0xFC`: resolve token `0` (the active descriptor) and return its recoverable/previous size (`+0x08`), or `0` if no active descriptor resolves.
+- `0xFC`: resolve token `0` (the active descriptor) and return its recoverable/previous-size state.
 - `0xFD`: sum `current_size` across descriptors in the current file group/folder.
-- `0xFE`: sum `min(current_size, min_size)` across descriptors in the current file group/folder.
+- `0xFE`: sum `min(current_size, min_size)` across descriptors in the current group/folder.
 - `0xFF`: sum `min(current_size, min_size)` across the complete descriptor table.
 
-The descriptor field at `+0x10` is `min_size` / minimum allocation. Earlier provisional descriptions of it as a generic accounting/reservation threshold are superseded by the later A1E8 reconstruction.
+The descriptor field at `+0x10` is `min_size` / minimum allocation; older provisional “accounting threshold” wording is superseded by the A1E8 reconstruction.
 
-The operation is read-only. It does not alter descriptor state, cursor, file sizes, or registered live mirrors.
+For the ordinary path and the `0xFC` path, if descriptor resolution fails, A1B4 preserves the resolver-provided auxiliary result/status rather than forcing a fabricated zero. The complete catalog of resolver error values remains intentionally unspecified.
 
-For an ordinary resolvable token, the neighboring reconstructed calls provide the invariant:
+The operation is read-only. It does not alter descriptor state, cursor, sizes, or registered live mirrors.
+
+For an ordinary resolvable token:
 
 ```text
 SYS_A1B4(file_id) + SYS_A1B0(file_id) == SYS_A1BC(file_id)
 ```
 
-because the ordinary A1B4 path returns `current_size`, A1B0 returns `max_size-current_size`, and A1BC returns `max_size`.
+because ordinary A1B4 returns `current_size`, A1B0 returns `max_size-current_size`, and A1BC returns `max_size`.
 
 ## Evidence summary
 
-The public A1B4 handler is 0x102 bytes in AlphaSmart 3000 System 3 (2005), NEO System 3 (2005), and NEO System 3 (2013). After normalizing only relocated globals/helpers and diagnostic operands, all three bodies are identical. The firmware contains 53 direct absolute internal calls in AS3000, 53 in NEO 2005, and 57 in NEO 2013, consistent with a central File API query primitive.
+The public A1B4 handler is 0x102 bytes in AlphaSmart 3000 System 3 (2005), NEO System 3 (2005), and NEO System 3 (2013). Direct firmware revalidation confirms identical selector dispatch and aggregate rules modulo relocated private data/call targets and diagnostic metadata. Firmware contains 53 direct absolute internal calls in AS3000, 53 in NEO 2005, and 57 in NEO 2013, in addition to the A-line vector.
 
-Historical SmartApplet correlation includes direct use of `0xFC` and `0xFF` by AlphaWord Plus and use of the reserved clipboard token `0x00CB` by multiple applets. The early FileModule source supports the underlying size/old-size/max-size descriptor model but does not expose an equivalent public modern symbol or names for these reserved selectors.
+Historical SmartApplet correlation includes ordinary file tokens, the clipboard token `0x00CB`, and direct uses of the reserved accounting selectors. Early `FileModule.c` supports the underlying size/old-size descriptor lineage but does not supply a trustworthy modern public symbol for this combined query.
 
 ## Confidence
 
-- **CONFIRMED:** ABI `uint32_t(uint16_t)`; ordinary current-size query; `0xFC` active previous/recoverable-size query; `0xFD` group current-size sum; `0xFE` group `min(current_size,min_size)` sum; `0xFF` table-wide equivalent; descriptor field mapping; read-only behavior; equivalent semantics across all three compared firmware generations.
-- **STRONG INFERENCE:** the syscall belongs to the File API size/accounting family.
-- **UNKNOWN:** original modern vendor function name and vendor names for selectors `0xFC..0xFF`.
+- **CONFIRMED:** ABI `uint32_t(uint16_t)`; ordinary current-size query; `0xFC` active recoverable/previous-size query; `0xFD` group current-size sum; `0xFE` group `min(current_size,min_size)` sum; `0xFF` table-wide equivalent; `min_size` field interpretation; read-only semantics; equivalent behavior across all three canonical firmware generations.
+- **STRONG INFERENCE:** the reserved selectors are internal storage/accounting views.
+- **UNKNOWN:** original vendor function/selector names and complete resolver error-value catalog.
 
-Static regression against the three canonical images: **66/66 PASS**. Dynamic/emulator verification remains specified separately and is not claimed as executed here.
+Canonical static regression: **96/96 PASS**. Dynamic/emulator verification remains specified separately and is not claimed as executed here.
+
+## Reconciliation note
+
+An earlier draft of this companion file incorrectly simplified unresolved ordinary/`0xFC` paths to a forced zero and quoted a narrower 66/66 harness. Direct firmware revalidation in the primary closure record supersedes those statements: resolver auxiliary status/result is preserved, and the canonical regression is 96/96 PASS.
