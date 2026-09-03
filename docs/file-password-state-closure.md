@@ -1,179 +1,121 @@
 # A1D0-A1DC file password/state block closure
 
 This note closes the mechanically usable ABI of System 3 traps A1D0, A1D4,
-A1D8 and A1DC.  The implementation was compared across the November 2005
+A1D8 and A1DC. The implementation was compared across the November 2005
 AlphaSmart 3000 ROM, the November 2005 NEO ROM and the July 2013 NEO/System
 3.15 ROM, then cross-checked against official SmartApplet callers and the
-original 2000 `PasswordModule` source.
+original 2000 `PasswordModule` source. A1D8 and A1DC have since been reaudited
+source-first directly from the canonical firmware; where historical behavior
+conflicts with modern firmware, the firmware result below is authoritative.
 
 The four traps remain named `SYS_A1D0`, `SYS_A1D4`, `SYS_A1D8` and
-`SYS_A1DC`.  Their behavior is now sufficiently closed for SDK use, but no
-reliable modern public symbol has been recovered.  Giving them new semantic
-names would confuse reconstructed behavior with historical nomenclature.
+`SYS_A1DC`. Their behavior is sufficiently closed for SDK use, but no reliable
+modern public symbol has been recovered.
 
 ## SYS_A1D0 — mutate per-file state flags
-
-Mechanical ABI:
 
 ```c
 int32_t SYS_A1D0(uint16_t file_id, uint32_t state_mask, uint8_t enable);
 ```
 
-The handler resolves `file_id` through the shared File API resolver.  The
+The handler resolves `file_id` through the shared File API resolver. The
 selected descriptor owns a 32-bit state/flags field at descriptor offset
 `+0x20`.
 
-Accepted low-byte masks differ by firmware generation:
+Accepted low-byte gate masks differ by generation:
 
 - AS3000 November 2005: `0x0D` (`0x01 | 0x04 | 0x08`)
 - NEO November 2005: `0x0D`
 - NEO/System 3.15 July 2013: `0x1D` (adds `0x10`)
 
-The validation is against the low byte of `state_mask`.  If no supported bit
-is present, the handler returns raw System 3 status `-14`.  No original symbolic
-name for this status has been recovered.
-
-On success:
-
-```text
-enable == 1  -> descriptor->state_flags |= state_mask
-otherwise    -> descriptor->state_flags &= ~state_mask
-```
-
-The success return is the canonical resolved 16-bit file token, zero-extended
-into D0.  Resolver failure returns zero.  Official AlphaWord, AlphaQuiz and
-KeyWords callers exercise masks including `0x01`, `0x04` and, on later
-firmware, `0x10`.
-
-The individual meanings of these bits are not sufficiently closed to publish
-`FILE_FLAG_*` constants.  The SDK therefore exposes the mechanical primitive
-without inventing flag names.
+If no supported low-byte bit is present, the handler returns raw System 3
+status `-14`. On success, `enable == 1` sets requested state bits and every
+other value clears them. The success return is the canonical resolved 16-bit
+file token, zero-extended; resolver failure returns zero. Individual bit names
+remain deliberately unpublished.
 
 ## SYS_A1D4 — query per-file state flags
-
-Mechanical ABI:
 
 ```c
 int32_t SYS_A1D4(uint16_t file_id, uint32_t state_mask);
 ```
 
-A1D4 is the query companion of A1D0.  It uses the same resolver, the same
-`descriptor+0x20` state field and the same generation-specific allowed low-byte
-masks (`0x0D` in the 2005 images, `0x1D` in 2013).
-
-- unsupported mask -> raw `-14`
-- resolver failure -> `0`
-- successful resolution -> `1` when any requested state bit is set, otherwise
-  `0`
-
-Official AlphaWord callers query at least masks `0x01` and `0x10`.
+A1D4 is the query companion of A1D0. It uses the same resolver and the same
+`descriptor+0x20` field. The generation-specific `0x0D`/`0x1D` test is an
+admission gate on the low byte; once admitted, the full 32-bit `state_mask`
+participates in the state intersection. It returns `1` when any requested bit
+is set, `0` when none is set or resolution fails, and raw `-14` when the gate
+is not satisfied.
 
 ## SYS_A1DC — get/set one file password
-
-Mechanical ABI:
 
 ```c
 int32_t SYS_A1DC(uint16_t file_id, char *password, uint8_t read_back);
 ```
 
-The resolved descriptor contains a NUL-terminated file-password buffer at
+The resolved descriptor contains the NUL-terminated file-password buffer at
 `+0x18`.
 
-When `read_back == 0`, A1DC sets the password:
-
-1. `strlen(password)` is evaluated;
-2. length `>= 6` returns raw status `-8` without copying;
-3. otherwise `strcpy(descriptor_password, password)` is performed.
-
-Therefore a valid modern file password is at most **five characters plus the
-terminating NUL**.
-
-When `read_back != 0`, A1DC performs the reverse copy:
+When `read_back == 0`, A1DC sets the password. Source-first revalidation of the
+actual handler and its private `strlen` helper establishes the modern boundary:
 
 ```text
-strcpy(password, descriptor_password)
+strlen(password) <= 6  -> accepted and copied
+strlen(password) > 6   -> raw status -8, no copy
 ```
 
-The caller must therefore supply a writable buffer large enough for the stored
-password (six bytes is sufficient for the normal five-character limit).
+The handler compares the `strlen` result with immediate `6` and branches to the
+copy path with 68k `BLS` (unsigned lower-or-same). This **corrects the earlier
+project statement** that inherited the 2000 `PasswordModule` five-character
+limit and claimed `length >= 6 -> -8`. That historical rule is not the modern
+A1DC ABI.
+
+For an accepted write, the private `strcpy` helper copies
+`password -> descriptor+0x18`. When `read_back != 0`, the same helper copies in
+the reverse direction: `descriptor+0x18 -> password`.
 
 Successful get or set returns the canonical resolved 16-bit file token,
-zero-extended.  Resolver failure returns zero.  No NULL-pointer guard for the
-password argument is visible in the handler, so passing an invalid pointer is
-not a supported edge case.
+zero-extended. Resolver failure returns zero. No safe NULL-pointer guard is
+visible before `strlen`/`strcpy`, so invalid pointers are outside the contract.
 
-Official AlphaWord code contains both modes, establishing that the modern trap
-is deliberately bidirectional.  This is why it is **not** renamed to the
-historical `PasswordSetFilePassword`: the 2000 routine was setter-only and had
-a different `(file_number, length, pointer)` interface.
+The modern trap remains deliberately bidirectional and is therefore not renamed
+to the historical setter-only `PasswordSetFilePassword` interface.
 
 ## SYS_A1D8 — reset all file passwords to the factory default
-
-Mechanical ABI:
 
 ```c
 uint32_t SYS_A1D8(void);
 ```
 
-A1D8 consumes no caller arguments.  An official Control Panel caller invokes
-it with an empty argument stack.
+A1D8 consumes no caller arguments. Direct source-first revalidation confirms
+the interactive destructive flow: it obtains current file-group context,
+builds a password UI, passes the typed master password to A24C, returns zero on
+cancel/failure, and only after successful comparison iterates descriptors with
+stride `0x48`. Each iteration calls a mechanically confirmed private `strcpy`
+with destination `descriptor+0x18` and source resolving directly to the firmware
+literal `"write"`. The successful return is the number of passwords reset.
 
-The routine is interactive and destructive:
-
-1. it obtains current file-group context;
-2. clears/builds a password UI;
-3. uses `TextBox` in password mode with Enter/Escape exit keys and a six-byte
-   local input area;
-4. Escape/cancel returns zero;
-5. Enter passes the typed string to A24C, the master-password comparison helper;
-6. a failed master-password comparison displays an error and returns zero;
-7. a successful comparison iterates every file descriptor in the current
-   group and copies the literal string `"write"` into descriptor `+0x18`;
-8. it displays the success message and returns the number of file passwords
-   reset (`file_count`).
-
-The System 3 ROM strings make the UI purpose explicit:
-
-- `Enter the master password to set all`
-- `file passwords to the factory default:`
-- `File passwords set to factory default.`
-
-The literal factory password is `write`.
-
-This is independently corroborated by the original 2000 `PasswordModule`:
-`PASSWORD_MAX_LENGTH` is 5, cold-boot initialization sets each file password to
-`w r i t e`, and the historical master password is initialized separately.
-The early source does not contain an exact equivalent of the later interactive
-A1D8 routine, so that historical evidence confirms the data model and factory
-value but does not justify inventing a modern function name.
+The original `PasswordModule` independently corroborates the factory value
+`"write"`, but the early source does not define an ABI-identical A1D8 routine.
 
 ## Historical naming boundary
 
-The original `PasswordModule.h` exposes names such as:
+The original `PasswordModule.h` exposes names such as
+`PasswordSetFilePassword`, `PasswordVerifyFileDialog`,
+`PasswordVerifyMasterPassword`, `PasswordChangeFileDialog`, and
+`PasswordGetMasterPassword`. None is ABI-identical to the modern quartet.
+Historical source is used for lineage and data-model correlation, not for
+forcing modern vendor symbols or limits.
 
-- `PasswordSetFilePassword`
-- `PasswordVerifyFileDialog`
-- `PasswordVerifyMasterPassword`
-- `PasswordChangeFileDialog`
-- `PasswordGetMasterPassword`
-
-None is ABI-identical to the modern A1D0/A1D4/A1D8/A1DC quartet.  In particular,
-A1DC combines get and set in one trap, while the old public setter was a
-three-argument setter only.  The project therefore preserves `SYS_A1D*` names
-until a genuine later System 3 symbol source is recovered.
-
-A prior Ghidra analysis renamed A1DC to a descriptive
-`a1dc_set_password_syscall`; that is useful comparative evidence but incomplete,
-because official callers prove the same trap also reads passwords.
+A prior Ghidra analysis described A1DC as a setter. That is useful comparative
+evidence but incomplete because the firmware has an explicit nonzero
+`read_back` path with reversed copy direction.
 
 ## Cross-ROM stability
 
-The four handlers occupy the same logical slots and preserve the same control
-flow across AS3000 2005, NEO 2005 and NEO 2013.  A1D0/A1D4 add support for the
-`0x10` flag bit in the 2013 generation; that is a real ABI-generation difference
-and is documented rather than normalized away.
-
-Handler addresses used during reconstruction:
+The four handlers occupy the same logical slots and preserve the same core
+semantics across AS3000 2005, NEO 2005 and NEO 2013. A1D0/A1D4 add support for
+the `0x10` gate bit in 2013; A1D8/A1DC show no observed contractual divergence.
 
 | Trap | AS3000 2005 | NEO 2005 | NEO 2013 |
 | --- | ---: | ---: | ---: |
@@ -182,25 +124,23 @@ Handler addresses used during reconstruction:
 | A1D8 | `0x4E29D2` | `0x5E532E` | `0x43B730` |
 | A1DC | `0x4E2B26` | `0x5E5482` | `0x43B884` |
 
-## Regression policy
+## Regression policy and status
 
-A1D0, A1D4 and A1DC can be regression-tested on disposable file descriptors in
-the firmware-first emulator.  Tests must cover supported/unsupported masks,
-set/clear/query behavior, the five-character password boundary, get-after-set,
-resolver failure and the raw `-14`/`-8` returns.
+A1D8 source-first static regression is **EXECUTED: 57/57 PASS**. Its dynamic
+regression remains emulator-first on disposable state because it intentionally
+changes every file password in the selected namespace.
 
-A1D8 must be tested **emulator-first on disposable state only**.  It intentionally
-changes every file password in the selected namespace.  It should not be used as
-a hardware discovery probe.  A hardware regression would only be appropriate
-when password state has been explicitly backed up and the user intends the reset.
+A1DC source-first static regression is **EXECUTED: 96/96 PASS**. Dynamic tests
+must cover write lengths 0 through 6 as accepted, length 7 as `-8` without
+mutation, get-after-set, resolver failure and read/write round trips. NULL
+pointers are unsupported rather than testable error cases.
 
-No regression is claimed as already executed by this document.  Firmware,
-official callers and historical source close the ABI contract; emulator
-execution remains a verification step.
+A1D0/A1D4 dynamic state tests likewise belong on disposable/restorable state.
 
 ## Closure decision
 
-A1D0-A1DC are no longer mechanically unknown traps.  All four have publishable
-SDK prototypes and documented state effects.  Their generic trap names are
-retained because semantic behavior is known more confidently than original
-System 3 symbol nomenclature.
+A1D0-A1DC are no longer mechanically unknown traps. All four have publishable
+SDK prototypes and documented state effects. Generic trap names are retained
+because semantic behavior is known more confidently than original System 3
+symbol nomenclature. The modern A1DC six-character acceptance boundary is now
+explicitly separated from the older five-character `PasswordModule` rule.
