@@ -42,10 +42,13 @@ int32_t SYS_A1D4(uint16_t file_id, uint32_t state_mask);
 uint32_t SYS_A1D8(void);
 
 /*
- * Bidirectional file-password access. The descriptor password is a maximum of
- * five characters plus NUL.
+ * Bidirectional file-password access. Direct source-first revalidation of the
+ * modern System 3 handler shows that write mode accepts strlen(password) <= 6;
+ * only lengths greater than six return raw status -8. This differs from the
+ * five-character historical PasswordModule limit and must not be projected
+ * onto the modern ABI.
  *
- * read_back == 0: copy password into the descriptor; length >= 6 returns -8.
+ * read_back == 0: copy password into the descriptor; length > 6 returns -8.
  * read_back != 0: copy the descriptor password into caller-provided storage.
  *
  * Returns the canonical resolved file token on success or 0 if resolution
