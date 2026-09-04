@@ -33,7 +33,7 @@ NEO 2005 and NEO 2013 differ in exactly 19 three-byte relocation regions. Neutra
 
 ## Callers and return value
 
-Six direct ROM references exist in each generation. A standalone caller pushes ten longwords and removes exactly `0x28` bytes after the call, independently proving the ten-slot physical ABI.
+Six direct ROM references exist in each generation: one absolute `JSR` and five direct `BSR.W` callers. A standalone caller pushes ten longwords and removes exactly `0x28` bytes after the call, independently proving the ten-slot physical ABI.
 
 More importantly, callers prove that **D0.L is contractual**. The AS3000 caller at `0x004C1F52` stores the complete D0 longword, subtracts it from a remaining-count global, advances a pointer by the same value, and subsequently iterates exactly that many bytes. The equivalent NEO callers at `0x005C1DF8` and `0x00411F62` perform the same full-longword accounting. A second caller family stores D0.L as a processed count and adds it to persistent progress fields.
 
@@ -71,5 +71,11 @@ A2D0 was used only as an initial structural ceiling. Final A2CC bounds are inste
 ## Regression
 
 Emulator-first regression is specified, **not executed**. It should exercise NULL/non-NULL `out_bytes`, the 16-way byte-class dispatch, states 0..4 at `state+0x2A`, explicit zero/one terminal paths, full processed-count returns, comparison paths with non-NULL `arg10`, and generation-differential state+0x10 behavior. For args 4..9, vary the upper 24 bits of the physical slot while holding the low byte constant; behavior must remain invariant.
+
+## 2026-09-04 source-first re-audit
+
+The closure was revalidated directly against the canonical ROMs after the A2C8 xref correction. Canonical ROM identities and exact A2CC handler fingerprints reproduced 3/3. A fresh whole-ROM control-transfer scan reproduced the complete direct-xref set in every generation: exactly one absolute `JSR`, exactly five `BSR.W` calls, and zero absolute `JMP` calls. The concrete callsite addresses match the private workpaper exactly.
+
+Static structural regression: **15/15 PASS** (3 canonical ROM identities, 3 exact handler fingerprints, 3 exact handler lengths/terminal epilogues, 3 direct-xref sets, 3 absence-of-absolute-JMP checks). No contradiction was found in the ten-slot ABI, full-long processed-count return, helper catalogue, or the AS-vs-NEO internal `state+0x10` difference. Dynamic/emulator regression remains **specified / not executed**.
 
 Private ROM bytes, complete disassemblies, CFG notes, caller traces, helper catalogue, and reproducibility material remain in Drive and are not published here.
