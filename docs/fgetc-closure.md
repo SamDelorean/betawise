@@ -1,6 +1,6 @@
 # A348 / `fgetc` — ABI correction and closure
 
-Status: **mechanically closed (A) / historical BetaWise mapping corrected**.
+Status: **mechanically closed (A) / source-first revalidated / historical BetaWise mapping corrected**.
 
 ## Correct contract
 
@@ -27,6 +27,12 @@ The A348 handler is 0x9C bytes in all three canonical ROMs and ends in `RTS` at 
 The prologue saves four registers. Its access at post-prologue `0x14(SP)` is therefore the original first caller slot. That value is compared with a firmware stream table containing the consecutive longwords 0, 1, and 2. A nonzero stream returns `-1`.
 
 The stdin route manages OS-owned buffered line input. It handles backspace `0x08`, maps carriage return `0x0D` to line feed `0x0A`, buffers through line termination or the observed `0x50`-byte bound, and returns the next buffered byte. The normal epilogue explicitly clears D0 before moving the result byte into D0, proving the 0..255 result domain.
+
+## Source-first correction
+
+The source-first pass begins with the historical `fgets` declaration as a falsifiable hypothesis. Firmware rejects it on every ABI dimension that matters: one slot rather than three, no destination/length access, integer byte/`-1` return rather than pointer/NULL, and a hard comparison against the stream constants. The historical label therefore cannot be retained safely.
+
+Independent correlation then supplies the positive identity. A354 passes A348 as the input-character callback to the common formatted-scanning engine and pairs it with A3B0; A3B0 independently reconstructs as `ungetc`. That get/unget callback pairing, together with A348's stream and return mechanics, confirms `fgetc(FILE *stream)` without relying on library-name adjacency. This is a source-first correction in which primary firmware overrides the historical SDK mapping.
 
 ## Independent callback correlation
 
