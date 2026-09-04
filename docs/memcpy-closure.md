@@ -8,6 +8,15 @@ Reconstructed contract:
 void *memcpy(void *dst, const void *src, size_t num);
 ```
 
+## Source-first re-audit
+
+The 2026-09-04 source-first pass first correlated the preserved SDK interface:
+`os3k/syscall.c` maps index 216 to `memcpy`, and `os3k/os3k.h` preserves the standard
+destination/source/count prototype. Those references were treated as hypotheses. The
+archived firmware mechanics and caller corpus independently reconfirm the same ABI,
+including full-width count consumption, explicit destination return, and forward-only
+copying with no overlap handling. No ABI correction was required.
+
 The A360 entry point is mechanically identical in the AS3000 2005, NEO 2005, and NEO 2013 canonical firmware generations. Its contractual handler ends at the first terminal `RTS`, 0x4A bytes after entry; code located later before A364 belongs to adjacent internal routines and is not part of A360.
 
 The handler consumes exactly three 32-bit slots: destination pointer, source pointer, and full-width byte count. It preserves the original destination, computes the source end from `src + num`, and copies forward. For sufficiently large aligned transfers it uses longword moves and then copies the remainder as bytes; smaller or unaligned transfers use byte moves. A zero count performs no copy. The epilogue explicitly places the original destination in full `D0.L` before return.
