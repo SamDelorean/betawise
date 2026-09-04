@@ -42,3 +42,11 @@ Alternatives were rejected as follows: A370 does not return the raw state (the h
 A private reproducible static regression revalidates the three ROM hashes, handler hashes and boundaries, state globals, multiplication helper operands, LCG constants, output transform, cross-ROM normalization, and A37C shared-state seed setter. Result: **OVERALL PASS**. Emulator-first dynamic regression is specified but has not been executed.
 
 Extended ROM bytes, full disassemblies, and caller workpapers remain private in Drive.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The historical source layer was consulted first: `os3k/syscall.c` maps index 220 to `rand`, and `os3k/os3k.h` declares `int rand(void)`. These names were used only as hypotheses. Primary firmware evidence independently reconfirms the contract: zero arguments, a persistent 32-bit state, the exact recurrence `state = state * 0x41C64E6D + 0x3039`, and an explicit return transform `(state >> 16) & 0x7FFF`.
+
+The adjacent A37C handler strengthens the correlation without being used as a naming shortcut: it writes one full 32-bit argument to the exact same PRNG state global. This also refutes the earlier transient possibility that A374 might be the seed setter. The negative caller result remains well controlled: A370 has 0 executable calls in the complete 41-app corpus and no direct ROM xrefs, while the same detector finds known-positive neighboring calls. No source/firmware contradiction was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. Previously executed static regression remains `OVERALL PASS`; dynamic/emulator-first regression remains **NOT EXECUTED**.
