@@ -64,7 +64,7 @@ This disproves `void`, byte-sized, and boolean return models. No vendor status n
 
 ## Callers and negative search
 
-No direct absolute JSR or BSR.W caller of A2D0 was found in any of the three canonical ROMs. Official SmartApplet binary searches found the expected sequential syscall-stub-table occurrence. Additional byte matches, notably in SpellCheck and newer NEO applets, resolve to embedded immediate/data bytes rather than a confirmed A2D0 instruction at an executable boundary. No independent A2D0/SYS_A2D0 prototype was recovered from the checked BetaWise/GitHub sources.
+No direct absolute `JSR`, absolute `JMP`, or direct `BSR.W` caller of A2D0 was found in any of the three canonical ROMs. Official SmartApplet binary searches found the expected sequential syscall-stub-table occurrence. Additional byte matches, notably in SpellCheck and newer NEO applets, resolve to embedded immediate/data bytes rather than a confirmed A2D0 instruction at an executable boundary. No independent A2D0/SYS_A2D0 prototype was recovered from the checked BetaWise/GitHub sources.
 
 The five-argument contract therefore rests on the handler's exact stack reads: slots 1 and 2 are full-width and slots 3–5 are low-byte-only; no later external slot is read. The analysis does not invent unused trailing arguments merely because C calling conventions would permit them.
 
@@ -81,5 +81,11 @@ The analysis rejected several tempting but incorrect interpretations: using A2D4
 ## Regression
 
 Emulator-first regression is **specified, not executed**. It should test the `+0x4A` guard error path, the normal zero result, invariance to the upper 24 bits of physical slots 3–5, snapshot-versus-original behavior around the A2CC call, transitive helper side effects, and equivalent external results on AS3000/NEO 2005/NEO 2013.
+
+## 2026-09-04 source-first re-audit
+
+The closure was revalidated directly against all three canonical ROMs. Canonical ROM identities and exact A2D0 handler fingerprints reproduced 3/3. A fresh whole-ROM control-transfer scan reproduced the negative caller result in every generation: zero absolute `JSR`, zero absolute `JMP`, and zero direct `BSR.W` callers to A2D0. Independently, the single internal `BSR.W` in each A2D0 body resolves exactly to the corresponding A2CC handler.
+
+The explicit full-long `0x02000005` guard sentinel is present at the same relative location in all three bodies, and the terminal epilogues/0x9C sizes reproduce exactly. Static structural regression: **15/15 PASS** (3 canonical ROM identities, 3 handler fingerprints, 3 exact lengths/epilogues, 3 negative direct-xref sets, 3 exact internal-A2CC branch targets). No source/manual evidence contradicted the neutral five-slot contract or the `{0, 0x02000005}` result domain. Dynamic/emulator regression remains **specified / not executed**.
 
 Private ROM bytes, full disassemblies and helper workpapers remain in Drive.
