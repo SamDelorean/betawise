@@ -2,13 +2,21 @@
 
 ## Status
 
-`A2AC` is mechanically closed with confidence **A**. No vendor symbol or API name has been recovered.
+`A2AC` is closed under the current **source-first** methodology with confidence **A** for its ABI and platform-specific behavior. No vendor symbol or API name has been recovered.
 
 ```c
 int32_t SYS_A2AC(uint8_t *out_byte);
 ```
 
 The physical ABI uses one 32-bit pointer slot. The common path dereferences it without a null guard.
+
+## Source-first correlation
+
+Searches across the recoverable BetaWise, historical AS3000 material and `ioma8/neo-re` did not recover a symbol, prototype, caller, or named error corresponding to A2AC or signed `-1302`. That negative result is retained explicitly rather than replaced by a guessed hardware/API name.
+
+Historical AS3000 material independently confirms that the platform used IrDA as an active transport, and the surrounding reconstructed family A28C-A2A8 is tied mechanically to IrDA/transport state. Separate source-first work on the serial/UART layer also establishes real AS3000-versus-NEO hardware-control differences in the UART/RS-232/IrDA path. Those facts make a transport-hardware cleanup/reset interpretation of A2AC's AS3000-only handshake **plausible**, but not nominally proven.
+
+Accordingly, subsystem membership is kept as **strong contextual inference** only. The public contract does not rename A2AC as an IrDA reset/shutdown/status API, and `-1302` remains an unlabeled raw error value.
 
 ## Platform/generation difference
 
@@ -62,9 +70,16 @@ The one-pointer ABI is nevertheless direct firmware evidence: NEO reads `4(A7)` 
 - `out_byte` is not optional: the common path writes through it without a null check.
 - AS3000 and NEO are not presented as byte-identical implementations; the hardware preamble is a real platform difference.
 - The raw `-1302` value is documented without inventing a vendor error name.
+- The source-first IrDA/transport context does not justify naming the handshake as reset/shutdown/transceiver-disable or assigning semantics to `out_byte`.
+
+## Evidence classification
+
+- **CONFIRMED:** one-pointer ABI; common helper/write/clear sequence; success return 0; AS3000-only hardware handshake and early `-1302`; no guaranteed output write on that early path; NEO absence of the error path; true cross-generation structural difference.
+- **STRONG INFERENCE:** A2AC belongs to the same transport/hardware-control domain as the surrounding IrDA family.
+- **UNKNOWN:** vendor symbol; meaning of `out_byte`; names of H0/H1/H2; hardware-bit semantics; vendor error name for `-1302`; precise protocol-layer role.
 
 ## Validation status
 
-An emulator-first regression is specified but not yet executed. It covers the NEO common path, AS3000 normal handshake, AS3000 `-1302` early return, output-byte write/no-write behavior, helper side effects, full-width return semantics and cross-generation tail equivalence.
+An emulator-first regression is **specified but not yet executed**. It covers the NEO common path, AS3000 normal handshake, AS3000 `-1302` early return, output-byte write/no-write behavior, helper side effects, full-width return semantics and cross-generation tail equivalence.
 
 Full firmware bytes, hardware addresses and correlated workpapers remain private in Drive.
