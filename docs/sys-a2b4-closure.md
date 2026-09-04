@@ -1,12 +1,18 @@
-# SYS_A2B4 closure
+# SYS_A2B4 source-first closure
 
-`SYS_A2B4` is mechanically closed across the canonical AlphaSmart 3000 System 3 (2005), NEO System 3 (2005), and NEO System 3.15 (2013) firmware images.
+`SYS_A2B4` is closed under the source-first audit across the canonical AlphaSmart 3000 System 3 (2005), NEO System 3 (2005), and NEO System 3.15 (2013) firmware images.
 
 ```c
 void SYS_A2B4(uint32_t *out_0, uint32_t *out_1, uint32_t *out_2);
 ```
 
-## Confirmed contract
+## Source-first result
+
+Targeted correlation against the available historical AlphaSmart/AS3000 material, BetaWise references, wireless SmartApplets, and modern reconstruction material did not recover an independent vendor symbol, prototype, or semantic names for the three exported values. The negative result is retained as such: it is not evidence for a guessed IrDA-specific API name.
+
+The surrounding A28C-A2A8 family remains strongly associated with the IrDA/transport subsystem from independent historical and firmware evidence, so subsystem membership is a strong inference. The exact meaning of the three 32-bit globals remains unknown.
+
+## Confirmed firmware contract
 
 - Three 32-bit stack slots are consumed, each as a required pointer.
 - The routine copies one internal 32-bit value to each output pointer.
@@ -26,8 +32,12 @@ No control-flow, argument-layout, width, or side-effect differences were found b
 
 No direct JSR/JMP references to the implementation were found in the three canonical ROMs. Targeted scans of wireless-related SmartApplets did not establish an executable caller outside the standard A-line stub table. The contract is nevertheless explicit from the complete handler: all three stack arguments are loaded and dereferenced unconditionally.
 
+## Adversarial conclusions
+
+A scalar or packed-structure argument is rejected because the handler independently loads and dereferences three caller-supplied addresses. Optional outputs are rejected because every pointer is dereferenced unconditionally. A return value is rejected because the complete handler does not materialize one in D0. Naming the outputs as device address, discovery identifiers, LAP state, or similar remains unsupported.
+
 ## Validation status
 
-An emulator-first regression is specified but not yet executed. It should preload three distinct internal values, verify exact independent copies to the three outputs, confirm no mutation of the source values, and verify that D0 is not part of the contract.
+The emulator-first regression is **specified, not executed**. It should preload three distinct internal values, verify exact independent copies to the three outputs, confirm no mutation of the source values, and verify that D0 is not part of the contract.
 
 Firmware bytes, long disassembly listings, and private workpapers remain outside the public repository.
