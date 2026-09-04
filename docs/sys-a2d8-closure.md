@@ -44,7 +44,7 @@ The return is still modeled as a full 32-bit status rather than `void`: the firm
 
 ## Callers and xrefs
 
-Direct ROM-wide searches for absolute JSR and BSR.W references to A2D8 were negative in all three canonical ROMs. SmartApplet occurrences inspected are the standard contiguous syscall table, except an additional Thesaurus Small byte match that lies in data rather than confirmed 68000 code. No independent A2D8 prototype or vendor symbol was recovered from BetaWise or `neo-re`.
+Direct ROM-wide searches for absolute `JSR`, absolute `JMP`, and direct `BSR.W` references to A2D8 are negative in all three canonical ROMs. SmartApplet occurrences inspected are the standard contiguous syscall table, except an additional Thesaurus Small byte match that lies in data rather than confirmed 68000 code. No independent A2D8 prototype or vendor symbol was recovered from BetaWise or `neo-re`.
 
 ## Cross-generation comparison
 
@@ -61,5 +61,13 @@ The complete external handler is instruction-identical after relocating four hel
 ## Regression status
 
 Emulator-first regression is **specified, not executed**. Tests should cover the `+0x4A` guard, in-range/out-of-range `+0x24` clamp behavior, one- and two-helper refresh paths, `post_flag` zero/non-zero, upper-bit invariance of the second physical slot, and `D0.L == 0` across AS3000 2005, NEO 2005 and NEO 2013.
+
+## 2026-09-04 source-first re-audit
+
+Canonical ROM identities and exact A2D8 handler fingerprints reproduced 3/3: AS3000 `3950b2ae056e7f047fe6765add3e55b13a0a2bce3cfeca0f1bde47385c16e3df`, NEO 2005 `4fe6a880c92dbd2891aa2be9d85d3cdf386d2bc249cd82bb1b6c400881567999`, and NEO 2013 `c29f0e3e409d7b565624e4ac36f78fac45dd6027b6efa39306c28fee7aca4477`.
+
+A fresh aligned whole-ROM control-transfer scan reproduced zero absolute `JSR`, zero absolute `JMP`, and zero direct `BSR.W` callers in every generation. The 0x96-byte lengths and terminal `RTS` at `+0x94` also reproduced 3/3. Static structural regression: **12/12 PASS** (3 canonical ROM identities, 3 exact handler fingerprints, 3 terminal size/epilogue checks, 3 negative direct-xref sets).
+
+No source or manual evidence contradicted the two-slot contract, transitive mutation model, or singleton reachable `D0.L` domain `{0}`. Dynamic/emulator regression remains **specified / not executed**.
 
 Private per-ROM disassemblies and ROM-derived workpapers are retained outside the public repository.
