@@ -1,6 +1,6 @@
 # A344 / `sscanf` — ABI closure
 
-Status: **mechanically closed (A) / published contract**.
+Status: **mechanically closed (A) / source-first revalidated / published contract**.
 
 ## Contract
 
@@ -17,6 +17,12 @@ The wrapper constructs a pointer to the caller's variadic argument area, fetches
 That mechanical structure independently matches the historical A344=`sscanf` mapping and the BetaWise prototype above: string source, format string, variadic output argument area, common scan engine, and an integer result.
 
 This closure deliberately does not import undocumented scanf-family conversion details, EOF behavior, `errno`, extensions, or edge-case semantics that are not established by the wrapper itself.
+
+## Source-first correlation
+
+The historical `sscanf` mapping and prototype are used as an identity hypothesis only. The firmware wrapper independently establishes the required shape: caller string source, format pointer, a pointer into the caller's variadic output area, dispatch into the shared scanning engine, cleanup of the six helper slots, and direct propagation of the engine's D0.L result. Those primary mechanics are sufficient to confirm the variadic scanning contract; the historical source supplies the recovered standard-library name.
+
+The negative official caller result is not treated as proof of ABI. It is independently controlled by the same detector recovering 67 A33C calls, while A344's argument and return contract comes from its explicit stack/dataflow reconstruction.
 
 ## Caller survey
 
