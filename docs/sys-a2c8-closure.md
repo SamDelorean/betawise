@@ -42,12 +42,22 @@ This platform difference is contractual behavior and must not be normalized away
 
 ## Callers and xrefs
 
-No direct JSR/JMP/BSR caller was found in the AS3000 ROM. NEO 2005 and NEO 2013 each contain four equivalent BSR.W callers. Every confirmed caller passes selector 0; some construct a local destination, while others expand a source pointer in-place. None consumes D0 after the call.
+Fresh source-first re-audit corrects an earlier negative-xref statement: **all three canonical ROMs contain four direct `BSR.W` callers to A2C8**. The AS3000 callsites are `0x004D4876`, `0x004D4CEE`, `0x004D6104`, and `0x004D6154`; NEO 2005 uses `0x005D6B38`, `0x005D6FB8`, `0x005D849E`, and `0x005D84EE`; NEO 2013 uses `0x00428212`, `0x004286B8`, `0x00429EF4`, and `0x00429F44`.
 
-Occurrences of the bytes `A2 C8` in inspected official applets belong to the contiguous A-line stub table and are not treated as semantic callsites.
+The four AS3000 windows are instruction-level homologues of the four NEO callsites after register/relocation differences, so they are executable calls rather than aligned data. The previously documented NEO caller shapes remain valid: confirmed calls use selector 0, some construct a local destination, and others expand a source pointer in-place. None of the corresponding callsites consumes D0 after the call.
+
+No absolute `JSR` or `JMP` caller was found in any generation. Occurrences of the bytes `A2 C8` in inspected official applets belong to the contiguous A-line stub table and are not treated as semantic callsites.
 
 ## Regression specification
 
-The emulator-first regression should cover selectors 0, 1 and 2; invalid selectors and partial mutation; preservation of output bytes +0x26..+0x29; NEO helper selection for all four values of bits 3:2; AS3000 preservation of output +0x10; and NEO in-place aliasing demonstrated by callers.
+The emulator-first regression should cover selectors 0, 1 and 2; invalid selectors and partial mutation; preservation of output bytes +0x26..+0x29; NEO helper selection for all four values of bits 3:2; AS3000 preservation of output +0x10; and in-place aliasing demonstrated by callers.
+
+## 2026-09-04 source-first re-audit
+
+Canonical ROM identities and exact handler fingerprints were reproduced 3/3: AS3000 `5f9850ba34bee772e248add7eb2c5e097cf5c600cf8d6e019af059163e666a22`, NEO 2005 `259b3d98675732105381f233522ec41d6a8ed0cfca7c45ec05c4cdc072c2fd17`, and NEO 2013 `75697f7954d18bb86cf07e30a3628f5ae33605461ad0846f4e2168e51302ebf4`. All three bodies retain the explicit full-long invalid-selector sentinel `0x02000002` and the documented handler lengths.
+
+Whole-ROM branch resolution finds **4/4/4 direct BSR.W callers**, correcting the prior AS3000 count from zero to four. This xref correction does not change the raw ABI, selector behavior, return domain, or the AS-vs-NEO `out_state+0x10` difference. Static structural regression: **15/15 PASS** (3 canonical ROM identities, 3 handler fingerprints, 3 exact handler lengths/sentinel checks, 3 direct-BSR target sets, 3 absence-of-absolute-JSR/JMP checks).
+
+Dynamic/emulator regression remains **specified / not executed**.
 
 Firmware, long disassemblies and raw handler bytes remain private workpaper material.
