@@ -95,6 +95,27 @@ pointer in the third slot. At least one caller consumes `D0.B` immediately.
 No absolute JSR/JMP caller to the implementation was established in the
 AS3000/NEO 2005 ROMs; this does not negate the trap ABI.
 
+## Source-first re-audit — 2026-09-04
+
+The closure was re-audited from the canonical firmware rather than accepted from
+its historical BetaWise identity. All three canonical ROM hashes were
+revalidated, vector index 174 was re-read independently, handler boundaries were
+re-extracted, and the literal handler fingerprints above reproduced exactly.
+Direct absolute JSR scanning also reproduced the prior caller result: `0/0/7`
+for AS3000 2005 / NEO 2005 / NEO 2013, including the same seven NEO 2013 call
+sites.
+
+Historical BetaWise source continues to corroborate `_OS3K_CallSysInt` and the
+`SysInt_e` family, while a fresh nominal search recovered no independent vendor
+symbol. User/Manager manuals are useful for user-visible properties reached by
+individual selectors, but they do not define this internal dispatcher's raw
+stack ABI; firmware therefore remains the controlling evidence for argument
+widths, return width and selector dispatch.
+
+No material contradiction was found. The raw `uint8_t` return, unused first
+slot, selector-dependent `void *io`, and genuine generation-specific dispatch
+remain confirmed.
+
 ## Adversarial conclusions
 
 Rejected alternatives:
@@ -110,8 +131,13 @@ Rejected alternatives:
 
 ## Regression status
 
-Emulator-first regression is specified but **not yet executed**. It should
-verify at minimum:
+A source-first static structural regression was **EXECUTED: 15/15 PASS**. For
+each of the three canonical ROMs it independently checked the full-ROM SHA-256,
+vector[174] target, handler SHA-256, terminal RTS boundary, and expected direct
+JSR count.
+
+The emulator-first dynamic regression remains **SPECIFIED / NOT EXECUTED**. It
+should verify at minimum:
 
 1. an unsupported selector returns low byte `0` without treating upper `D0`
    bits as contractual;
