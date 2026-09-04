@@ -72,7 +72,17 @@ The following alternatives were rejected by primary evidence:
 
 Searches of the current BetaWise/neo-re references did not provide an independent A2BC vendor name or prototype.
 
+## Source-first re-audit — 2026-09-04
+
+The closure was re-audited independently against all three canonical firmware images rather than accepted from the earlier workpaper. Whole-ROM SHA-256 values were revalidated, vector index 175 reproduced the three documented runtime entries, each documented handler slice reproduced its literal SHA-256 and terminal RTS boundary, and a fresh direct absolute-JSR scan reproduced exactly one equivalent caller per ROM at `0x004C8FB2`, `0x005C87F4` and `0x00418FB6`.
+
+The resulting structural regression was **EXECUTED: 12/12 PASS**: per generation it checked vector target, handler fingerprint, terminal RTS boundary and expected direct-JSR count. No contradiction was found in the eight-slot ABI, full-width `int32_t` return or generation-specific geometry handling.
+
+A fresh nominal repository search recovered no independent vendor name or prototype. The official user/Manager documentation layer was also considered: the low-level eight-slot state/geometry ABI and its numeric status values are not specified there, so the firmware remains the controlling evidence. No user-facing manual claim is being projected onto this internal routine.
+
 ## Regression status
+
+The static source-first structural regression is **executed, 12/12 PASS**.
 
 Emulator-first regression is **specified, not executed**. The private test plan covers the canonical caller, zero success, both explicit validation statuses, full signed helper-status propagation, flag paths, NEO 2013 extra flags, AS3000 legacy bounds, NEO native bounds, 6x/16x legacy conversion, and preservation of the full 32-bit `value` field.
 
