@@ -1,6 +1,6 @@
 # A350 / `_OS3K_fputc` — raw ABI closure
 
-Status: **mechanically closed (A) / published contract**.
+Status: **mechanically closed (A) / source-first revalidated / published contract**.
 
 ## Contract
 
@@ -19,6 +19,12 @@ The handler consumes two physical 32-bit stack slots. The first is loaded as a f
 The two accepted output-stream objects correspond to stored values 1 and 2 in every canonical ROM. An unrecognized stream follows the failure path. This observation is sufficient for the ABI reconstruction but is not generalized into undocumented host-libc behavior.
 
 A334 independently calls A350 with the recovered character and stream value 1, discards A350's return, and reconstructs its own return from the original character. A34C / `fprintf` independently embeds A350 as the formatter's output-character callback. Together these integrations corroborate both argument order and writer semantics from primary firmware behavior.
+
+## Source-first correlation
+
+The historical raw mapping `_OS3K_fputc(int c, FILE *stream)` is used as an identity anchor rather than proof. Primary firmware independently establishes two full 32-bit slots, stream discrimination, a success result equal to the preserved input character, and an explicit `-1` failure. A334 then supplies an independent concrete caller with `(character, stream=1)`, while A34C independently passes A350 as the output-character callback to its formatting engine.
+
+The separate BetaWise `fputc` implementation is also correlated before naming the trap: it can handle the extended-font stdout path itself and otherwise delegates to `_OS3K_fputc`. This proves that A350 is the raw service, not the complete public wrapper. The identity is therefore supported by firmware dataflow, concrete integration, callback use, and historical source-layer separation.
 
 ## Raw syscall versus wrapper
 
