@@ -1,6 +1,6 @@
 # A34C / `fprintf` — ABI closure
 
-Status: **mechanically closed (A) / published contract**.
+Status: **mechanically closed (A) / source-first revalidated / published contract**.
 
 ## Contract
 
@@ -17,6 +17,12 @@ At entry the caller stack is `stream`, `fmt`, followed by variadic arguments. Th
 A350 is the next OS3K standard-library trap and is historically `_OS3K_fputc`; the absolute callback operand in A34C equals the A350 runtime vector in every canonical ROM. The explicit stream context, format pointer, variadic-area pointer, output callback, and integer helper result independently confirm the historical `fprintf` mapping.
 
 This closure establishes the wrapper ABI. It does not import undocumented details of individual printf-format conversions or error policies from a host libc.
+
+## Source-first correlation
+
+The historical `fprintf` mapping and prototype are treated as an identity hypothesis only. Firmware independently reconstructs all contract-defining pieces: caller-supplied stream context, format pointer, explicit pointer to the first variadic slot, A350 as an output-character callback, and direct propagation of the common formatter's D0.L result. These mechanics establish the variadic stream-formatting ABI before the historical standard-library name is accepted.
+
+Adversarial alternatives fail on primary dataflow: fixed-arity formatting cannot explain the explicit vararg pointer; `sprintf` cannot explain forwarding a stream context through A350; and plain `printf` cannot explain a caller-provided stream slot. The 0/41 direct caller result is therefore only supporting search evidence, not the basis for the contract.
 
 ## Caller survey
 
