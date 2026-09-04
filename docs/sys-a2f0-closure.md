@@ -78,3 +78,11 @@ A private static regression was **executed and passed**. It revalidated all thre
 The first regression pass caught and corrected a one-character transcription error in the private workpaper SHA-256 for `text2speechupdate.os3kapp`; the binary and canonical manifest agreed, the workpaper was fixed, and the complete regression then passed. This correction is retained in the private chronological record.
 
 Dynamic/emulator regression is not claimed as executed. Private ROM bytes, extensive disassembly, helper listings, and exhaustive file manifests remain in Drive.
+
+## 2026-09-04 source-first re-audit
+
+The closure was reclassified under SOURCE-FIRST without changing its neutral ABI. The source-first anchor is the exhaustive official SmartApplet corpus together with direct ROM callers: official AlphaWordPlus 2005 and NEO 2012 provide twelve executable A2F0 invocations in total, while the other 39 applets are documented negatives. These callers independently demonstrate three physical 32-bit slots and consume or propagate the returned full D0 longword. Direct ROM callers likewise clean exactly `0x0C` bytes and execute `TST.L D0` immediately.
+
+The firmware remains authoritative for slot consumption: low16 of slot 1, mutable pointer slot 2, low8 of slot 3. It also proves explicit full-long success/failure construction, including propagated helper statuses and literal `0x01000001`. Thus `uint32_t SYS_A2F0(uint32_t arg1_slot, void *state, uint32_t arg3_slot)` remains the maximum justified public contract; no vendor name, argument semantics, marker semantics, or status enum is recovered.
+
+Static source-first correlation regression: **18/18 PASS** (3 canonical ROM identities, 3 exact handler fingerprint/length checks, 3 terminal CFG checks, 3 physical-slot access checks, 2 official applet generation caller sets, 2 exact three-slot cleanup checks, 2 full-long D0-consumption/propagation checks). Dynamic/emulator regression remains **specified / not executed**.
