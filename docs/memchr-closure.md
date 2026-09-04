@@ -7,6 +7,15 @@ The existing public declaration is correct:
 void *memchr(const void *ptr, int value, size_t num);
 ```
 
+## Source-first re-audit
+
+The 2026-09-04 source-first pass first correlated the preserved SDK references:
+`os3k/syscall.c` maps index 214 to `memchr`, while `os3k/os3k.h` declares the standard
+three-argument pointer/value/count interface. These references were used only as
+hypotheses. Independent firmware dataflow and official callers then reconfirmed the
+same contract, including low-byte consumption of the promoted value slot, full 32-bit
+count consumption, and a full pointer/NULL result. No ABI correction was required.
+
 ## Mechanical evidence
 
 The A358 handler is exactly 0x26 bytes / 16 decoded instructions and byte-identical
