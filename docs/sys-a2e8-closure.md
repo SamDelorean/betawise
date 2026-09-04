@@ -83,4 +83,12 @@ NEO 2013's extra preparation calls are preserved as a genuine generational diffe
 
 Emulator-first regression is **specified, not executed**. It should cover rejected/default selectors, every recognized selector route, final D0 byte values, `out_value` initialization and per-route writes, state mutations, and the NEO 2013 preparation preamble while comparing the common core across generations.
 
+## 2026-09-04 source-first re-audit
+
+The closure was re-audited using the archived canonical ROM reconstruction together with the official SmartApplet caller corpus, rather than inferring the ABI from handler stack reads alone. The three exact handler fingerprints and lengths remain AS3000 `f7761a9cb63a3a6cd1b41984a88aa09c455a256175c01c48b5957a0c722fcbe7`/`0x254`, NEO 2005 `9e29269066412c8989a1c6eb2a64a20fe35bb6a3468e5d903fea2275ee9b994d`/`0x254`, and NEO 2013 `a2136926c3c34689db4fc6109c089f007464f72a385b7a68ddfd08ab94f58c00`/`0x25E`; the normalized common core remains `74b6107edf0cdf8fe9afcb28eef5deaeb751279a6d7b5e56c9eb11b5872cfa2d`.
+
+The decisive source-first correlation is the pair of executable AlphaWordPlus callers from the official 2005 and NEO 2012 generations. Both physically push five 32-bit slots, clean exactly `0x14` bytes, save the returned D0 value, and consume its low byte with `TST.B` before the register is redefined. This independently confirms the five-slot physical call ABI and justifies the neutral `uint8_t` result width. The firmware simultaneously proves that slot 5 is not read, `selector` must remain full-width, and all reachable exits explicitly construct D0.L as 0 or 1.
+
+Static structural/correlation regression: **18/18 PASS** (3 canonical ROM identities, 3 exact handler fingerprints/lengths, 3 terminal-CFG result checks, 3 normalized-core checks, 2 official caller target resolutions, 2 five-slot cleanup checks, 2 explicit low-byte result-consumption checks). No historical source recovered a vendor symbol or semantic enum name, so `SYS_A2E8` and neutral argument names remain appropriate. Dynamic/emulator regression remains **specified / not executed**.
+
 Private ROM bytes, extensive disassembly, helper listings, and the exhaustive applet manifest remain in Drive and are not published here.
