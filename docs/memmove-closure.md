@@ -17,3 +17,11 @@ The official SmartApplet corpus contains **95 executable A364 callers in 13 tabl
 The historical BetaWise index-217 mapping to `memmove` is retained only as secondary corroboration. The public contract above is established from firmware dataflow, the forward/backward copy paths, the explicit destination return, and caller evidence.
 
 Private static regression verifies canonical ROM hashes, A-line vectors, exact handler bytes and boundary, ABI loads, terminal return, direct ROM references, and the complete official caller sweep. It executed **OVERALL PASS**. Dynamic/emulator-first validation was not executed and is not claimed here.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The re-audit began from the historical source anchors rather than from the binary label: `os3k/syscall.c` maps index 217 to `memmove`, and `os3k/os3k.h` preserves `void *memmove(void *dst, const void *src, size_t num)`. Those references were treated as hypotheses, not authority.
+
+The existing primary firmware workpapers independently reconfirm the same contract in all three canonical ROMs: the handler is 0x3C bytes and byte-identical, consumes full-width `dst/src/count` slots, preserves and returns the original destination in `D0.L`, and explicitly chooses forward versus backward traversal from the relative source/destination addresses. That overlap-aware branch is the decisive mechanical discriminator from A360/`memcpy`. The complete 41-app caller corpus (95 executable callers) and direct ROM xrefs (27/31/32) remain consistent with the three-slot ABI and destination return. No source/firmware contradiction was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. The previously executed private static regression remains `OVERALL PASS`; dynamic/emulator-first regression remains **NOT EXECUTED**.
