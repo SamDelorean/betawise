@@ -59,3 +59,11 @@ The historical BetaWise mapping `A374 = scanf` is therefore only secondary corro
 A private reproducible static regression revalidates ROM hashes, vectors, handler boundaries and hashes, callback/engine identities, stdin descriptor values, A354 correlation, normalized hash, and the official caller sweep with positive controls. Result: **OVERALL PASS**. Dynamic emulator-first regression is specified but has not been executed.
 
 Full ROM bytes, disassemblies, and caller workpapers remain private in Drive.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The re-audit started from the historical API layer: `os3k/syscall.c` maps index 221 to `scanf`, and `os3k/os3k.h` preserves `int scanf(const char *fmt, ...)`. Those references were treated as hypotheses. Primary firmware correlation independently confirms the same contract: the wrapper takes a fixed `fmt`, forms `&first_variadic_argument`, inserts stdin context internally, supplies A348/`fgetc` and the A3B0 unget adapter, and invokes exactly the same scan engine as A354/`fscanf` with mode `0`.
+
+This cross-family comparison also resolves the earlier transient seed-setter confusion: A374 is structurally part of the scan family, while A37C is the handler that directly writes the PRNG state used by A370/`rand`. A344/`sscanf` supplies string adapters and mode `1`, whereas A374 uses the stream callbacks and internal stdin descriptor. The complete 41-app caller search remains negative with positive detector controls, and direct ROM xrefs remain negative. No source/firmware contradiction was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. Previously executed static regression remains `OVERALL PASS`; dynamic/emulator-first regression remains **NOT EXECUTED**.
