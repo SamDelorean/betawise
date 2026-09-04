@@ -1,6 +1,6 @@
 # A33C / `atoi` — ABI closure
 
-Status: **mechanically closed (A) / published contract**.
+Status: **mechanically closed (A) / source-first revalidated / published contract**.
 
 ## Contract
 
@@ -25,6 +25,12 @@ The corrected PC-index detector exhausted the canonical SmartApplet corpus: 30 t
 A33C has **67 executable callers**, all in four NEO applets: Accelerated Reader (16), AlphaQuiz (2), MathFacts in a Flash (41), and MathFacts Offline (8). The other 26 table-bearing applets and all 11 structural-negative applets contain no A33C caller.
 
 Simple call sites provide direct ABI evidence: they push one string pointer, invoke A33C, clean exactly four bytes, and consume D0.L as a scalar result. No caller supplies a second argument.
+
+## Source-first correlation
+
+The historical BetaWise mapping `DEFINE_SYSCALL(207, atoi)` and declaration `int atoi(const char *str);` are treated as identity anchors rather than proof. Primary firmware independently establishes a signed decimal string parser with one pointer argument and a 32-bit scalar result, and the 67 official callers independently confirm the one-slot calling shape and D0.L consumption. The historical name is therefore retained because all three evidence layers converge, not because the table label is assumed correct.
+
+This pass also tests the strongest alternative directly: A340 is historically `atol` and is mechanically byte-identical to A33C in the canonical ROMs. Since both `int` and `long` are 32-bit in this ABI, the nominal distinction cannot be recovered from handler mechanics alone; it remains justified by the consecutive historical mapping while the common parser contract is firmware-confirmed.
 
 ## A33C versus A340
 
