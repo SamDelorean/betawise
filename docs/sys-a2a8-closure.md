@@ -2,7 +2,7 @@
 
 ## Status
 
-`A2A8` is mechanically closed with confidence **A**. No vendor symbol or API name has been recovered, so the neutral symbol is retained.
+`A2A8` is closed under the current **source-first** methodology with confidence **A** for its ABI and mechanical behavior. No vendor symbol or API name has been recovered, so the neutral symbol is retained.
 
 ```c
 uint8_t SYS_A2A8(uint32_t context,
@@ -11,6 +11,14 @@ uint8_t SYS_A2A8(uint32_t context,
 ```
 
 The physical ABI uses three 32-bit caller slots. `context` is consumed as a full longword; `payload` is a pointer; only the low byte of the third slot is consumed as `payload_size`.
+
+## Source-first correlation
+
+Historical AS3000 material independently establishes a state-sensitive IrDA LAP stack and operational IrDA transfers. In the reconstructed firmware family, A28C establishes IrDA/IrCOMM/IrLMP/TinyTP state, A2A4 is the shared payload/request constructor, and A2A8 invokes A2A4 specifically as `(0, 2, payload, payload_size)` before storing an opaque context and waiting for a neighboring completion path.
+
+That correlation supports A2A8 as a **higher-level synchronous request/transaction primitive inside the same IrDA/transport machinery**. The conclusion is stronger than vector adjacency because it rests on an explicit A2A8→A2A4 call, shared state/result globals, and a distinct completion routine that writes the result and clears the pending state.
+
+No historical source recovered the vendor symbol, meaning of selector `2`, meaning of `context`, semantic names for result values `1`/`2`, or the protocol interpretation of `payload[0] & 0x7F`. Those remain unknown and are not promoted into the public API.
 
 ## Cross-ROM evidence
 
@@ -61,10 +69,17 @@ No direct A-line A2A8 opcode was found inside the compared ROMs. Searches in Bet
 - `payload` is not nullable: A2A8 reads `payload[0]` without a null guard.
 - `payload_size` is byte-sized in meaning, not 32-bit, and zero is rejected.
 - The return is not Boolean: A2A4 errors are propagated, timeout yields `0x1B`, and normal completion returns a shared result byte for which callers explicitly recognize values 1 and 2.
-- The subsystem is mechanically related to neighboring transport/IrDA state, but no vendor operation, enum, result labels or context meaning are invented.
+- Source-first correlation does not justify renaming selector `2`, the context value, payload byte 0, or result values 1/2.
+- Names such as connect/request/open-session/IrCOMM-negotiate remain unsupported and are not published.
+
+## Evidence classification
+
+- **CONFIRMED:** three-argument ABI; full-width context storage; pointer payload; byte payload_size; preconditions; exact A2A4 `(0,2,...)` call; `payload[0] & 0x7F`; completion/timeout behavior; shared result byte; two callers per ROM; byte return; cross-ROM equivalence.
+- **STRONG INFERENCE:** synchronous higher-level transaction/request primitive in the same IrDA/transport state machine as A28C/A2A4.
+- **UNKNOWN:** vendor symbol; context semantics; selector-2 semantics; payload format; meanings of result values 1/2; protocol-layer identity.
 
 ## Validation status
 
-An emulator-first regression is specified but not yet executed. It covers all preconditions, A2A4 error propagation, full-width context storage, `payload[0] & 0x7F`, ten-tick completion and timeout including byte wraparound, asynchronous result/state completion, byte-only return behavior, and cross-ROM equivalence.
+An emulator-first regression is **specified but not yet executed**. It covers all preconditions, A2A4 error propagation, full-width context storage, `payload[0] & 0x7F`, ten-tick completion and timeout including byte wraparound, asynchronous result/state completion, byte-only return behavior, and cross-ROM equivalence.
 
 Full firmware bytes and correlated workpapers remain private in Drive.
