@@ -1,6 +1,6 @@
 # A334 — raw blocking character input with echo
 
-Status: **mechanically closed (A) / published raw contract**.
+Status: **mechanically closed (A) / source-first revalidated / published raw contract**.
 
 ## Public ABI
 
@@ -29,6 +29,12 @@ The absence of callers is not used to infer `void`. The handler itself deliberat
 ## Generational comparison
 
 AS3000 2005, NEO 2005, and NEO 2013 are mechanically equivalent after relocation of the static `stdout` data reference. The relocation-normalized handler SHA-256 is `ed2c743d59e51c8a83a98e837e23817c9b67ee9ef88e006b9c5b93b3b5a3c240`.
+
+## Source-first revalidation
+
+The source-first pass treats the historical material as an anchor, not as authority. `os3k/syscall.c` retains index 205 as `SYS_A334` with the descriptive comment `getchar with echo`; the firmware then independently confirms that description by calling A330 / `_OS3K_getchar`, passing the preserved character to A350 / `_OS3K_fputc` with the SDK `stdout` value, discarding the output routine's result, and explicitly rebuilding a sign-extended D0.L from the original character before return.
+
+This correlation also prevents conflating the trap with the separate C-layer `getchar()` implementation: A334 remains the raw A-line service `SYS_A334`, while the descriptive historical comment is retained only as functional corroboration. The 41/41 caller survey and the three-ROM normalized body continue to support the same contract; no source-first evidence requires an ABI change.
 
 ## Adversarial conclusions
 
