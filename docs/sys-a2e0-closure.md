@@ -64,4 +64,12 @@ Each caller uses `PEA 8(SP)` to pass one local/context pointer, executes A2E0, r
 
 Emulator-first regression is **specified, not executed**. Cases should cover the `state+0x4A` guard, helper state mutation, lower/upper clamp cases in the second helper, explicit `D0.L==0`, and the extra NEO 2013 preparation path.
 
+## 2026-09-04 source-first re-audit
+
+The prior private checkpoint was incomplete, so A2E0 was independently revalidated from the canonical ROMs before accepting this closure. Canonical ROM identities and exact handler fingerprints reproduced 3/3. A fresh whole-ROM control-transfer scan found exactly one absolute `JSR` caller in each generation (`0x004C9074`, `0x005C88B6`, `0x00419078`), correcting the earlier private statement that the ROM search was negative. The three caller windows are equivalent: each pushes one pointer with `PEA 8(SP)`, calls A2E0, then removes exactly four argument bytes.
+
+The private correlated AS3000 disassembly was also re-read: helper `0x004D98DE` has a single terminal path converging on `MOVEQ #0,D0`, while helper `0x004E10D2` clamps its result non-negative before returning. This independently confirms that the handler's defensive non-zero propagation and negative-result `0x02000004` branches are unreachable in the compared firmware. NEO helper counterparts preserve those return constraints; NEO 2013's two added preparation calls do not alter the external result.
+
+Static structural/correlation regression: **15/15 PASS** (3 canonical ROM identities, 3 exact handler fingerprints, 3 exact lengths/terminal epilogues, 3 concrete one-slot caller shapes, 3 helper-return constraints). Dynamic/emulator regression remains **specified / not executed**.
+
 Private ROM-derived disassembly and helper workpapers remain outside the public repository.
