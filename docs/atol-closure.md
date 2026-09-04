@@ -1,6 +1,6 @@
 # A340 / `atol` — ABI closure
 
-Status: **mechanically closed (A) / published contract**.
+Status: **mechanically closed (A) / source-first revalidated / published contract**.
 
 ## Contract
 
@@ -19,6 +19,12 @@ The handler skips leading characters whose classification marks whitespace, acce
 A340 is byte-identical to A33C inside each of the three canonical ROMs for the full 0x8E-byte body. Firmware mechanics therefore do not distinguish `atoi` from `atol`; that nominal distinction is retained from the historical consecutive syscall mapping and their SDK prototypes, while the one-pointer / 32-bit result contract is independently confirmed from firmware.
 
 This closure does not claim NULL checking, `errno`, saturation, or a stronger overflow policy than the observed 32-bit arithmetic.
+
+## Source-first correlation
+
+The historical A-line mapping assigns index 208 to `atol` and declares `long atol(const char *str)`. That source is used only to recover the nominal identity. Primary firmware independently proves a one-pointer signed decimal parser returning a 32-bit D0.L value. The strongest adversarial comparison is A33C/`atoi`: A340 and A33C are byte-identical for the complete handler in every canonical ROM, so firmware cannot encode a semantic width distinction between them on this ABI where both `int` and `long` are 32 bits.
+
+The nominal `atoi`/`atol` split is therefore retained only because the consecutive historical symbol mapping is consistent with the independently established common mechanical contract. No artificial binary difference, overflow policy, or wider arithmetic is inferred.
 
 ## Caller survey
 
