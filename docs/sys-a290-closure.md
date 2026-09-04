@@ -20,7 +20,7 @@ The first argument is a writable table of exactly six packed records, each six b
 
 A relocated subsystem-state byte must equal `1`. If it does not, A290 returns `0x15` without calling its worker. The worker's non-zero byte errors are propagated through `D0.B`; observed worker error values include `0x12` and `0x13`. Success returns byte value `0`.
 
-The handler invokes the worker on the 36-byte table, then scans the six entries for duplicate `field_0` values. A first duplicate causes another worker pass and rescan. A duplicate surviving a later pass causes the later record to be cleared (`field_0`, `field_4`, and `field_5` all become zero). This proves a normalization/deduplication contract, but does not establish what the records represent.
+The handler invokes the worker on the 36-byte table, then scans the six entries for duplicate `field_0` values. A first duplicate causes another worker pass and rescan. A duplicate surviving a later pass causes the later record to be cleared (`field_0`, `field_4`, and `field_5` all become zero). This proves a normalization/deduplication contract.
 
 When `optional_out32 != NULL`, the handler copies exactly 32 bytes from a relocated OS block. `NULL` is explicitly valid and is used by an internal caller.
 
@@ -44,11 +44,25 @@ Each ROM contains exactly one equivalent absolute JSR caller of A290 and no abso
 
 After success it iterates exactly six records of stride six and consumes `field_0` from each non-empty entry. That 32-bit field is subsequently passed unchanged to A294. This independently confirms the table layout, the byte-sized return contract, and the mechanical A290→A294 relationship.
 
-## Historical and adversarial review
+## Source-first historical correlation
 
-Historical BetaWise material and the modern `neo-re` reference do not provide an independent recovered public symbol or prototype for A290. Numeric proximity to the confirmed IrDA initializer A28C and the downstream A294 operation is compatible with an IrDA discovery/listing interpretation, but that interpretation is not promoted into the public API because no independent nominal evidence identifies the records or their fields.
+A re-audit of the surviving AS3000 project material recovered an independent 1998 engineering document that describes an API into the IrDA LAP stack whose purpose is to poll for other IrDA-compatible devices and return a list of the results. The same example documents discovery-specific outcomes including media-busy, incorrect-state ("You can only discover in NDM"), and successful discovery.
 
-A generic opaque first argument is rejected because the handler explicitly indexes six six-byte records. A mandatory second argument is rejected because the official internal caller passes `NULL`. A clean 32-bit return is rejected because both the handler and caller define/consume only the low byte.
+That historical description was written years before the three canonical ROMs and is independent of the A290 disassembly. Its semantics correlate strongly with the firmware evidence: A290 requires a subsystem state, asks a worker to populate a fixed result table, normalizes/deduplicates those results, and its sole internal consumer walks the resulting entries before passing each 32-bit `field_0` to A294. Together with the independently established IrDA role of neighboring A28C and the A294 state machine, **IrDA LAP discovery/result enumeration is therefore an INFERENCIA FUERTE for A290's functional role**, rather than merely a proximity-based provisional guess.
+
+The 1998 document is a programming-conventions document and its sample function header is attached to an unrelated example function name. It therefore does **not** recover A290's vendor symbol, exact record typedef, field names, or a one-to-one mapping between the historical symbolic status names and the numeric byte codes seen in the 2005/2013 firmware. Those remain unknown unless independently recovered. The public API consequently stays `SYS_A290` with neutral structural labels.
+
+## Adversarial review
+
+Historical BetaWise material and the modern `neo-re` reference do not provide an independent recovered public symbol or prototype for A290. The newly recovered AS3000 source-era documentation strengthens the subsystem/function-class identification without supplying a trustworthy symbol.
+
+A generic opaque first argument is rejected because the handler explicitly indexes six six-byte records. A mandatory second argument is rejected because the official internal caller passes `NULL`. A clean 32-bit return is rejected because both the handler and caller define/consume only the low byte. Treating the sample name in the 1998 programming-conventions document as A290's name is also rejected because that name belongs to a demonstrative coding example, not a recovered LAP declaration.
+
+## Confidence classification
+
+- **CONFIRMADO:** two pointer arguments; six packed 6-byte writable records; nullable 32-byte output; byte-sized status return; state precondition; normalization/deduplication; cross-ROM equivalence; A290→A294 caller relationship.
+- **INFERENCIA FUERTE:** A290 performs IrDA LAP discovery/result enumeration.
+- **DESCONOCIDO:** vendor/public symbol, exact record/field names, semantic meaning of `field_0/+4/+5`, and exact symbolic names for numeric statuses `0x12`, `0x13`, and `0x15`.
 
 ## Regression status
 
