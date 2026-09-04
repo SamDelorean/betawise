@@ -10,6 +10,16 @@ int fscanf(FILE *stream, const char *fmt, ...);
 The existing declaration in `os3k/os3k.h` and the historical syscall mapping already
 match this contract, so no source/header change is required.
 
+## Source-first re-audit
+
+The 2026-09-04 source-first pass started from the preserved SDK surface rather than
+from the binary name: `os3k/syscall.c` independently maps index 213 to `fscanf`, and
+`os3k/os3k.h` preserves the variadic `FILE *`/format prototype. Those references were
+treated as hypotheses only. The firmware reconstruction below independently confirms
+the same stream-scanner ABI, while comparison with A344/`sscanf` and A348/`fgetc`
+provides cross-function correlation. No contradiction requiring a contract change was
+found.
+
 ## Mechanical evidence
 
 The A354 handler is 0x30 bytes / 15 decoded instructions in AS3000 2005, NEO 2005
