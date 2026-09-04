@@ -56,4 +56,12 @@ A2C4 is not the public three-argument `ProcessMessage` interface; it does not ta
 
 **Specified / not executed.** Tests should cover exact A2BC field forwarding and full-long return propagation, `state+0x4A != 0`, negative preliminary status propagation, zero gating paths, and NEO 2013 preservation of `state+0x0A` on the path reaching A2BC.
 
+## 2026-09-04 source-first re-audit
+
+The closure was revalidated directly against all three canonical ROM images before advancing the sequential frontier. The ROM hashes matched the canonical manifest. Exact handler fingerprints also reproduced: AS3000 `70a7c3539a10e12aba2c2b1408440781b973af08b6cb7ea99041a322a22e7332`, NEO 2005 `546c0239baeb92fba1d68e08eb877fe55bbd548046340c080031e3f310896914`, and NEO 2013 `8a81cffe764df0498148369f52753af19dd08b8613dc55b92f00c6a282b88bca`.
+
+A fresh whole-ROM xref scan found zero absolute `JSR`/`JMP` references to A2C4 in each generation, reproducing the prior negative caller search. Independently, the internal word-displacement `BSR` on the accepted path resolves exactly to the corresponding A2BC entry in AS3000, NEO 2005, and NEO 2013. Static structural regression: **12/12 PASS** (3 canonical ROM identities, 3 handler fingerprints, 3 negative absolute-xref checks, 3 exact A2BC branch-target checks).
+
+No new source or manual evidence contradicted the neutral contract or justified a vendor name. Dynamic/emulator regression remains **specified / not executed**.
+
 Full ROM bytes and detailed disassembly remain private workpapers.
