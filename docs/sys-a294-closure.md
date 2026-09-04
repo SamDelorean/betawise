@@ -38,6 +38,12 @@ Each ROM contains exactly one equivalent absolute JSR caller of A294. No direct 
 
 This independently confirms the argument width and the mechanical A290→A294 relationship. It does not establish a vendor name or a semantic name for the 32-bit value.
 
+## Source-first historical correlation
+
+A 1998 AlphaSmart AS3000 engineering-conventions document contains an independent example API for the IrDA LAP stack. It describes a discovery operation that polls for other IrDA-compatible devices, returns discovery results, and distinguishes media-busy and incorrect-LAP-state conditions from success. This source predates the canonical System 3 firmware and therefore provides an independent architectural anchor rather than a derivation from the A-line binaries.
+
+Combined with the already-confirmed A290 discovery/list construction and the direct A290→A294 caller relationship, this makes it a **strong inference** that A294 initiates a subsequent LAP-layer operation against the selected discovery result. It still does **not** recover the vendor symbol, prove that `value` was named a device address in the original source, or map the numeric status values to historical enum names. Those details remain deliberately neutral.
+
 ## Historical and adversarial review
 
 No independent A294 name or prototype was recovered from the historical BetaWise material or the modern `neo-re` reference. The surrounding subsystem is compatible with IrDA operation, but the public contract intentionally does not rename `value` as a device address or other protocol-specific identifier without independent nominal evidence.
@@ -46,4 +52,4 @@ A pointer signature is rejected because neither A294 nor its worker dereferences
 
 ## Regression status
 
-An emulator-first regression is specified but has not been executed. It should verify: one or more worker `0x12` results followed by `0` cause retries; `0x13` or another non-zero value other than `0x12` propagates immediately; accepted operation remaining in state `6` waits; transition from `6` to `3` returns `0`; transition from `6` to another state returns `0x1e`; the input remains full-width 32-bit; and only `D0.B` is part of the return contract.
+The existing static/cross-ROM evidence remains the basis of the confidence-A mechanical closure. An emulator-first dynamic regression is specified but has not been executed. It should verify: one or more worker `0x12` results followed by `0` cause retries; `0x13` or another non-zero value other than `0x12` propagates immediately; accepted operation remaining in state `6` waits; transition from `6` to `3` returns `0`; transition from `6` to another state returns `0x1e`; the input remains full-width 32-bit; and only `D0.B` is part of the return contract.
