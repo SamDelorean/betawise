@@ -8,6 +8,15 @@ Reconstructed contract:
 int memcmp(const void *ptr1, const void *ptr2, size_t num);
 ```
 
+## Source-first re-audit
+
+The 2026-09-04 source-first pass began from the preserved SDK layer: `os3k/syscall.c`
+maps index 215 to `memcmp`, and `os3k/os3k.h` carries the same two-pointer/full-count
+prototype. Those references were treated as hypotheses rather than proof. The archived
+firmware reconstruction and callers independently reconfirm the three-slot ABI,
+full-width count, unsigned-byte ordering, and full `D0.L` comparison result. No ABI
+correction was required.
+
 The A35C handler is byte-identical in the AS3000 2005, NEO 2005, and NEO 2013 canonical ROMs. It consumes exactly three 32-bit slots: two pointers and a full-width count. It compares bytes sequentially over the bounded range and returns a deliberately defined full `D0.L` result of `-1`, `0`, or `+1`.
 
 The ordering is unsigned-byte ordering. The implementation normalizes the nonzero result to sign rather than returning the arithmetic byte difference; this is compatible with the C `memcmp` contract, which specifies only the sign of a nonzero result. A zero count returns zero without requiring a byte comparison.
