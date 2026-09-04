@@ -2,13 +2,21 @@
 
 ## Status
 
-`A2A0` is mechanically closed with confidence **A**. No vendor symbol or API name has been recovered, so the neutral symbol `SYS_A2A0` is retained.
+`A2A0` is closed under the current **source-first** methodology with confidence **A** for its ABI and mechanical behavior. No vendor symbol or API name has been recovered, so the neutral symbol `SYS_A2A0` is retained.
 
 ```c
 uint8_t SYS_A2A0(uint8_t selector);
 ```
 
 The physical caller ABI uses one 32-bit slot, but the handler consumes only the slot's low byte.
+
+## Source-first correlation
+
+Historical AS3000 material independently documents a state-sensitive IrDA LAP stack and an API whose discovery operation is only legal in the appropriate LAP state and returns byte-sized status codes such as media-busy and incorrect-state. Contemporary AlphaWord release notes independently confirm that IrDA was an operational AS3000 file-transfer transport.
+
+That history is consistent with the already reconstructed A28C/A290/A294/A298/A29C/A2A0 cluster, its shared major-state checks, byte-sized status domain, indexed per-channel/per-entry storage, and synchronous polling. It therefore supports **IrDA/transport subsystem membership as a strong inference**.
+
+It does **not** recover the original A2A0 symbol, the meaning of selectors `0..4`, or a vendor name for the stride-eight records. In particular, the constant `0x80` passed by A2A0 into A2A4 is not assigned a protocol name without an independent historical declaration.
 
 ## Cross-ROM evidence
 
@@ -61,10 +69,17 @@ The following alternatives were rejected from primary evidence:
 - `0x14` from the pre-operation helper is **not** propagated; it is converted to `0x20` at this layer.
 - A non-zero `A2A4` result **is** propagated rather than translated.
 - The stride-8 table and selector are mechanically demonstrated, but their vendor semantics are not; no semantic name is published.
+- The historical IrDA/LAP evidence does not justify renaming A2A0 as a disconnect/close/release primitive or assigning names to selectors.
 - The A2A0-to-A2A4 interval is a complete function, not code-plus-data: all internal branches converge on the final register restore and `RTS` immediately before the A2A4 entry.
+
+## Evidence classification
+
+- **CONFIRMED:** one byte-valued selector argument; byte return; selector bound `<5`; state/precondition checks; stride-eight record access; pre-helper behavior; exact A2A4 invocation shape; record clearing; synchronous completion wait; three-generation equivalence.
+- **STRONG INFERENCE:** membership in the IrDA/transport state machine shared with the surrounding A28C-A29C family.
+- **UNKNOWN:** original vendor symbol; selector meanings; record names/fields beyond mechanically observed offsets; protocol meaning of A2A4 flag `0x80` in this call.
 
 ## Validation status
 
-An emulator-first regression is specified but not yet executed. It covers invalid major states, selector bounds, inactive table records, pre-helper timeout/state change, A2A4 error propagation, table-state clearing, ten-tick completion timeout, tick wraparound, byte-only selector consumption and the byte-only return contract.
+An emulator-first regression is **specified but not yet executed**. It covers invalid major states, selector bounds, inactive table records, pre-helper timeout/state change, A2A4 error propagation, table-state clearing, ten-tick completion timeout, tick wraparound, byte-only selector consumption and the byte-only return contract.
 
 Full ROM bytes and correlated disassembly remain private workpapers in Drive.
