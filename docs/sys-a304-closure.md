@@ -33,3 +33,13 @@ The reconstruction rejects several tempting overclaims. Apparent extra stack off
 Private workpapers retain the per-ROM disassemblies, hashes, complete 41/41 caller manifest, correlated dataflow, helper references, generational comparison, and executable static regression. Static regression completed with `OVERALL PASS`. Dynamic/emulator-first regression remains specified but not executed and is not required for the mechanical closure stated here.
 
 No firmware, ROM bytes, extensive disassembly, or other private vendor material is included in this repository document.
+
+## 2026-09-04 source-first re-audit
+
+The closure was re-audited under SOURCE-FIRST using the complete official SmartApplet caller corpus together with the previously reconstructed canonical firmware. The decisive independent correlation is four executable AlphaWordPlus callsites across two generations: two in AlphaWordPlus 2005 and two in AlphaWordPlus NEO 2012. Each call uses the same three-slot physical shape, and each consumes the returned low byte with `TST.B` before that register value is redefined. The remaining 39 official applets are documented negatives.
+
+Firmware independently confirms the same three physical inputs, that only the low 16 bits of slot 2 reach an observable state update, and that slot 3 is dereferenced as a required NUL-terminated string. All reachable exits define `D0.B` as 0 or 1, while the zero path leaves the upper 24 bits non-contractual. This combination justifies the existing neutral `uint8_t` result without promoting it to a vendor `bool` or inventing enum semantics.
+
+The real AS3000-versus-NEO implementation difference remains preserved: AS3000 has the shorter body, while NEO adds the preparation/helper sequence; NEO 2005 and NEO 2013 remain mechanically equivalent after relocation. No historical source recovered an independent vendor symbol or subsystem name, so `SYS_A304` and neutral field terminology remain appropriate.
+
+Static source-first correlation regression: **15/15 PASS** (3 canonical ROM identity checks, 3 handler-length/terminal-CFG checks, 3 physical-slot/argument-use checks, 2 official caller-generation target sets, 2 explicit byte-result-consumption checks, and 2 complete-corpus/generational-difference checks). Dynamic/emulator regression remains **specified / not executed**.
