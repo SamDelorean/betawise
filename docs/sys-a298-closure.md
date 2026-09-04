@@ -2,6 +2,7 @@
 
 ## Status
 
+- Audit status: **CLOSED A / SOURCE_FIRST / PUBLISHED**.
 - Mechanical confidence: **A**.
 - Original vendor name: **unknown**; retain the neutral `SYS_A298` identity.
 - Dynamic/emulator regression: **specified, not executed**.
@@ -75,6 +76,20 @@ same SHA-256:
 The raw firmware bytes and extended disassembly remain in the private research
 archive and are intentionally not reproduced here.
 
+## Source-first correlation
+
+The historical/BetaWise/neo-re search did not recover an independent vendor
+symbol, prototype, selector enumeration, or status-code enumeration for A298.
+That negative result is recorded explicitly rather than converted into a name.
+
+Independent AlphaSmart engineering material from the AS3000 era confirms that
+the surrounding firmware family contains a layered IrDA/LAP stack with
+state-sensitive, byte-status APIs. Together with the already reconstructed
+A28C/A290/A294 neighborhood and the shared state used by A298, this supports a
+**strong subsystem-level inference** that A298 belongs to the same IrDA/transport
+state machine. It does not justify assigning meanings to selectors `0..4`, the
+second byte argument, or numeric results `0x15..0x1B`.
+
 ## Adversarial conclusions
 
 The evidence rejects the following alternatives:
@@ -87,10 +102,7 @@ The evidence rejects the following alternatives:
 - treating the indexed storage as unrelated bytes: `selector << 3` establishes
   an eight-byte entry stride.
 
-Neighboring reconstructed traps and shared state make a transport/IrDA-family
-interpretation plausible, but that contextual inference is insufficient to
-assign a vendor function name or selector meanings. The public interface
-therefore remains `SYS_A298`.
+The public interface therefore remains `SYS_A298`.
 
 ## Regression specification
 
