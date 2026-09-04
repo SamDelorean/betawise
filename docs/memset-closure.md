@@ -17,3 +17,11 @@ The official SmartApplet sweep used the corrected PC-index detector over the com
 Adversarial checks reject nearby alternatives. `memcpy`/`memmove` require a source pointer that A368 does not consume; string semantics are absent; a void byte-fill helper is inconsistent with the deliberate `D0.L = ptr` return. The historical BetaWise `memset` mapping therefore agrees with, but is not the basis of, the reconstruction.
 
 Private static regression against the canonical ROMs and the official caller corpus executed with **OVERALL PASS**. Dynamic/emulator regression remains specified but was not executed. Firmware bytes and detailed disassembly remain private in Drive.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The re-audit began from the historical source anchors: `os3k/syscall.c` maps index 218 to `memset`, and `os3k/os3k.h` preserves `void *memset(void *ptr, int value, size_t num)`. These references were treated as hypotheses and then checked against the independently reconstructed firmware behavior.
+
+The primary workpapers confirm the contract without relying on the names: the handler is 0x28 bytes and byte-identical in all three canonical ROMs; it consumes a destination pointer, only the low byte of the value slot, and a full 32-bit count; it performs exactly `num` byte stores with a zero-count no-write path; and it deliberately returns the original pointer in `D0.L`. The complete 41-app corpus contains 100 executable callers, while direct ROM xrefs are 22/30/34. Alternatives requiring a source pointer or string termination are mechanically incompatible with the handler. No source/firmware contradiction was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. The previously executed private static regression remains `OVERALL PASS`; dynamic/emulator-first regression remains **NOT EXECUTED**.
