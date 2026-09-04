@@ -2,7 +2,7 @@
 
 ## Status
 
-`A29C` is mechanically closed with confidence **A**. No vendor symbol or API name has been recovered, so the neutral symbol `SYS_A29C` is retained.
+`A29C` is **CLOSED A / SOURCE_FIRST / PUBLISHED**. No vendor symbol or API name has been recovered, so the neutral symbol `SYS_A29C` is retained.
 
 ```c
 uint8_t SYS_A29C(void);
@@ -43,6 +43,12 @@ Exactly two absolute internal JSR callers were found per canonical ROM, and no a
 Neither caller prepares arguments for `A29C`. Both ignore its return value. That does not make the reconstructed API `void`: the handler deliberately constructs and propagates a byte-sized status result, while the high bits of `D0` are not contractual.
 
 A Beamer binary from both the 2005 and later NEO corpus contains `A29C` only once inside the contiguous A-line stub table (`A298`, `A29C`, `A2A0`, ...), not as an independent executable caller.
+
+## Source-first correlation
+
+Historical AlphaSmart/BetaWise/neo-re searches did not recover an independent symbol or prototype for A29C. Independent AS3000-era engineering material does establish a stateful IrDA LAP stack with named discovery and state-dependent operations, which is consistent with the already-confirmed A28C→A290→A294→A298 neighborhood and A29C's reuse of the same primary state domain.
+
+That correlation strengthens the **subsystem assignment** but does not identify the exact primitive. In particular, names such as `disconnect`, `close`, `reset`, or `shutdown` remain **unproven** and are intentionally not published. The neutral contract is therefore retained without semantic renaming.
 
 ## Adversarial checks
 
