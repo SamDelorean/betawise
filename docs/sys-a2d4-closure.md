@@ -56,7 +56,7 @@ The worker itself returns `1`, but A2D4 does **not** expose that value; it reloa
 
 ## Callers and xrefs
 
-Direct ROM-wide searches for absolute JSR and BSR.W callers of A2D4 were negative in all three canonical ROMs. SmartApplet searches mostly find the standard contiguous syscall stub table. The extra `A2 D4` occurrence inspected in NEO Wireless File Transfer lies inside the immediate operand of `MOVEA.L #0x0000A2D4,A0`, not an executed A-line opcode. Additional thesaurus matches are data, not confirmed 68000 callers.
+Direct ROM-wide searches for absolute `JSR`, absolute `JMP`, and direct `BSR.W` callers of A2D4 are negative in all three canonical ROMs. SmartApplet searches mostly find the standard contiguous syscall stub table. The extra `A2 D4` occurrence inspected in NEO Wireless File Transfer lies inside the immediate operand of `MOVEA.L #0x0000A2D4,A0`, not an executed A-line opcode. Additional thesaurus matches are data, not confirmed 68000 callers.
 
 No independent A2D4 prototype or vendor symbol was recovered from BetaWise or `neo-re`.
 
@@ -77,5 +77,13 @@ Several tempting interpretations were rejected:
 ## Regression status
 
 Emulator-first regression is **specified, not executed**. Tests should cover each of the five return values, preserve the low byte of `flags` while varying its upper 24 bits, exercise valid/invalid guard and comparison paths, and compare AS3000 2005, NEO 2005 and NEO 2013.
+
+## 2026-09-04 source-first re-audit
+
+The closure was revalidated directly from all three canonical ROMs after correcting the neighboring A2C8 xref record. Canonical ROM identities and exact handler fingerprints reproduced 3/3: AS3000 `866d912bf7d9ee9d101c2ca176ab5df1c5d88b7a7d0f6854bba352849db4c682`, NEO 2005 `a00a72e5e4073a634eadd810ddc710098f27df435c900a1ebe858b7a4401b332`, and NEO 2013 `ddc9127b5268cb28229e8dfa8afa71a924a7a1aa24c9ba01cfc69f11c2d00a41`.
+
+A fresh aligned whole-ROM control-transfer scan reproduced the negative direct-caller result in every generation: zero absolute `JSR`, zero absolute `JMP`, and zero direct `BSR.W` callers to A2D4. The 0x5E-byte lengths and terminal `RTS` at `+0x5C` also reproduced exactly. Static structural regression: **12/12 PASS** (3 canonical ROM identities, 3 exact handler fingerprints, 3 terminal size/epilogue checks, 3 negative direct-xref sets).
+
+No source or manual evidence contradicted the four-slot neutral ABI or the five-value `D0.L` domain. Dynamic/emulator regression remains **specified / not executed**.
 
 Private evidence includes per-ROM disassembly, exact bytes, helper correlation and workpapers. ROM/disassembly material is intentionally not published in this repository.
