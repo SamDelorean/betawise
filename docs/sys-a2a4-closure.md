@@ -2,7 +2,7 @@
 
 ## Status
 
-`A2A4` is mechanically closed with confidence **A**. No vendor symbol or API name has been recovered, so the neutral symbol `SYS_A2A4` is retained.
+`A2A4` is closed under the current **source-first** methodology with confidence **A** for its ABI and mechanical behavior. No vendor symbol or API name has been recovered, so the neutral symbol `SYS_A2A4` is retained.
 
 ```c
 uint8_t SYS_A2A4(uint8_t flags,
@@ -12,6 +12,14 @@ uint8_t SYS_A2A4(uint8_t flags,
 ```
 
 The physical ABI uses four 32-bit stack slots. The handler consumes only the low byte of slots 1, 2 and 4; slot 3 is a 32-bit pointer. `flags` is deliberately not modeled as `bool`: the A2A0 caller passes `0x80` and other callers pass `0`.
+
+## Source-first correlation
+
+Historical AS3000 documentation independently establishes a state-sensitive IrDA LAP stack, while contemporary AlphaWord release notes confirm IrDA as an operational transfer transport. Within the reconstructed firmware family, A28C establishes IrDA/IrCOMM/IrLMP/TinyTP state, A288 returns the same dynamic `global16 - 6` quantity that A2A4 enforces as its payload-size ceiling, and A298/A2A0 share A2A4's selector domain, state table and byte-sized status model.
+
+Taken together, this makes membership in the same IrDA/transport request machinery a **strong inference**, not merely vector-neighborhood speculation. The correlation also independently strengthens the interpretation of A288 as a transport payload ceiling because A2A4 consumes that exact limit.
+
+No historical source recovered the A2A4 symbol, selector meanings, error enum, protocol meaning of `flags`, or a vendor name for the payload format. `0x80` is therefore preserved as an observed flag value rather than renamed as a protocol bit.
 
 ## Corrected function boundary and cross-ROM evidence
 
@@ -76,10 +84,17 @@ Primary evidence rejects the following alternatives:
 - `selector` and `payload_size` are **not** 32-bit in meaning; only their low bytes are consumed.
 - `payload` is **not** proven nullable; only a specific pointer sentinel is demonstrated.
 - Not every non-zero status is generated locally; internal-helper byte errors are propagated.
-- The surrounding subsystem is consistent with the neighboring transport/IrDA work, but that does not justify inventing a vendor function name, selector enum, state labels, or error names.
+- The source-first IrDA/LAP correlation is insufficient to assign protocol names to selectors, flags, headers or status codes.
+- A semantic API name such as send-frame/send-packet/IrLMP-send is not justified without nominal evidence and is not published.
+
+## Evidence classification
+
+- **CONFIRMED:** four-argument ABI; byte widths for flags/selector/payload_size; pointer payload; dynamic payload ceiling shared with A288; selector bound; stride-eight table; immediate/deferred paths; header construction; helper behavior; byte return; exact 0x14A function boundary; cross-ROM equivalence.
+- **STRONG INFERENCE:** A2A4 is a transmit/request-construction primitive inside the IrDA/transport state machine shared with A28C/A288/A298/A2A0.
+- **UNKNOWN:** vendor symbol; selector enum; protocol meaning of flags including `0x80`; names of local status codes; exact protocol-layer interpretation of the two-byte header and selector-3/4 control bytes.
 
 ## Validation status
 
-An emulator-first regression is specified but not yet executed. It covers size boundaries, selector bounds, state preconditions, non-zero flags including `0x80`, deferred replay and timeout including tick wraparound, immediate buffer construction, the special-pointer path, selectors 3/4, shared-counter exhaustion, helper `0x13`/`0x14` and arbitrary error propagation, byte-only return behavior, and the corrected function boundary.
+An emulator-first regression is **specified but not yet executed**. It covers size boundaries, selector bounds, state preconditions, non-zero flags including `0x80`, deferred replay and timeout including tick wraparound, immediate buffer construction, the special-pointer path, selectors 3/4, shared-counter exhaustion, helper `0x13`/`0x14` and arbitrary error propagation, byte-only return behavior, and the corrected function boundary.
 
 Full ROM bytes, addresses of private globals, and correlated reverse-engineering workpapers remain private in Drive.
