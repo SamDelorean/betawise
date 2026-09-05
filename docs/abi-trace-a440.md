@@ -1,21 +1,21 @@
-# ABI trace — A440
+# ABI trace — A440 / index 272
 
-Public trace for the mechanically reconstructed but semantically blocked OS3K A-line entry `A440`.
+SOURCE-FIRST revalidation of OS3K A-line entry `A440`.
 
-- Vector ordinal/index: 272.
-- AS3000 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2013: callable handler; exact private bounds and hashes are retained in the correlated workpaper.
-- External stack evidence: five 32-bit slots.
-- Effective widths/roles: slot 1 readable two-long object; slot 2 pointer-like byte/NUL input; slot 3 writable byte buffer; slot 4 signed low-16 value; slot 5 writable 16-bit conditional output pointer.
-- Additional result channel: incoming `A1` is preserved and used as the destination for a terminal six-byte aggregate copy.
-- Aggregate layout evidence: byte at offset 0, one uninitialized/padding-compatible byte at offset 1, 32-bit field at offset 2.
-- Direct firmware xrefs to the handler in NEO 2013: exactly one recovered `BSR.W`, from the A44C-family handler.
-- Caller evidence: the caller prepares `A1` to a local six-byte object, pushes exactly five stack arguments, calls A440, discards 20 bytes of stack arguments, does not consume `D0`, and later forwards the same six-byte object to its own saved `A1`.
-- `D0` scalar-return hypothesis: refuted as a coherent stable contract because the early and normal paths leave different internal values in `D0` while the contractual aggregate is independently formed through `A1`.
-- Static regression: 48/48 PASS against the canonical NEO 2013 ROM, the recovered A44C caller, callback evidence, and the official AlphaWordPlus corpus artifact.
-- Dynamic/emulator validation: not executed for semantic promotion.
+- Disposition: `MECANICA_CERRADA A / SOURCE_FIRST`; unresolved source-level semantics are an evidence limit, not a sequencing blocker.
+- Historical correlation: recovered BetaWise/ioma8 mapping establishes `SYS_A440` at index 272; no independent vendor prototype was recovered.
+- AS3000 2005: non-callable/non-pointer table value `0x5A06004E`.
+- NEO 2005: non-callable/non-pointer table value `0x7F08005E`.
+- NEO 2013: runtime `0x00443052`, file offset `0x033052`.
+- Handler: `0xE8` bytes, SHA-256 `f312ec08cdf5791a160f4ce68ca81ff16dc50a13f727dc380e3a306319a3fc02`.
+- External ABI: five 32-bit stack slots.
+- Effective mechanics: arg1 points to at least two readable longwords; arg2 is pointer-like byte/NUL input; arg3 is a writable byte buffer; arg4 is mechanically signed 16-bit (`MOVE.W` + sign extension); arg5 is a pointer receiving a conditional 16-bit write outside the early path.
+- Incoming `A1` is preserved and receives a terminal six-byte aggregate result: byte at offset 0, one uninitialized/padding-compatible byte at offset 1, and a 32-bit field at offset 2.
+- Contractuality of the A1 aggregate channel is confirmed by the sole direct caller in A44C: it prepares a six-byte local in A1, pushes five stack arguments, calls A440 through `BSR.W` at runtime `0x00443304`, discards exactly 20 bytes, ignores D0, and later forwards the six-byte local through its own saved A1.
+- Stable scalar D0 return is refuted: early and normal paths leave incompatible internal values while the aggregate result is independently formed through A1, and the caller ignores D0.
+- Direct xrefs: one `BSR.W` caller, zero direct absolute JSR/JMP.
+- Fresh directed static regression: `35/35 PASS`.
+- Dynamic/emulator validation: not executed.
+- Source-level meanings of the five arguments, status codes and private globals remain unknown; no semantic function name or callable C header is emitted.
 
-Disposition: **MECANICA_RECONSTRUIDA A / BLOQUEADO_SEMANTICA**. The binary ABI shape is substantially established, including the contractual aggregate result through `A1`, but no callable C header is emitted until the source-level semantics of the five stack arguments and observed state/output fields are independently resolved.
-
-See `docs/sys-a440-blocked.md` for adversarial analysis and consolidation clues.
+Private ROM bytes, full disassembly, callback/helper analysis and regression workpapers remain outside the repository.
