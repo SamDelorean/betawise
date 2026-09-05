@@ -1,44 +1,95 @@
 # A3A4 / `strstr` closure
 
-A3A4 (index 233) is mechanically reconstructed as:
+A3A4 (index 233) is reconstructed and independently revalidated source-first as:
 
 ```c
 char *strstr(const char *haystack, const char *needle);
 ```
 
-## Primary mechanics
+Status: **CLOSED A / SOURCE_FIRST / PUBLISHED**.
 
-Canonical entry points:
+## Source-first anchors
+
+Historical and current references were correlated before accepting the previous reconstruction:
+
+- preserved BetaWise `syscall.c` maps index 233 to `strstr`;
+- preserved `os3k.h` and `os3k.pdf` declare `char *strstr(const char *str1, const char *str2)`;
+- the current `sdk/abi-automation` BetaWise sources retain both index233→`strstr` and the same two-pointer prototype;
+- `master` independently retains index233→`strstr`;
+- a targeted `debug.pdf` text search did not recover a direct `strstr` occurrence, so no positive source-level evidence is attributed to that document.
+
+These references are treated only as identity/signature anchors. The contract below is based on the canonical firmware and concrete executable callers.
+
+## Fresh primary verification
+
+The three canonical private ROMs were freshly materialized and their complete SHA-256 values recomputed:
+
+- AS3000 2005: `732dca63399d883071ce41cc07ad352fa19c506b7b8c307ace16d5c53e6f8708`
+- NEO 2005: `5f550e48ad36892ee5f5a067e8c1b87f6bf504b6cb2c2dfc4098776fa8831a3d`
+- NEO 2013: `32fe55bb50c1b58326bd303f14973b8402ddf8bf6662b210e4d5e9f931c7e6c0`
+
+All three passed exactly.
+
+Canonical A3A4 entry points remain:
 
 - AS3000 2005: runtime `0x004DDCA0`, file `+0x01DCA0`
 - NEO 2005: runtime `0x005E03BE`, file `+0x0203BE`
 - NEO 2013: runtime `0x004367BC`, file `+0x0267BC`
 
-The handler is 0x48 bytes in all three ROMs. The raw images differ only in the two absolute JSR operands; after neutralizing those relocations the common SHA-256 is `5587602b25c9085b2a43cce4b05eefe7db0e93897142751f65ba78e3d53b2dbe`.
+The handler is exactly `0x48` bytes with its unique terminal `RTS` at `+0x46`. Fresh raw handler SHA-256 values are:
 
-It consumes two string pointers. The second string is passed to the already reconstructed A390/`strlen`. An empty second string returns the first pointer immediately. Otherwise the handler scans the first NUL-terminated string. When the current byte equals the first byte of the second string, it calls a private bounded comparator with `(cursor, needle, strlen(needle))`; comparator zero returns the current cursor, while a mismatch advances by one byte. Exhaustion returns NULL. The handler does not modify either string and uses no globals or data tables.
+- AS3000: `5d13c5e42c32d1e9478dc755ef4f4ad144f50ade79a46a368b89131da264f634`
+- NEO 2005: `0ee34148ce168d7c6cba4c5c34c6dc5be98e48882d3ceafec3435b42fe48d66c`
+- NEO 2013: `64183aacd5ffd6c13c71ced1a2a88d346a2c286108bec13ac5af364b6530935e`
 
-The private comparator is 0x3A bytes and byte-identical across AS3000 2005, NEO 2005 and NEO 2013 (SHA-256 `494834eaa7a797f952e4b7612b64fe08759217596a56bf8cf12428d045740cb9`). It consumes two pointers plus a 32-bit count and compares zero-extended bytes until count, mismatch or NUL, returning zero or the byte difference. No vendor symbol is assigned to that helper.
+The only cross-generation changes are the two relocated absolute call operands. Neutralizing those operands gives common SHA-256 `5587602b25c9085b2a43cce4b05eefe7db0e93897142751f65ba78e3d53b2dbe`.
+
+## Handler contract and helper
+
+The handler consumes exactly two 32-bit string pointers. It passes `needle` to the already-closed A390/`strlen`, preserving the resulting 32-bit length. If that length is zero it returns `haystack` immediately.
+
+For a nonempty needle, the handler scans `haystack` one byte at a time until NUL. A first-byte equality gates a call to a private bounded comparator with `(cursor, needle, needle_length)`. Comparator zero returns the current cursor; comparator nonzero advances the scan by one byte. Exhaustion returns zero/NULL. Neither input string is written, and the handler uses no globals or data tables.
+
+The private comparator is `0x3A` bytes and was freshly checked byte-identical in all three ROMs, SHA-256 `494834eaa7a797f952e4b7612b64fe08759217596a56bf8cf12428d045740cb9`. It consumes pointer/pointer/count32, compares zero-extended bytes until count, mismatch or NUL, and returns zero or the byte difference. No vendor symbol is assigned to it.
+
+This mechanics directly confirms:
+
+```c
+char *strstr(const char *haystack, const char *needle);
+```
+
+Valid readable NUL-terminated strings are caller preconditions; no NULL guard is present in the handler.
 
 ## Caller correlation
 
-The validated official corpus is complete at 41/41. The physical A-line target (`A378 + 0x16`) finds 11 executable A3A4 calls in three NEO applets: eight in AcceleratedReader, two in KeywordsWireless and one in MathFactsInAFlash. The other 27 table-bearing applets and all 11 structural negatives have no executable A3A4 call.
+The previously completed 41/41 official-corpus audit found 11 executable A3A4 calls in exactly three NEO applets: eight in AcceleratedReader, two in KeywordsWireless and one in MathFactsInAFlash. The remaining 27 table-bearing applets and all 11 structural negatives had no executable A3A4 call.
 
-All positive sites supply two pointer-sized slots. Ten immediately test `D0.L` for NULL/non-NULL; the remaining caller performs pointer arithmetic on `D0.L` and moves it to an address register. This independently confirms the pointer/NULL result contract. No direct firmware JSR/JMP/BSR to A3A4 was found in any canonical ROM.
+As part of this source-first revalidation, those three positive binaries were freshly materialized, their complete SHA-256 values rechecked, and the A-line detector rerun. It reproduced the exact 11 sites with no drift:
 
-## Adversarial alternatives
+- AcceleratedReader: 8/8 expected sites;
+- KeywordsWireless: 2/2 expected sites;
+- MathFactsInAFlash: 1/1 expected site.
 
-- `strchr`/`strrchr` are rejected because the second external argument is a pointer and the handler computes its string length.
-- `strncmp` is the three-argument private comparator used by the search, not the outer two-argument pointer-return service.
-- Copy/concatenation routines are rejected because A3A4 does not write either input.
-- A generic substring-search label adds no explanatory power beyond the exact standard `strstr` edge behavior: empty needle returns haystack, successful search returns the first matching cursor and failure returns NULL.
+All positive callers supply two pointer-sized slots. Ten test `D0.L` directly for NULL/non-NULL; the remaining caller performs pointer arithmetic on `D0.L` and moves it to an address register. The pointer/NULL return is therefore independently confirmed by consumers. The prior complete ROM-wide direct JSR/JMP/BSR search remains negative in all three canonical generations.
 
-The historical BetaWise `strstr` declaration is secondary corroboration only. The contract follows from the ROM mechanics and official callers.
+## Adversarial checks
 
-## Validation status
+The historical `strstr` hypothesis was challenged against alternatives:
 
-Static regression over all three canonical ROMs and the complete official SmartApplet corpus executed with **OVERALL PASS**. It validates canonical hashes, exact handler lengths and normalized identity, exact helper identity, negative direct ROM xrefs, the exact 11-call/3-applet corpus, pointer-return consumption, and neighboring detector controls A388=244, A38C=302, A390=477 and A3A0=2.
+- `strchr` / `strrchr` are incompatible because the second argument is a pointer and its string length is computed;
+- `strncmp` corresponds to the three-argument bounded comparison mechanics, not the outer two-argument pointer-return search;
+- copy/concatenation routines are incompatible with the absence of input writes;
+- boolean/status-return search is incompatible with callers that use `D0.L` as an address;
+- a custom substring-search contract does not explain the observed standard edge semantics better than `strstr`: empty needle returns haystack, success returns the first matching cursor, and failure returns NULL.
 
-Dynamic emulator-first regression is specified for empty needle, empty haystack, beginning/middle/end matches, no match and repeated first-byte false candidates, but was not executed for this mechanically determined entry.
+No source-versus-firmware contradiction was found. The historical name and prototype survive primary verification unchanged.
 
-Status: **MECÁNICA_CERRADA A / PUBLICADO**. The existing `os3k.h` declaration already matches the reconstructed contract, so no header change is required.
+## Regression status
+
+The preserved full static regression over all three canonical ROMs and the complete 41-applet accounting is **EXECUTED / OVERALL PASS**. It covers canonical ROM hashes, exact handler lengths/hashes, relocation-normalized identity, exact helper identity, negative direct ROM xrefs, the 11-call/3-applet corpus, return consumption, mechanics and neighboring detector controls.
+
+This source-first pass additionally re-executed the canonical ROM/hash/handler/helper checks and the complete positive-caller set: **PASS** with exact prior fingerprints and site offsets.
+
+Dynamic/emulator-first regression remains **SPECIFIED / NOT EXECUTED**. Minimum cases remain: empty needle; empty haystack with nonempty needle; match at beginning/middle/end; no match; needle longer than remaining suffix; high-bit bytes in the comparator; and repeated first-byte false candidates before the real match.
+
+The existing `os3k.h` declaration already matches the verified ABI; no header or wrapper change is required.
