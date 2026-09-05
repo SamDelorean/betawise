@@ -1,23 +1,22 @@
-# ABI trace — A448
+# ABI trace — A448 / index 274
 
-Public trace for the mechanically reconstructed but source-semantics-blocked OS3K A-line entry `A448`.
+Status: **MECANICA_RECONSTRUIDA A / SOURCE_FIRST / PUBLICADO**.
 
-- Vector ordinal/index: 274.
-- AS3000 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2013: callable handler; exact private bounds and hashes are retained in the correlated workpaper.
-- External stack evidence: five 32-bit slots plus a six-byte aggregate result through incoming `A1`.
-- Slot roles: input descriptor span; exact NUL-string selector/filter; writable array of 16-byte four-long descriptor records; effective signed-8 record capacity; writable one-byte accepted-record count.
-- Parser correlation: common core explicitly recognizes XML/markup syntax characters and shares the entity-reference helper independently established in A444.
-- Predicate correlation: A448 installs a callback that compares the supplied selector string against a parser-maintained NUL string with a strcmp-like helper and accepts only exact equality.
-- Descriptor correlation: callbacks write records at `base + count*16`, populate fields at offsets 0/4/8/12, and increment count only after the predicate accepts the candidate.
-- Direct firmware xrefs in NEO 2013: exactly two recovered `BSR.W` callers, one leading to the A440 wrapper path and one to the A444 wrapper path.
-- Caller evidence: both callers prepare a local descriptor array, pass literal record capacity 2, pass a local count byte, prepare `A1` to a local six-byte aggregate, call A448, clean 20 bytes, inspect aggregate state and count, ignore `D0`, and then pass the first produced descriptor to A440 or A444.
-- State code 8 is mechanically tied to record-capacity exhaustion/limit: the descriptor callback sets it when produced count is no longer less than capacity; both callers treat state 0 or 8 as usable when count is positive.
-- `D0.L` duplicates the aggregate detail delta at return, but no recovered caller consumes it independently; a separate scalar-return contract is not established.
-- Static regression: 70/70 PASS against canonical NEO 2013 ROM, callbacks, strcmp-like helper, both callers, common XML parser syntax, and official AlphaWordPlus corpus presence.
-- Dynamic/emulator validation: not executed for semantic promotion.
+- Historical correlation: `betawise-master/os3k/syscall.c` establishes neutral placeholder `SYS_A448` at index 274; `os3k.h` contains no independent vendor prototype.
+- AS3000 2005 and NEO 2005: non-pointer/unresolved vector values; no callable handler attributed.
+- NEO 2013 handler: runtime `0x00443214..0x004432AF`, length `0x9C`, SHA-256 `480cd19d43b2fc3535ede8bd7b600845217cc3dea3a4f337d0eed6bd63f7e3a8`.
+- External ABI: five 32-bit stack slots plus a six-byte aggregate result through incoming `A1`.
+- Mechanical slot roles: input descriptor span; exact NUL-string selector/filter; writable array of 16-byte four-long descriptor records; effective signed-8 record capacity; writable one-byte accepted-record count.
+- Parser correlation: common core recognizes XML/markup syntax and shares the entity-reference helper independently established in A444.
+- Predicate callback compares the supplied selector against a parser-maintained NUL string with a strcmp-like helper and accepts exact equality.
+- Descriptor callbacks write records at `base + count*16`, fields 0/4/8/12, and increment count only after predicate acceptance.
+- Direct NEO 2013 xrefs: exactly two `BSR.W` callers at `0x004432D0` and `0x0044333C`; zero direct absolute JSR/JMP.
+- Both callers pass literal capacity 2, local descriptor storage and count, prepare A1 to a six-byte aggregate, ignore D0, then consume the first descriptor through A440 or A444.
+- State 8 is mechanically tied to the record-capacity condition; no vendor enum name is assigned.
+- `D0.L` duplicates an aggregate detail delta, but no recovered caller consumes it independently, so a separate scalar-return contract remains unproved.
+- Selector meaning (tag/path/other structural key) and descriptor field names remain evidence-limited, not sequencing-blocking.
+- Fresh canonical-ROM directed static regression on 2026-09-05: **32/32 PASS**.
+- Dynamic/emulator validation: **specified, not executed**.
+- No callable C header or invented vendor semantic name is emitted.
 
-Disposition: **MECANICA_RECONSTRUIDA A / BLOQUEADO_SEMANTICA_SELECTOR**. The binary ABI and parser/filter/descriptor mechanics are established, but no callable C header is emitted until the descriptor-field and selector-string source semantics are independently resolved.
-
-See `docs/sys-a448-blocked.md` for adversarial analysis and consolidation clues.
+Private ROM bytes, full parser/callback disassembly and regression workpapers remain outside the repository.
