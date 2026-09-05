@@ -1,17 +1,17 @@
-# Forward-sweep trace — A3CC / index 243
+# Source-first trace — A3CC / index 243
 
-- Status: mechanically reconstructed A; blocked exclusively on contractual return intent.
-- AS3000 2005 raw slot: `0x5AB6004E`, non-pointer/unresolved.
-- NEO 2005 raw slot: `0x7FC0005E`, non-pointer/unresolved.
-- NEO 2013 handler: runtime `0x0043EFE8`, file `0x02EFE8`, length `0xD6`, 72 decoded instructions, SHA-256 `460e37673239f9d7fcc4feaaf0a606350f724c411bb0447e5c8076e11ef3ca4b`.
+- Status: **SOURCE_FIRST / MECHANICALLY_RECONSTRUCTED A / contractual return UNKNOWN**.
+- Correlation first: BetaWise and `ioma8/neo-re` retain only the neutral mapping `index 243 = SYS_A3CC`; checked public/header/debug sources provide no independent vendor prototype or semantic name.
+- Fresh primary pass reproduced all three canonical ROM SHA-256 values.
+- AS3000 2005 raw slot `0x5AB6004E` and NEO 2005 raw slot `0x7FC0005E` remain non-pointer/unresolved.
+- NEO 2013 has a real 0xD6-byte handler; its archived SHA-256 was reproduced exactly.
 - Physical input ABI: zero caller arguments.
-- Direct dependencies include A3B8 twice and A3B4 twice.
-- Mechanical terminal D0.B domain: `{0,1}`; no wider return contract is implied.
-- Firmware direct callers: 3; demonstrated return consumption: 0/3.
-- Official SmartApplet corpus: 41/41 structurally checked; A3CC is not present as an A-line slot, callers 0/41.
-- `uint8_t SYS_A3CC(void)` remains a strong inference only; no callable prototype is published.
-- Static regression: OVERALL PASS. Dynamic regression: specified, not executed.
+- Fresh handler correlation reproduces two BSR calls to A3B8 and two BSR calls to A3B4.
+- The implementation deliberately constructs a terminal D0.B domain `{0,1}`, but all three direct firmware callers ignore/overwrite D0. A contractual `uint8_t` return therefore remains **INFERENCIA FUERTE**, not CONFIRMADO.
+- Fresh firmware xrefs: exactly three absolute JSR callers, zero absolute JMP and zero BSR.W callers.
+- The archived 41/41 SmartApplet survey remains structurally negative because A3CC is not physically exposed as an applet A-line slot.
+- Static regression: prior integral regression **EJECUTADA / OVERALL PASS**; directed source-first primary revalidation **EJECUTADA / PASS**. Dynamic regression remains **ESPECIFICADA / NO EJECUTADA**.
 
 Public disposition: [`sys-a3cc-blocked.md`](sys-a3cc-blocked.md).
 
-Detailed firmware/disassembly evidence remains private in Drive.
+No callable prototype or invented vendor name is published. Detailed firmware/disassembly evidence remains private in Drive.
