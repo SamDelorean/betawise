@@ -1,15 +1,17 @@
-# Forward-sweep trace — A3C4 / index 241
+# Source-first trace — A3C4 / index 241
 
-- Status: mechanically reconstructed A; blocked only on contractual return intent.
-- AS3000 2005 raw slot `0x004E004E` lands inside an existing instruction extension word, not at a handler boundary.
-- NEO 2005 raw slot `0x004E005E` is outside the mapped ROM runtime range.
-- NEO 2013 handler: runtime `0x0043DAE2`, file `0x02DAE2`, length `0x1A`, SHA-256 `7619bfc511b2f496744dc3cc0db4f3b7a27095e604f30824fc5d5d006f6b29d9`.
-- Physical input: one 32-bit pointer-like slot, confirmed by seven official executable callers.
-- Side effects: conditional storage of that longword plus state-byte update; semantic names remain unknown.
-- D0: never defined by the handler; all seven official callers clobber it before use. `void` is very strongly inferred but not independently confirmed, so no callable prototype is published.
-- Official corpus: 41/41; seven callers in seven extended applets.
-- Static regression: OVERALL PASS. Dynamic regression: not executed.
+- Status: **SOURCE_FIRST / MECHANICALLY_RECONSTRUCTED A / contractual return UNKNOWN**. No callable prototype is published.
+- Correlation first: BetaWise and `ioma8/neo-re` independently retain only the neutral mapping `index 241 = SYS_A3C4`; the available `os3k.h` standard-library declarations stop at `ungetc`, and the checked DebugTool source provides no A3C4 prototype or semantic name. These are anchors/negative evidence, not primary proof.
+- Fresh primary revalidation reproduced all three canonical ROM SHA-256 values before extraction.
+- AS3000 2005 raw slot `0x004E004E` maps into the extension word of an existing instruction, not a handler boundary.
+- NEO 2005 raw slot `0x004E005E` is below the mapped ROM runtime base.
+- NEO 2013 has a real 26-byte handler; its previously recorded handler SHA-256 was reproduced exactly.
+- Physical input: one 32-bit pointer-like slot, freshly rechecked in seven official executable callers.
+- Side effects: if the shared state byte is zero, the handler stores that longword and changes the state to literal `5`; if state is already non-zero, it returns without mutation. Semantic names remain unknown.
+- D0 is never defined by the handler. All seven callers overwrite D0 before use. `void` remains **INFERENCIA MUY FUERTE**, not CONFIRMADO; return intent is **DESCONOCIDO**.
+- Fresh direct firmware search again found no absolute JSR/JMP or BSR.W reference to the NEO 2013 handler.
+- Static regression: prior integral regression **EJECUTADA / OVERALL PASS**; directed source-first primary revalidation **EJECUTADA / PASS**. Dynamic regression remains **ESPECIFICADA / NO EJECUTADA**.
 
 Public disposition: [`sys-a3c4-blocked.md`](sys-a3c4-blocked.md).
 
-Detailed firmware and caller evidence remains private in Drive.
+Detailed firmware bytes, addresses of private globals, caller contexts, and workpapers remain private in Drive.
