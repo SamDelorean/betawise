@@ -1,52 +1,63 @@
-# A3BC / index 239 — generational closure
+# A3BC / index 239 — source-first generational closure
 
-Status: **mechanically closed** from primary firmware, firmware-caller, official-corpus, and regression evidence. The vendor symbol/name and the semantic meaning of the backing byte remain unknown, so the neutral `SYS_A3BC` label is retained.
+Status: **CERRADO A / SOURCE_FIRST / PUBLICADO**.
+
+`SYS_A3BC` remains a project-neutral label. No independently reproducible vendor symbol or semantic name for the backing byte has been recovered, so the public contract is intentionally width-only.
 
 ## Platform availability
 
-- AlphaSmart 3000 (2005): the index-239 table slot contains `0x83848788`, not a demonstrated firmware code pointer.
-- NEO (2005): the same slot contains `0x83848788`, not a demonstrated firmware code pointer.
-- NEO (2013): index 239 points to runtime `0x0043DACA` (file offset `0x02DACA`) and has a real handler.
+Fresh revalidation against the canonical ROMs confirms:
 
-The old-firmware marker is recorded mechanically and is **not** labeled `reserved`, `unimplemented`, or assigned vendor semantics.
+- AlphaSmart 3000 (2005): index 239 contains `0x83848788`, not a demonstrated code pointer.
+- NEO (2005): index 239 contains `0x83848788`, not a demonstrated code pointer.
+- NEO (2013): index 239 points to runtime `0x0043DACA` / file `0x02DACA` and has a real handler.
 
-## NEO 2013 mechanical contract
+No callable A3BC contract is asserted for the 2005 ROMs, and the marker is not assigned `reserved`/`unimplemented` vendor semantics.
 
-A3BC reads no stack arguments. It delegates to a private byte getter and returns immediately. A direct firmware caller invokes A3BC and tests `D0.B` immediately, establishing the external width independently of the helper implementation.
+## NEO 2013 raw ABI
+
+The complete A3BC handler reads no stack arguments. It delegates to a private byte getter and returns immediately. A direct firmware caller independently establishes the external width by executing `TST.B D0` immediately after the call.
 
 ```c
 /* NEO 2013 only; vendor name and byte semantics unknown. */
 uint8_t SYS_A3BC(void);
 ```
 
-The upper bits of `D0` are not part of the demonstrated contract: the private getter writes only `D0.B`, leaving the upper bits residual, and the demonstrated firmware caller consumes only the byte.
+This is a width-preserving raw declaration. The private getter writes only `D0.B`; upper `D0` bits are residual and are not part of the demonstrated contract.
 
 ## Handler, backing state, and callers
 
-The NEO 2013 A3BC handler is exactly `0x08` bytes long at runtime `0x0043DACA` / file offset `0x02DACA`. SHA-256 of the exact handler bytes is:
+Fresh extraction reproduces the exact 8-byte handler:
+
+`JSR 0x0043E86E ; RTS`
+
+Handler SHA-256:
 
 `cca0b14256241ab7c00bc1a88c952d1d044674466f3a74afd5823b34ffdea792`
 
-Its private getter is also `0x08` bytes long and reads one byte from a mutable global. SHA-256 of that helper is:
+The delegated getter is also exactly 8 bytes and reads one mutable global byte into `D0.B`. Getter SHA-256:
 
 `dda45819112d6ce88c5b5984fa875ebd64a09a67b00839deaa4fa75b63a26bfe`
 
-Firmware analysis found exactly one direct absolute JSR to A3BC in NEO 2013 and no direct absolute JMP or direct BSR.W. The call is followed immediately by `TST.B D0`, which confirms the byte-sized contract. No stack input is read by A3BC.
+Fresh firmware xref scanning reproduces exactly one direct absolute JSR to A3BC in NEO 2013. The immediate sequence is `JSR A3BC ; TST.B D0 ; BNE.W ...`, confirming byte-sized caller consumption independently of the helper implementation.
 
-The backing global has observed byte writers for values zero and one, but that is insufficient to assign a boolean/status/vendor meaning. No semantic name or enum is published.
+Fresh references to the backing address reproduce a `MOVE.B #1` writer, a `CLR.B` writer, and the getter. That proves mutable byte-sized storage, but it is insufficient to label the value as a boolean, status flag, subsystem state, or vendor concept.
 
-The official SmartApplet corpus was checked 41/41. The 16 applets with the extended A-line tail containing A3BC were rematerialized and rehashed; none has an executable A3BC caller. The 14 legacy table-bearing applets terminate before A3BC, and the remaining 11 are structural negatives. Official-app caller count is therefore 0/41.
+The existing full SmartApplet regression remains **EJECUTADA / PASS**: 41/41 corpus classification, including 16 extended-table applets, 14 legacy tables, and 11 structural negatives; no executable A3BC SmartApplet caller was found. A fresh directed source-first regression covering canonical slots, handler/helper bytes and hashes, firmware caller width consumption, and global byte references is also **EJECUTADA / PASS**. Dynamic/emulator regression remains **ESPECIFICADA / NO EJECUTADA**.
 
-## Private evidence and regression
+## Confidence classification
 
-Full ROM bytes, private disassembly, exact global references, caller reconstruction, applet hashes, and regression source/output remain in Drive workpapers. Static regression validates all three canonical ROM hashes, the old/new slot values, handler/helper boundaries and hashes, direct firmware byte-return consumption, observed byte writers, and the extended-app corpus. Result: **OVERALL PASS**. Dynamic/emulator regression has not been executed.
+- **CONFIRMADO:** callable implementation only in NEO 2013 among the three canonical ROMs.
+- **CONFIRMADO:** zero physical arguments.
+- **CONFIRMADO:** external return contract is `D0.B` only.
+- **CONFIRMADO:** backing storage is one mutable byte with observed zero/one writers.
+- **DESCONOCIDO:** vendor function name and semantic meaning of the backing byte.
 
 ## Adversarial conclusions
 
-- Rejected: assuming A3BC is callable on AS3000/NEO 2005 merely because NEO 2013 implements it.
-- Rejected: interpreting `0x83848788` as a demonstrated old-firmware code pointer.
-- Rejected: publishing `uint16_t` or `uint32_t` return types from residual upper `D0` bits.
-- Rejected: inventing implicit parameters; the complete handler reads none.
-- Rejected: naming the backing byte as a boolean, status flag, subsystem state, or vendor-specific concept from only its observed 0/1 writers.
+- Rejected: interpreting `0x83848788` as a valid 2005 handler pointer.
+- Rejected: publishing `uint16_t`/`uint32_t` from residual upper `D0` bits.
+- Rejected: inventing implicit parameters; the complete handler accesses none.
+- Rejected: promoting observed zero/one writes to a boolean/status/vendor name.
 
-A3BC should therefore be treated as a neutral NEO-2013-specific byte getter until stronger symbol or subsystem evidence is recovered.
+Full ROM bytes, private disassembly, exact global-reference details, corpus hashes, and regression workpapers remain private in Drive.
