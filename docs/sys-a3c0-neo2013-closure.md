@@ -1,56 +1,61 @@
-# A3C0 / index 240 — generational closure
+# A3C0 / index 240 — source-first generational closure
 
-Status: **mechanically closed** from primary firmware, firmware callers, the official SmartApplet corpus, and reproducible static regression. The vendor symbol and the semantic name of the backing state byte remain unknown, so the neutral `SYS_A3C0` name is retained.
+Status: **CERRADO A / SOURCE_FIRST / PUBLICADO**.
+
+`SYS_A3C0` remains a neutral project label. Historical/repository correlation has not recovered an independent vendor symbol or semantic name for the backing state.
 
 ## Platform availability
 
-- AlphaSmart 3000 (2005): index-240 slot contains `0x89909192`, not a demonstrated code pointer.
-- NEO (2005): the same slot contains `0x89909192`, not a demonstrated code pointer.
-- NEO (2013): index 240 points to runtime `0x0043DAD2` (file offset `0x02DAD2`).
+Fresh canonical-ROM revalidation confirms:
 
-No meaning such as `reserved` or `unimplemented` is assigned to the older-generation marker.
+- AlphaSmart 3000 (2005): index 240 contains `0x89909192`, not a demonstrated code pointer.
+- NEO (2005): index 240 contains `0x89909192`, not a demonstrated code pointer.
+- NEO (2013): index 240 points to runtime `0x0043DAD2` / file `0x02DAD2`.
 
-## NEO 2013 contract
+No callable contract is asserted for the 2005 ROMs and the marker is not assigned vendor semantics.
 
-The handler reads no input arguments. It tests one mutable global byte and returns a normalized zero/non-zero result. Four direct firmware callers independently establish that only `D0.B` is contractual: one performs `CMPI.B #1,D0` and three perform `TST.B D0` immediately after A3C0.
+## NEO 2013 raw ABI
+
+The complete handler reads no input arguments. It tests one mutable byte and normalizes zero/nonzero to a byte result:
 
 ```c
 /* NEO 2013 only; vendor name and state meaning unknown. */
 uint8_t SYS_A3C0(void);
 ```
 
-The upper bits of `D0` are not contractual. The false path clears only `D0.B`, whereas the true path uses `MOVEQ #1,D0`.
+Fresh ROM-wide xref scanning reproduces four direct callers. One immediately executes `CMPI.B #1,D0`; the other three immediately execute `TST.B D0`. That independently establishes `D0.B` as the contractual return width. Upper `D0` bits are not contractual because the false path clears only `D0.B`.
 
-## Handler and state
+## Handler and backing state
 
-NEO 2013 handler:
+Fresh extraction reproduces the exact NEO 2013 handler at file `0x02DAD2`, length `0x10`:
 
-- runtime `0x0043DAD2`
-- file offset `0x02DAD2`
-- exact length `0x10` bytes, ending immediately before A3C4
-- SHA-256 `f3ebf233e2aba5b86449eac3049f4376acbf9902ba628177308aee75d1085bc7`
+`TST.B $00011944 ; BNE ... ; CLR.B D0 ; BRA ... ; MOVEQ #1,D0 ; RTS`
 
-The backing global is byte-sized. Writers for at least zero and one are present, and neighboring firmware writes other values as well. Therefore the state is deliberately **not** published as a C `bool`, enum, status code, or named subsystem state. A3C0 itself only normalizes zero versus non-zero.
+SHA-256:
 
-## Callers
+`f3ebf233e2aba5b86449eac3049f4376acbf9902ba628177308aee75d1085bc7`
 
-NEO 2013 firmware contains four direct absolute JSRs to A3C0 and no direct absolute JMP or direct BSR.W. Every demonstrated firmware caller consumes only the byte result.
+The backing storage is byte-sized. Fresh reference contexts show byte writers and neighboring writes of values beyond the simple normalized output domain. Consequently the underlying state is deliberately **not** published as a C `bool`, named status, enum, or vendor subsystem state. A3C0 itself only maps zero to 0 and nonzero to 1.
 
-The official SmartApplet corpus was checked 41/41. Sixteen extended-table applets physically contain the A3C0 slot and were rematerialized/rehashed; corrected PC-index analysis finds no executable A3C0 invocation. Fourteen legacy table-bearing applets terminate before this extension and eleven applets are structural negatives. Official executable-caller count is therefore 0/41.
+## Callers and regression
 
-This distinguishes table **presence** from executable **use**.
+The four direct NEO 2013 firmware call sites are all byte consumers. The existing SmartApplet regression remains **EJECUTADA / PASS** across the 41-object corpus: 16 extended-table applets physically contain the A3C0 slot but corrected PC-index analysis finds zero executable A3C0 applet callers; 14 legacy tables end before the extension; 11 are structural negatives.
+
+A fresh source-first directed regression covering canonical slot values, exact handler bytes/hash, the four firmware xrefs and byte consumers, and backing-byte references is also **EJECUTADA / PASS**. Dynamic/emulator regression remains **ESPECIFICADA / NO EJECUTADA**.
+
+## Confidence classification
+
+- **CONFIRMADO:** callable implementation only in NEO 2013 among the canonical ROMs.
+- **CONFIRMADO:** zero physical arguments.
+- **CONFIRMADO:** normalized zero/nonzero return in `D0.B`.
+- **CONFIRMADO:** backing state is a mutable byte.
+- **DESCONOCIDO:** vendor function name, subsystem name, and semantic meaning of the backing state.
 
 ## Adversarial conclusions
 
-- Rejected: assigning a callable A3C0 contract to AS3000/NEO 2005 from the NEO 2013 implementation.
-- Rejected: interpreting `0x89909192` as a demonstrated old-generation code pointer.
-- Rejected: `uint16_t` or `uint32_t` return width; all four real firmware consumers use `D0.B`, while upper bits are not consistently defined.
-- Rejected: implicit input parameters; the complete handler reads none.
-- Rejected: naming the backing byte as boolean/status/state merely from normalized return behavior.
-- Historical/repository searches for `A3C0` / `SYS_A3C0` did not recover an independent vendor symbol or prototype.
+- Rejected: treating `0x89909192` as a valid 2005 handler pointer.
+- Rejected: `uint16_t`/`uint32_t` return width; all real callers consume the byte only.
+- Rejected: implicit arguments; the complete handler reads none.
+- Rejected: naming the backing byte as boolean/status/state simply because A3C0 normalizes it to 0/1.
 
-## Regression and private evidence
-
-Static regression revalidates the three canonical ROM hashes, the generational slot values, exact NEO 2013 handler bytes/hash, the four firmware call sites and byte-sized consumers, representative backing-state writers, and the sixteen extended official applets with zero executable A3C0 calls. Result: **OVERALL PASS**.
-
-Dynamic/emulator regression is specified but has not been executed. Full ROM bytes, detailed caller contexts, workpapers, and private reverse-engineering evidence remain in Drive.
+Full ROM bytes, detailed caller contexts, corpus hashes, and reverse-engineering workpapers remain private in Drive.
