@@ -1,48 +1,63 @@
-# A3B8 / index 238 — generational closure
+# A3B8 / index 238 — source-first generational closure
 
-Status: **mechanically closed** from primary firmware and official-caller evidence. The original vendor symbol/name remains unknown, so the neutral `SYS_A3B8` label is retained.
+Status: **CERRADO A / SOURCE_FIRST / PUBLICADO**.
+
+`SYS_A3B8` remains a project-neutral label. No independently reproducible vendor symbol or historical prototype has been recovered from the available BetaWise/reference material, so firmware and official callers define the narrow raw ABI below.
 
 ## Platform availability
 
-- AlphaSmart 3000 (2005): the index-238 table slot contains `0x05060708`, not a demonstrated firmware code pointer.
-- NEO (2005): the same slot contains `0x05060708`, not a demonstrated firmware code pointer.
+Fresh revalidation against the three canonical ROMs confirms the generational split:
+
+- AlphaSmart 3000 (2005): index 238 contains `0x05060708`, not a demonstrated firmware code pointer.
+- NEO (2005): index 238 also contains `0x05060708`, not a demonstrated firmware code pointer.
 - NEO (2013): index 238 points to runtime `0x0043ECEE` (file offset `0x02ECEE`) and has a real handler.
 
-The old-firmware marker is recorded mechanically and is **not** labeled `reserved`, `unimplemented`, or assigned vendor semantics.
+The 2005 marker is recorded mechanically. It is not labeled `reserved`, `unimplemented`, or assigned vendor semantics, and no callable A3B8 contract is asserted for those ROMs.
 
-## NEO 2013 mechanical contract
+## NEO 2013 raw ABI
 
-The handler reads four physical 32-bit stack slots. Only these widths have observable effect: low 16 bits of slot 1, full pointer value of slot 2, low 16 bits of slot 3, and low 8 bits of slot 4. Its neutral raw ABI is therefore:
+The handler consumes four physical 32-bit stack slots. Only these widths affect execution: low 16 bits of slot 1, full pointer value of slot 2, low 16 bits of slot 3, and low 8 bits of slot 4. The narrowest justified declaration is therefore:
 
 ```c
 /* NEO 2013 only; vendor name and argument semantics unknown. */
 uint8_t SYS_A3B8(uint16_t arg1, void *arg2, uint16_t arg3, uint8_t arg4);
 ```
 
-The handler calls private helper `0x0043EEB6` with those four values. If the helper returns zero, A3B8 returns immediately. If it returns nonzero, A3B8 invokes another private dependency with literal argument `1` and retries. The retry counter permits at most six helper attempts. The final helper status is returned only in `D0.B`; the upper bits of `D0` are not part of the demonstrated contract.
+This is a width-preserving raw ABI, not a recovered semantic type signature.
 
-No semantic names are assigned to the arguments, status values, helper, or the secondary private dependency.
+The handler calls private helper `0x0043EEB6` with the four normalized values. A zero helper status exits immediately. A nonzero status causes a second private dependency to be called with literal argument `1`, followed by another helper attempt. The byte counter allows at most six helper attempts. The final helper status is deliberately returned via `MOVE.B D7,D0`; only `D0.B` is contractual.
+
+No semantic names are assigned to the arguments, status values, retry action, helper, or secondary private dependency.
 
 ## Handler and callers
 
-The NEO 2013 handler is exactly `0x50` bytes long, ending at the immediately following A3B4 handler (`0x0043ED3E`). SHA-256 of the exact A3B8 handler bytes is:
+Fresh primary revalidation reproduces the NEO 2013 handler at file offset `0x02ECEE`, length `0x50`, ending exactly where A3B4 begins at `0x02ED3E`. SHA-256 of the exact handler bytes is:
 
 `495fb94ec6eaef43abcf182c5ba94b95d421afa4a0866cb0806f81a5306ca143`
 
-The official SmartApplet corpus was checked 41/41. Of the 30 applets with A-line tables, 16 use the extended table containing A3B4/A3B8/A3BC and 14 use legacy tables ending at A3B0; 11 applets are structural negatives. Exactly one executable A-line A3B8 caller was found: NEO ControlPanel.
+The archived deterministic 68k decode remains byte-correlated to that fresh handler and shows the four effective input widths, helper call, retry path, six-attempt bound, and byte return.
 
-That callsite confirms four functional inputs and byte-sized return consumption. The apparent cleanup of `0x14` bytes does **not** imply five A3B8 arguments: one older stack slot is retained beneath the four functional slots and is removed by the same cleanup. The observed functional values include slot 1 = `0x0300`, slot 4 = `3`, with pointer-like values in slots 2 and 3. The caller copies `D0.B` and tests it; it does not consume the upper return bits.
+The full official SmartApplet regression remains **EJECUTADA / PASS**: 41/41 corpus objects classified; 16 NEO applets have the extended A3B4/A3B8/A3BC table, 14 have legacy tables ending at A3B0, and 11 are structural negatives. Exactly one executable A-line A3B8 caller is present: NEO ControlPanel.
 
-## Private evidence
+Fresh materialization of that ControlPanel object reproduces its canonical SHA-256, so the archived caller reconstruction remains tied byte-for-byte to current primary evidence. It demonstrates four functional A3B8 inputs and byte-sized return consumption. The apparent cleanup of `0x14` bytes does **not** prove five A3B8 arguments: one older stack slot is retained underneath the four functional slots and is removed by the same cleanup.
 
-Full ROM bytes, the NEO 2013 disassembly, reused helper disassembly, caller manifest, exact source hashes, stack reconstruction, and regression output remain in private Drive workpapers. Static regression verifies the three canonical ROM hashes, old/new table-slot values, handler boundary/hash, helper call, ControlPanel hash/callsite, retained-stack-slot distinction, four-argument shape, and byte return. Result: **OVERALL PASS**. Dynamic/emulator regression has not been executed.
+A fresh source-first directed regression covering canonical ROM hashes, per-generation slot values, handler boundary/hash, effective-width loads, helper call, retry dependency, retry limit, byte return, and ControlPanel identity is **EJECUTADA / PASS**. Dynamic/emulator regression remains **ESPECIFICADA / NO EJECUTADA**.
+
+## Confidence classification
+
+- **CONFIRMADO:** no demonstrated callable A3B8 handler in the two 2005 canonical ROMs; real implementation in NEO 2013.
+- **CONFIRMADO:** four functional stack slots with effective widths `low16 / pointer / low16 / low8`.
+- **CONFIRMADO:** helper status drives a bounded retry path; maximum six helper attempts.
+- **CONFIRMADO:** only `D0.B` is part of the demonstrated return contract.
+- **INFERENCIA FUERTE:** A3B8 is a private hardware/service transaction wrapper with a recovery action between failed attempts.
+- **DESCONOCIDO:** vendor name, subsystem name, argument meanings, status meanings, retry meaning, and identity/semantics of the secondary private dependency.
 
 ## Adversarial conclusions
 
-- Rejected: assuming A3B8 is portable across AS3000/NEO 2005 because neighboring libc calls are portable.
-- Rejected: interpreting `0x05060708` as a demonstrated old-firmware code pointer.
-- Rejected: deriving five parameters from the caller cleanup size without reconstructing retained stack state.
-- Rejected: publishing a full-long return when only `D0.B` is consumed and deliberately staged.
-- Rejected: inventing a subsystem name, retry meaning, error enum, or meaning for the secondary private call.
+- Rejected: treating A3B8 as portable/libc merely because it follows the portable C-library region.
+- Rejected: interpreting `0x05060708` as a valid old-firmware code pointer.
+- Rejected: deriving five parameters from cleanup size without reconstructing retained stack state.
+- Rejected: publishing a full-long return when the handler deliberately stages and the caller consumes only `D0.B`.
+- Rejected: inventing a subsystem name, argument names, retry semantics, or status enum.
 
-A3B8 should therefore be treated as a neutral NEO-2013-specific raw ABI until stronger symbol or subsystem evidence is recovered.
+Full ROM bytes, extensive disassembly, helper listings, caller reconstruction, and regression workpapers remain private in Drive.
