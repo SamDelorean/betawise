@@ -1,19 +1,23 @@
-# ABI trace — A43C
+# ABI trace — A43C / index 271
 
-Public trace for the mechanically reconstructed but contract-blocked OS3K A-line entry `A43C`.
+SOURCE-FIRST revalidation of OS3K A-line entry `A43C`.
 
-- Vector ordinal/index: 271.
-- AS3000 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2013: callable handler; exact private bounds and hashes are retained in the correlated workpaper.
-- External stack evidence: five 32-bit slots; slot 4 is used through its low byte.
+- Disposition: `MECANICA_CERRADA A / SOURCE_FIRST`; unresolved return interpretation is an evidence limit, not a sequencing blocker.
+- Historical correlation: the recovered BetaWise/ioma8 syscall table establishes only `SYS_A43C` at index 271; no independent vendor prototype was recovered.
+- AS3000 2005: non-callable/non-pointer table value `0x5A06004E`.
+- NEO 2005: non-callable/non-pointer table value `0x7F08005E`.
+- NEO 2013: callable handler at runtime `0x00442F86`, file offset `0x032F86`.
+- Handler: `0xCC` bytes, SHA-256 `512c14da95b3e86859ea281f446cfc1bc7492ac2aa5b75fbf5886cb35fa11bae`.
+- External stack ABI: five 32-bit slots; slot 4 is consumed through its low byte.
 - Additional entry channel: incoming `A1` is preserved and used as the destination for a terminal six-byte copy.
-- Aggregate layout evidence: byte at offset 0, one uninitialized/padding-compatible byte at offset 1, 32-bit value at offset 2.
-- Return-register evidence: `D0.L` holds the 32-bit delta at exit, but contractual scalar-return status is unproven.
-- Direct firmware xrefs to the handler in the NEO 2013 image: none found by the reproducible direct JSR/JMP/BSR sweep.
-- Related contiguous family: A440, A444, A448, A44C reproduce the preserved-`A1` plus terminal-six-byte-copy pattern.
-- Static regression: primary A43C checks and a helper-core supplement both passed; dynamic/emulator validation has not been used to promote the unresolved ABI interpretation.
+- Material aggregate layout: byte at offset 0, one uninitialized/padding-compatible byte at offset 1, and a 32-bit value at offset 2.
+- The 32-bit field is mechanically `$1407A - arg1`; `D0.L` also contains that delta on exit.
+- Related NEO 2013 family A43C/A440/A444/A448/A44C repeats the preserved-`A1` plus terminal-six-byte-copy pattern.
+- GCC-like hidden structure return through A1 is a **strong inference**, not a confirmed vendor contract; a proprietary A1 output convention remains mechanically possible.
+- A scalar contractual interpretation of D0 is therefore not published.
+- Direct firmware xrefs to A43C: zero direct JSR/JMP/BSR targets in the reproducible sweep.
+- Fresh directed static regression: `37/37 PASS`.
+- Dynamic/emulator-first validation: not executed.
+- Public callable header: intentionally not emitted until the A1/return convention is independently identified.
 
-Disposition: **MECANICA_RECONSTRUIDA A / BLOQUEADO**. No callable header is emitted until independent caller/prototype evidence discriminates hidden structure return from a proprietary `A1` output convention and clarifies `D0`.
-
-See `docs/sys-a43c-blocked.md` for the public adversarial analysis and consolidation clues.
+Private ROM bytes, full disassembly, helper/callback analysis and regression workpapers remain outside the repository.
