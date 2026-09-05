@@ -1,18 +1,13 @@
-# ABI trace — A3D8 / index 246
+# Source-first trace — A3D8 / index 246
 
-Public traceability summary for the forward OS3K ABI sweep.
+- Disposition: **SOURCE_FIRST / MECÁNICA_RECONSTRUIDA A / RETORNO_CONTRACTUAL=DESCONOCIDO**.
+- Correlation first: BetaWise and `ioma8/neo-re` preserve only `index 246 = SYS_A3D8`; checked header/debug material yields no independent prototype, vendor symbol, or semantic argument names.
+- Fresh primary pass reproduced the canonical ROM hashes and generation-specific slots. AS3000 2005 and NEO 2005 remain non-pointer/unresolved; only NEO 2013 has a demonstrated handler.
+- NEO 2013 handler length/hash were freshly reproduced: 0x178 bytes with the archived SHA-256 unchanged.
+- Physical ABI is **CONFIRMADO** as four 32-bit slots with effective consumptions low16, low8, full32, and full32/pointer-like. Nominal meanings remain **DESCONOCIDO**.
+- Reachable exits deliberately produce `D0.B` in `{0,3,5,8}`. The 3/5/8 paths define clean longword values via MOVEQ, while the normal zero path clears only D0.B, leaving upper bits potentially residual. A byte-sized return remains **INFERENCIA FUERTE**, not a confirmed source contract; `void` is also unsupported because explicit status bytes are constructed.
+- Fresh NEO 2013 direct xrefs: JSR/JMP/BSR.W = 0/0/0. The previously executed official table-tail survey remains structurally negative because applet exposure ends before A3D8.
+- Static regression: prior integral **EJECUTADA / OVERALL PASS (29/29)**; directed source-first primary revalidation **EJECUTADA / PASS**. Dynamic regression remains **ESPECIFICADA / NO EJECUTADA**.
+- Public callable header remains intentionally unpublished.
 
-- Disposition: `MECÁNICA_RECONSTRUIDA A / BLOQUEADO` only in contractual return intent.
-- AlphaSmart 3000 (2005): non-callable/non-pointer table value.
-- NEO (2005): non-callable/non-pointer table value.
-- NEO (2013): callable handler, length `0x178`, SHA-256 `15c33d2963c3ada1e1dc15669cf7a4b109c213f95f5b37896b10825f1c94f837`.
-- Physical ABI: four 32-bit slots; effective widths are low16, low8, full32, full32/pointer-like.
-- Mechanical result: `D0.B` is exactly in `{0, 3, 5, 8}` at reachable exits; upper D0 is not uniformly contractual because the zero path clears only the low byte.
-- Direct firmware callers to A3D8: none found.
-- Official SmartApplet exposure: structurally absent from the validated late-table corpus.
-- Independent symbol/prototype: not recovered.
-- Static regression: `OVERALL PASS`, 29/29 assertions.
-- Dynamic/emulator-first regression: not executed.
-- Public callable header: intentionally not published.
-
-Private evidence, ROM extraction, disassembly, helper/global correlation and regression workpapers remain outside the repository.
+Private ROM bytes, disassembly, helper/global correlation and regression workpapers remain outside the repository.
