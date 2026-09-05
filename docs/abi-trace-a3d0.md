@@ -1,14 +1,16 @@
-# ABI trace — A3D0 / index 244
+# Source-first trace — A3D0 / index 244
 
-Forward-sweep disposition: **MECÁNICA_RECONSTRUIDA / BLOQUEADO — RETORNO_CONTRACTUAL=DESCONOCIDO**.
+Status: **SOURCE_FIRST / MECÁNICA_RECONSTRUIDA A / RETORNO_CONTRACTUAL=DESCONOCIDO**. No callable prototype is asserted.
 
-- AS3000 2005: non-pointer/unresolved slot; no callable contract.
-- NEO 2005: non-pointer/unresolved slot; no callable contract.
-- NEO 2013: real handler; two physical argument slots are demonstrated (full pointer + low-16-bit byte count).
-- Exactly one direct NEO 2013 firmware BSR caller is demonstrated. It removes 8 bytes of arguments and does not consume `D0`.
-- Official SmartApplets: no physical A3D0 table slot in the validated 41-binary corpus.
-- The handler defines complete `D0` mechanically, but no independent evidence fixes the intended C return type, width, or signedness.
-- No vendor symbol, error enum, or semantic argument names are claimed.
-- Static regression: PASS. Dynamic regression: not executed.
+- Correlation first: BetaWise and `ioma8/neo-re` preserve only the neutral mapping `index 244 = SYS_A3D0`; checked header/debug sources provide no independent vendor prototype or semantic name.
+- Fresh primary pass reproduced all three canonical ROM SHA-256 values and the generation-specific slots.
+- AS3000 2005 and NEO 2005 remain non-pointer/unresolved; no NEO 2013 contract is projected backward.
+- NEO 2013: the real handler length/hash and its private helper length/hash were freshly reproduced.
+- Physical ABI is **CONFIRMADO** as two 32-bit stack slots: slot 1 is consumed as a full pointer/source; only low16 of slot 2 participates as count/length.
+- The implementation defines full D0 on every exit path, including literals 8/9/10 and zero-extended successful length. Those values are mechanical observations, not a recovered enum/error contract.
+- Fresh firmware xrefs reproduce zero absolute JSR/JMP and exactly one direct BSR.W caller. That caller removes 8 bytes of arguments and immediately branches without consuming D0.
+- Official SmartApplets remain a structural negative from the previously executed 41/41 table-tail survey: no official applet physically exposes A3D0.
+- Return type, width, signedness and semantic intent therefore remain **DESCONOCIDO** despite uniform machine-level D0 definition.
+- Static regression: prior integral **EJECUTADA / OVERALL PASS (30/30)**; directed source-first primary revalidation **EJECUTADA / PASS**. Dynamic regression remains **ESPECIFICADA / NO EJECUTADA**.
 
-Detailed ROM mappings, hashes, CFG/disassembly, helper/global analysis and caller workpapers are retained privately in Drive under the A3D0 dossier.
+Detailed ROM mappings, CFG/disassembly, helper/global analysis and caller bytes remain private in Drive.
