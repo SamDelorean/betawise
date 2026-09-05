@@ -1,5 +1,7 @@
 # ABI trace — A43C / index 271
 
+Status: **MECANICA_CERRADA A / SOURCE_FIRST / PUBLICADO**.
+
 SOURCE-FIRST revalidation of OS3K A-line entry `A43C`.
 
 - Disposition: `MECANICA_CERRADA A / SOURCE_FIRST`; unresolved return interpretation is an evidence limit, not a sequencing blocker.
@@ -17,7 +19,7 @@ SOURCE-FIRST revalidation of OS3K A-line entry `A43C`.
 - A scalar contractual interpretation of D0 is therefore not published.
 - Direct firmware xrefs to A43C: zero direct JSR/JMP/BSR targets in the reproducible sweep.
 - Fresh directed static regression: `37/37 PASS`.
-- Dynamic/emulator-first validation: not executed.
+- Dynamic/emulator-first validation: **specified, not executed**.
 - Public callable header: intentionally not emitted until the A1/return convention is independently identified.
 
 Private ROM bytes, full disassembly, helper/callback analysis and regression workpapers remain outside the repository.
