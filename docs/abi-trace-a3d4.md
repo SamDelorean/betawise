@@ -1,18 +1,17 @@
-# Forward-sweep trace — A3D4 / index 245
+# Source-first trace — A3D4 / index 245
 
-- Status: mechanically reconstructed A; blocked exclusively on contractual return intent.
-- AS3000 2005 raw slot: `0x5B5E004E`, non-pointer/unresolved.
-- NEO 2005 raw slot: `0x8068005E`, non-pointer/unresolved.
-- NEO 2013 handler: runtime `0x0043F508`, file `0x02F508`, length `0x3A`, 19 decoded instructions, SHA-256 `c7ff7ac9d4fc4f34d2d1881238a0c3b88c8c6275813200050ffc9e67f0bc3aec`.
-- Physical input ABI: one 32-bit source-pointer slot.
-- Internal count: big-endian 16-bit value from two state bytes; destination is an internal buffer.
-- Direct dependency: A360/`memcpy`.
-- Mechanical terminal D0.L: inherited upper word from `memcpy` plus count in low word; no contractual width inferred.
-- NEO 2013 direct JSR/JMP/BSR.W callers: 0/0/0.
-- Official SmartApplet corpus: 41/41 structurally checked; demonstrated extended tables stop at A3BC, so A3D4 has no A-line slot and callers are 0/41.
-- No independent BetaWise/neo-re symbol or prototype recovered.
-- Static regression: OVERALL PASS. Dynamic regression: specified, not executed.
+- Status: **SOURCE_FIRST / MECHANICALLY_RECONSTRUCTED A / contractual return UNKNOWN**.
+- Correlation first: BetaWise and `ioma8/neo-re` preserve only the neutral mapping `index 245 = SYS_A3D4`; checked header/debug sources provide no independent vendor prototype or semantic name.
+- Fresh primary pass reproduced all three canonical ROM hashes and the three generation-specific slot values.
+- AS3000 2005 and NEO 2005 remain non-pointer/unresolved.
+- NEO 2013 has a real 0x3A-byte handler; its archived SHA-256 and the independent function boundary immediately following it were reproduced exactly.
+- Physical input ABI: one full 32-bit source-pointer slot. The copy count is internal state, not another caller argument.
+- Direct dependency: A360/`memcpy`; destination is an internal buffer and the count is assembled from two state bytes.
+- Mechanical terminal D0.L retains the upper word from `memcpy` while replacing the low word with count. This residual dataflow is **CONFIRMADO** but is not evidence for a C return width or intent.
+- Fresh NEO 2013 direct xrefs: JSR/JMP/BSR.W = 0/0/0. The previously executed official 41/41 structural survey remains negative because applet tables stop before A3D4.
+- `uint16_t`, residual `uint32_t`, and `void` return hypotheses all remain unconfirmed; contractual return is **DESCONOCIDO**.
+- Static regression: prior integral **EJECUTADA / OVERALL PASS**; directed source-first primary revalidation **EJECUTADA / PASS**. Dynamic regression remains **ESPECIFICADA / NO EJECUTADA**.
 
 Public disposition: [`sys-a3d4-blocked.md`](sys-a3d4-blocked.md).
 
-Detailed firmware/disassembly evidence remains private in Drive.
+Detailed firmware/disassembly and private-state addresses remain private in Drive.
