@@ -1,25 +1,33 @@
 # SYS_A458 / index 278 — ABI trace
 
-Status: **mechanically reconstructed (A), no callable contract in the canonical corpus**.
+Status: **MECANICA_CERRADA A / SOURCE_FIRST / NO_CONTRATO_CALLABLE**.
+
+## Source correlation
+
+The recovered BetaWise/ioma8 syscall mapping contains `SYS_A454` at index 277 and resumes with `SYS_A468` at index 282. There is no recovered `SYS_A458` definition at index 278. This negative source evidence independently agrees with the canonical firmware and SmartApplet corpus.
 
 ## Availability
 
-- AlphaSmart 3000 (2005): slot 278 contains a value outside the mapped ROM image; it is not treated as a callable pointer.
-- NEO (2005): slot 278 likewise contains a value outside the mapped ROM image; it is not treated as a callable pointer.
-- NEO (2013): slot 278 is null. The following three slots are also null; the vector resumes with a valid pointer at index 282.
+- AlphaSmart 3000 (2005): slot 278 is `0x04020205`, outside the mapped ROM runtime window; it is not a callable pointer.
+- NEO (2005): slot 278 is `0x04020002`, likewise outside the mapped ROM runtime window.
+- NEO (2013): slot 278 is `0x00000000`. Slots 279–281 are also null; a valid pointer resumes at index 282 (`A468`).
+
+The 2005 values occur inside a compact data-like sequence rather than a valid pointer run. The NEO 2013 four-slot null gap provides independent generational corroboration that A458–A464 are not callable entries in the canonical image.
 
 ## Official SmartApplet corpus
 
-The canonical corpus contains 16 SmartApplets with the extended late A-line table. All 16 carry the late sequence `A450, A454, A468, A46C`; none contains an intervening A458 stub. Fourteen additional table-bearing applets use an older table that terminates before this range, and eleven corpus applets contain no A-line table.
+The canonical 41-SmartApplet sweep is negative for A458. All 16 EXTENDED applets carry the late callable sequence `A450, A454, A468, A46C` and omit A458–A464. Fourteen legacy table-bearing applets terminate before this range, and eleven corpus applets have no A-line table.
 
-Thus the official 41-SmartApplet corpus has no valid A458 stub or caller.
+Therefore the canonical corpus contains no valid A458 stub or executable caller.
 
 ## Mechanical disposition
 
-For the canonical ROM/Applet corpus, A458 is classified as a non-callable ABI hole rather than a reconstructable function. There is therefore no handler body, argument list, return contract, helper/global contract, or C prototype to publish.
+A458/index278 is an **ABI hole / non-callable slot** in the canonical evidence set. There is no handler body, stack/register ABI, return contract, helper/global contract, or callable C prototype to reconstruct.
 
-This classification is deliberately corpus-bounded: it does not assert a vendor name or rule out use of the numeric trap in firmware builds not present in the evidence set.
+Earlier static regression: `47/47 PASS`. Dynamic execution is not applicable because there is no callable handler target.
+
+This conclusion is deliberately corpus-bounded: it does not claim that the numeric trap was never used in an unavailable vendor build.
 
 ## Publication boundary
 
-No ROM bytes, extended disassembly, vendor function name, signature, enum, or synthetic implementation is asserted here. Those evidence details remain in the private workpapers.
+No vendor function name, signature, enum, synthetic implementation, ROM byte dump, or fabricated behavior is asserted.
