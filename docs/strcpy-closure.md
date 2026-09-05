@@ -37,8 +37,24 @@ The explicit return is not inferred from caller usage: the handler saves the ori
 
 The historical BetaWise index-227 `strcpy` mapping and existing `os3k.h` declaration are secondary corroboration only.
 
+## Source-first revalidation — 2026-09-04
+
+The sequential source-first audit rechecked the historical anchors before accepting the libc identity: `syscall.c` maps index 227 to `strcpy`, while `os3k.h` declares `char *strcpy(char *dst, const char *src)`. Those names/signatures remain corroboration rather than proof.
+
+The canonical extraction is consistent 3/3 at the entry points above. The preserved exact handler bytes are:
+
+```text
+2f0a226f0008206f000c244912d866fc200a245f4e75
+```
+
+They are 22 bytes and independently hash to `50054e3d38a584435f567a7c20a921920dada63b58334adae697f339fd2dcfa2`. Decoding yields: save `A2`; load `dst` and `src` from two 32-bit ABI slots; preserve original `dst` in `A2`; `MOVE.B (A0)+,(A1)+`; loop on nonzero copied byte; move original `dst` to `D0.L`; restore `A2`; `RTS`. This directly establishes NUL-terminated copying and the destination-pointer return, with no helper/global/table side effects.
+
+The prior complete caller corpus remains consistent with that ABI: 302 executable calls in 24 applets, representative two-pointer push order with 8-byte cleanup, and direct ROM JSR/JMP counts 25/0, 25/0 and 27/0. No contradictory caller was identified.
+
+Classification after revalidation: **CONFIRMED** for index, handler mechanics, two-pointer ABI, copied-NUL termination, `D0.L=dst`, absence of count/helpers/globals and cross-generation identity; **INFERENCIA FUERTE** only for treating the standard-library name as the vendor-facing identity beyond the historical headers; **DESCONOCIDO**: none material to the contract. Dynamic emulator-first regression remains **SPECIFIED / NOT EXECUTED**.
+
 ## Validation status
 
 Static regression over the canonical ROMs and official SmartApplet manifest executed with **OVERALL PASS**. It validates ROM hashes, exact handler bytes/hash, direct JSR/JMP counts, the 302-call/24-applet corpus, detector controls and a representative two-slot caller. Dynamic emulator-first regression was not executed for this mechanically determined entry.
 
-Status: **MECÁNICA_CERRADA A / PUBLICADO**. The existing `os3k.h` declaration already matches the reconstructed contract, so no header modification is required.
+Status: **CERRADO A / SOURCE_FIRST / PUBLICADO**. The existing `os3k.h` declaration already matches the reconstructed contract, so no header modification is required.
