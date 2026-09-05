@@ -40,3 +40,13 @@ The historical BetaWise index-224 `strcat` mapping is therefore corroborative ra
 Static regression over the canonical ROMs and official SmartApplet manifest executed with **OVERALL PASS**. It revalidates the handler hash, A380 caller total (130), positive applet count (16), and detector controls A36C=99 and A378=598. Dynamic emulator-first regression was not executed for this mechanically trivial entry.
 
 Status: **MECÁNICA_CERRADA A / PUBLICADO**. The existing `os3k.h` declaration already has the correct two-pointer `char *` contract, so no header modification is required.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The sequential re-audit began from the preserved C-library references: `os3k.h`/`os3k.pdf` declare `char *strcat(char *dst, const char *src)`, and the generated syscall representation places `strcat` at index224/A380. These were treated as anchors only. The prior official-corpus workpaper additionally supplies a representative two-slot caller and exact positive controls for the compact SmartApplet A-line table layout.
+
+Primary firmware was independently re-extracted from all three canonical ROMs after their SHA-256 identities were revalidated in the current sweep. Vector[224] again resolves to the documented A380 entries, and all three 0x1C handlers reproduce as byte-identical with SHA-256 `59190d0e290ade7eb5b8ab112af48a58ba4fb1e1a8a7b8a98e344ec1d6ef2f83`. The instruction dataflow is unambiguous: load `dst` and `src`, preserve original `dst`, scan `dst` to NUL, overwrite that NUL while copying `src` through its NUL, then explicitly place original `dst` in `D0.L` before `RTS`.
+
+The adversarial pass independently rejects `strcpy`, `strncat`, `memcpy`, and a void proprietary append. No capacity/count argument, helper, global side effect, or bounds check exists. The canonical caller workpaper remains 130 executable callers in 16 applets, with 14 table-bearing negatives and 11 structural negatives; its controls A36C=99 and A378=598 also guard against the compact-table indexing error previously encountered at A37C. No source/firmware contradiction was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. Previously executed static regression remains **OVERALL PASS**; dynamic/emulator-first regression remains **SPECIFIED / NOT EXECUTED**.
