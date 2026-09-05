@@ -19,3 +19,13 @@ The official SmartApplet caller sweep was rerun from the canonical binaries. All
 Adversarial alternatives are excluded mechanically. A37C is not a random-value getter because it never reads state or constructs `D0`; it is not a 16-bit seed setter because it copies the full longword slot; it is not a seed transform because the input is stored verbatim; and it is not a pointer setter because the argument is not dereferenced.
 
 Private static regression against all three canonical ROMs and the complete official caller corpus executed with **OVERALL PASS**. Dynamic/emulator regression remains specified but was not executed. Firmware bytes and detailed disassembly remain private in Drive.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The sequential re-audit started from the independent historical API anchors: the BetaWise-generated syscall map assigns index223/A37C to `srand`, while `os3k.h` and `os3k.pdf` preserve `void srand(unsigned int seed)`. Those names and types were treated as hypotheses rather than proof. A370/`rand`, already revalidated in the current sweep, provided the independent state-machine anchor for the PRNG state.
+
+Primary firmware was then re-extracted from all three canonical ROMs. Their SHA-256 identities, vector[223] targets, exact 0x0A handlers, raw handler hashes, relocated state-global operands, and normalized SHA-256 `22d695a1919cedcd0c727f7f87405e664fdc5e3ebc6d87272888281af27012f6` all reproduce independently. The handler copies the complete longword at entry `SP+4` verbatim to exactly the persistent state read and updated by A370. No helper, branch, validation, transform, dereference, or second write exists.
+
+Return semantics were rechecked adversarially. A37C never constructs `D0`; residual incoming `D0` is therefore not evidence for a return value. With zero executable official callers, caller consumption cannot settle the source type, but the exact seed-setter mechanics plus the independent C-library prototype support `void srand(unsigned int seed)` and reject getter, 16-bit seed, pointer-setter, and transform interpretations. The canonical caller workpaper remains 0/41 with positive controls A36C=99 and A378=598; the known duplicate workpaper generated from an incorrect compact-table offset remains explicitly superseded and was not used.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. Previously executed static regression remains **OVERALL PASS**; dynamic/emulator-first regression remains **SPECIFIED / NOT EXECUTED**.
