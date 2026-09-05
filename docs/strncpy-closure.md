@@ -45,4 +45,14 @@ Static regression executed with **OVERALL PASS**. It validates all three canonic
 
 Dynamic emulator-first regression was not executed for this mechanically determined entry.
 
-Status: **MECÁNICA_CERRADA A / PUBLICADO**. The existing `os3k.h` prototype is ABI-compatible and requires no change.
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The re-audit began from source/API anchors before accepting the historical symbol. BetaWise master maps index 231 to `strncpy`; the public `ioma8/neo-re` snapshot independently preserves both `DEFINE_SYSCALL(231, strncpy)` and the matching `char *strncpy(char *dst, const char *src, size_t num)` declaration. A separate recovered `functions.c` source uses `strncpy(out, alphabet + i, 1)` and `strncpy(out, alphabet + tens, 1)`, followed by caller-managed terminators, providing a concrete source-level use consistent with bounded copying. A search of the public `alphasmart-research` tree produced no direct `strncpy` match; that is recorded as a contextual negative rather than contradictory evidence.
+
+All three canonical ROMs were then re-read in the current pass. Full ROM hashes matched the canonical manifest, the handlers re-extracted at the offsets above, and all three again produced the exact 0x3E-byte sequence and handler SHA-256. Control flow confirms that entry branches to the count gate before the first copy. `num == 0` therefore performs no source or destination access; a positive count copies through the first NUL and pads the remainder with zero bytes, while count exhaustion on a non-NUL byte terminates without adding an extra NUL. The original destination is deliberately preserved and returned in `D0.L`. There are no helper or global-state dependencies and no generational differences in the handler.
+
+The official SmartApplet corpus was re-used from the fresh materialization performed in the immediately preceding A398 audit and independently rescanned for the next physical slot. All 30 table-bearing binaries contained the expected C-library sequence exactly once. A39C reproduced exactly 34 executable calls in 12 applets, plus 18 table-bearing negatives and 11 structural negatives. Stable same-run controls reproduced A36C=99, A378=598, A380=130, A384=24, A388=244, A390=477 and A398=48. Direct firmware JSR counts reproduced 1/1/8 with no direct JMPs.
+
+A new static regression initially encoded the count-gate assertion using physical byte ordering rather than control-flow ordering. The assertion was corrected to verify the entry `BRA` to the `TST.L` gate and the `BHI` edge back to the copy block. This was a regression-specification correction, not a firmware contradiction. The corrected SOURCE-FIRST regression executed with **OVERALL PASS**. Dynamic/emulator-first regression remains **SPECIFIED / NOT EXECUTED**.
+
+Classification: **CONFIRMED / CLOSED A / SOURCE_FIRST / PUBLISHED**. A3A0/index232 is released as the next sequential audit block.
