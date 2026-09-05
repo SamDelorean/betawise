@@ -19,3 +19,13 @@ The corrected PC-index detector was run over the complete official 41-SmartApple
 Adversarial alternatives are mechanically excluded. A378 is not `printf` or `fprintf`, because it receives an explicit destination string and no stream. It is not `snprintf`, because no capacity parameter exists and the output callback has no bounds check. A fixed-arity helper is inconsistent with the explicit first-vararg pointer, and `void` is inconsistent with preservation and caller consumption of the formatter result. Simple string-copy/concatenation interpretations are incompatible with the explicit format pointer and common formatter invocation.
 
 Private static regression against the canonical ROMs and official caller corpus executed with **OVERALL PASS**. Dynamic/emulator regression remains specified but was not executed. Firmware bytes and detailed disassembly remain private in Drive.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The sequential re-audit began from the historical API layer rather than from the binary. `os3k.h` and `os3k.pdf` preserve `int sprintf(char *str, const char *fmt, ...)`, while the generated syscall representations map `sprintf` to index 222 / A378. `debug.pdf` supplies independent real source callers that format hexadecimal bytes and addresses into caller-owned buffers before printing them. These references were treated only as hypotheses and behavioral anchors.
+
+The three canonical ROM images were then re-extracted independently and their SHA-256 identities revalidated. A378 again resolves to the same 0x2C handler in each generation. The vector targets, raw handler hashes, relocation-normalized hash, and byte-identical 0x18 string callback all reproduce the archived workpaper. Stack/dataflow confirms `str`, `fmt`, and the variadic tail; the wrapper clears `str[0]`, passes a mutable destination cursor cell and the string callback to the same formatter engine already revalidated through A34C/`fprintf` and A36C/`printf`, and preserves the formatter result in `D0.L`.
+
+The adversarial pass again rejects `printf`, `fprintf`, `snprintf`, fixed-arity, `void`, and simple copy/concatenation interpretations. The previously executed complete caller sweep remains consistent with the reconstructed contract: 598 executable calls in 25 table-bearing applets, plus controlled negative cohorts, with representative callers consuming `D0.L`. No source/firmware contradiction was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. Static regression remains **OVERALL PASS**; dynamic/emulator-first regression remains **SPECIFIED / NOT EXECUTED**.
