@@ -1,23 +1,18 @@
-# ABI trace — A444
+# ABI trace — A444 / index 273
 
-Public trace for the mechanically reconstructed but source-semantics-blocked OS3K A-line entry `A444`.
+Status: **MECANICA_RECONSTRUIDA A / SOURCE_FIRST / PUBLICADO**.
 
-- Vector ordinal/index: 273.
-- AS3000 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2005: non-pointer/unresolved vector value; no callable handler attributed.
-- NEO 2013: callable handler; exact private bounds and hashes are retained in the correlated workpaper.
-- External stack evidence: four 32-bit slots.
-- Effective roles: slot 1 points to a readable descriptor-like object with at least four 32-bit fields; slot 2 is a writable byte-buffer destination; slot 3 is consumed as a signed 16-bit bound; slot 4 is a writable pointer receiving a 16-bit output-count-like delta.
-- Additional result channel: incoming `A1` is preserved and used as the destination for a terminal six-byte aggregate copy.
-- Aggregate layout evidence: state byte at offset 0, one uninitialized/padding-compatible byte at offset 1, and a conditional 32-bit detail field at offset 2.
-- Direct firmware xrefs in NEO 2013: exactly one recovered `BSR.W`, from the private wrapper beginning at `0x0044331C`.
-- Caller evidence: the caller prepares `A1` to a local six-byte object, pushes exactly four stack arguments, sign-extends the effective 16-bit bound before pushing it, calls A444, discards 16 bytes of stack arguments, does not consume `D0`, and later forwards the same six-byte object to its own saved `A1`.
-- Functional behavior: bounded single-byte XML/entity-reference decoding is confirmed from primary firmware evidence. Ordinary bytes are copied directly; `&...;` references are decoded for the predefined names `amp`, `lt`, `gt`, `apos`, `quot`, and numeric references beginning with `#`, including decimal and `x`-prefixed hexadecimal forms. Numeric results are emitted only when below `0x100`.
-- The destination is NUL-terminated. Slot 4 receives a 16-bit produced-length-like delta on the normal path and is cleared on the early path.
-- `D0` scalar-return hypothesis: refuted as a coherent stable contract because path-dependent internal values remain in `D0` while the recovered caller ignores it.
-- Static regression: 61/61 PASS against canonical NEO 2013 ROM, caller, entity helper/table, output behavior, and official AlphaWordPlus corpus presence.
-- Dynamic/emulator validation: not executed for semantic promotion.
+- Historical correlation: `betawise-master/os3k/syscall.c` establishes neutral placeholder `SYS_A444` at index 273; `os3k.h` contains no independent vendor prototype.
+- AS3000 2005 and NEO 2005: non-pointer/unresolved vector values; no callable handler attributed.
+- NEO 2013 handler: runtime `0x0044313A..0x00443213`, length `0xDA`, SHA-256 `beeaa6288ce535f5a31b1e54559274ea2018d15662ada66c1cf68b0196610a14`.
+- External stack evidence: four 32-bit slots. Slot 3 is mechanically signed 16-bit; slot 4 is a writable 16-bit output-count-like pointer.
+- Incoming `A1` is preserved and used as the destination for a terminal six-byte aggregate result; the sole direct caller confirms this result channel and ignores D0.
+- Functional behavior: bounded single-byte XML/entity-reference decoding is **confirmed** from primary firmware evidence. Ordinary bytes copy directly; `&...;` references decode the predefined names `amp`, `lt`, `gt`, `apos`, `quot`, plus decimal and `x`-prefixed hexadecimal numeric references. Numeric results are emitted only below `0x100`.
+- Destination output is NUL-terminated. The output-count pointer is cleared on the early path and receives the produced-length delta on the normal path.
+- `D0` as a coherent stable scalar return is **refuted** by path-dependent values and caller non-consumption.
+- The source-level descriptor type and vendor state semantics remain unknown. These are evidence limits, not sequencing blockers.
+- Fresh canonical-ROM directed static regression on 2026-09-05: **32/32 PASS**, including handler, entity helper/table, sole caller wrapper and negative absolute xrefs.
+- Dynamic/emulator validation: **specified, not executed**.
+- No callable C header or invented vendor semantic name is emitted.
 
-Disposition: **MECANICA_RECONSTRUIDA A / BLOQUEADO_SEMANTICA_DESCRIPTOR**. The transformation behavior and binary ABI shape are substantially established, but no callable C header is emitted until the descriptor/result-state semantics can be represented without inventing source-level names or assuming the conditional aggregate detail field is always initialized.
-
-See `docs/sys-a444-blocked.md` for adversarial analysis and consolidation clues.
+Private ROM bytes, full correlated disassembly and regression workpapers remain outside the repository.
