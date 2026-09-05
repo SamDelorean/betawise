@@ -41,3 +41,13 @@ The historical BetaWise index-225 `strchr` mapping and the existing `os3k.h` dec
 Static regression over the canonical ROMs and official SmartApplet manifest executed with **OVERALL PASS**. It revalidates ROM hashes, exact handler bytes/hash, direct JSR/JMP counts, the A384 corpus total (24), the three positive applets, detector controls, and representative caller argument/return patterns. Dynamic emulator-first regression was not executed for this mechanically trivial entry.
 
 Status: **MECÁNICA_CERRADA A / PUBLICADO**. The existing `os3k.h` declaration already matches the reconstructed two-argument contract, so no header modification is required.
+
+## SOURCE-FIRST re-audit — 2026-09-04
+
+The sequential re-audit started from the preserved API anchors: `os3k.h`/`os3k.pdf` declare `char *strchr(const char *str, int c)`, and the generated syscall mapping places `strchr` at index225/A384. Those references were treated only as hypotheses. The archived official-corpus workpaper supplied caller anchors with concrete promoted character values and explicit pointer/NULL consumption, plus positive controls for the compact table layout.
+
+Primary firmware was independently re-extracted from all three canonical ROMs. Vector[225] again resolves to the documented entries, and all three 0x1A handlers reproduce byte-identically with SHA-256 `3633a5c6151a9bbcfed16b7a1159646302b89e1f3cc7a10fd9b96ded665292f6`. Dataflow confirms a string pointer plus a 32-bit argument slot whose low byte alone is compared, pointer return on match, NULL on exhaustion, and compare-before-NUL-test ordering; consequently `c == 0` returns the terminator address exactly as standard `strchr` requires.
+
+The adversarial pass rejects `memchr`, boolean-search and terminator-excluding variants. The canonical caller workpaper remains 24 executable calls in three NEO applets, with explicit two-slot cleanup and `D0.L` consumed as a pointer/NULL; controls A36C=99, A378=598 and A380=130 remain consistent. No source/firmware contradiction or generational divergence was found.
+
+Classification after re-audit: **CLOSED A / SOURCE_FIRST / PUBLISHED**. Previously executed static regression remains **OVERALL PASS**; dynamic/emulator-first regression remains **SPECIFIED / NOT EXECUTED**.
