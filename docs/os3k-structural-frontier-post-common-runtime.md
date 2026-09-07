@@ -55,7 +55,17 @@ NEO 2013 contains additional homologous objects:
 - `[0x03FF80,0x040000)` and `[0x05FF80,0x060000)` are byte-identical.
 - `[0x060780,0x060800)` repeats the same code prefix and principal metadata, with a different revision field and final padding.
 
-This strongly supports a bank/container/boundary interpretation, but the precise meaning of each copy remains unresolved pending source/build/updater correlation.
+The repetition is confirmed structural evidence, but it does **not** by itself prove that raw file offset `0x040000` begins another bank or independently loaded segment. The earlier bank/container-boundary interpretation is therefore withdrawn as over-strong.
+
+Source-first correlation with `ioma8/neo-re` provides the missing coordinate model. `alpha-emu` maps the OS package at `0x00410000` and documents a late NEO main executable span of `0x60000` bytes (`0x00410000..0x00470000`). Its layout patcher independently uses the exact pair `CHAR_HOOK_CODE_OFFSET = 0x42E8E` and `CHAR_HOOK_RUNTIME_ADDRESS = 0x00452E8E`, which demonstrates the package-relative relation `runtime = 0x00410000 + file_offset` for that stock-image coordinate system. Under that mapping, raw `0x040000` corresponds to `0x00450000`, inside the same executable continuum rather than at its start.
+
+`neo-re` also distinguishes whole-package investigation coordinates from updater segment descriptors. Those coordinate systems must not be conflated when inferring installed segment boundaries from raw package offsets.
+
+References:
+
+- `ioma8/neo-re`, `docs/2026-04-20-alpha-emu-memory-map.md`
+- `ioma8/neo-re`, `alpha-emu/src/firmware.rs`
+- `ioma8/neo-re`, `layout-patcher/src/layout_patcher/firmware.py`
 
 ## `0x040000` is not a common semantic continuation
 
@@ -65,10 +75,10 @@ Although all three images reach the physical coordinate `0x040000`, what follows
 - NEO 2005 has only `0x18` bytes remaining in the file.
 - NEO 2013 enters executable 68k code and continues to a later repeated trailer.
 
-Therefore `0x040000` is a coincident **physical boundary**, not evidence of one common object across generations. Subsequent classification must branch by generation.
+Therefore `0x040000` remains useful as a **cross-generation physical comparison coordinate**, but it is not evidence of one common object across generations and must not be promoted to an internal NEO 2013 bank/segment boundary. Subsequent classification must branch by generation and follow source-supported object boundaries.
 
 ## ABI consequence
 
 No Axxx syscall is promoted from any of the regions described here. The evidence is structural and explicitly refutes interpreting zero-fill or trailer metadata as dispatcher entries merely because an arithmetic A-line coordinate overlaps them.
 
-Private regression against the canonical images: **60/60 checks passed**. The regression validates hashes, generation-specific zero-fill geometry, trailer layout, metadata fields, post-`0x040000` divergence, and the repeated NEO 2013 trailer pattern.
+Private regression against the canonical images: **60/60 checks passed**. That previously executed regression validates hashes, generation-specific zero-fill geometry, trailer layout, metadata fields, post-`0x040000` byte-class divergence, and the repeated NEO 2013 trailer pattern. The new semantic correction about NEO 2013 package coordinates is source-correlated; a dedicated canonical-image regression for that coordinate interpretation is **specified, not executed in this update**.
