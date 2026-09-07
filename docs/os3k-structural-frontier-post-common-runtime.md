@@ -67,18 +67,41 @@ References:
 - `ioma8/neo-re`, `alpha-emu/src/firmware.rs`
 - `ioma8/neo-re`, `layout-patcher/src/layout_patcher/firmware.py`
 
+## NEO 2013 active-to-unused-ROM frontier
+
+A dedicated source-first check now provides a real internal physical boundary after raw `0x040000`.
+
+`neo-re` deliberately places its keyboard-layout hook at file offset `0x42E8E` / runtime `0x00452E8E` and describes that destination as unused ROM space. Direct verification of the canonical NEO 2013 image independently matches that claim:
+
+- `[0x040000, 0x042E8E)` contains active non-fill bytes and must be treated as a mixed code/data region until its internal subobjects are separated.
+- The active tail ends with a 68k `RTS` (`4E75`) at raw `0x042E8C..0x042E8D`.
+- `[0x042E8E, 0x05FF80)` is one continuous `0xFF` span of length `0x1D0F2`.
+- The repeated `0x80`-byte trailer begins exactly at raw `0x05FF80`.
+
+Therefore `[0x042E8E, 0x05FF80)` is structurally **closed as unused/erased ROM fill**, not code and not ABI. The former shorthand suggesting executable code continued all the way to `0x05FF80` was too broad and is withdrawn. The preceding `[0x040000, 0x042E8E)` remains `PARCIAL_CERRADO`: its active extent is confirmed, but its internal code/data object boundaries still require source/xref/firmware decomposition.
+
+The canonical host file also has an `0x800`-byte tail after the main `0x60000` area:
+
+- `[0x060000, 0x060014)` is 20 non-zero bytes beginning with the System 3 Neo identifier;
+- `[0x060014, 0x060780)` is zero-filled;
+- `[0x060780, 0x060800)` is the final homologous trailer with revision `03 04`.
+
+The updater segment table independently declares `0x00410000/0x60000`, `0x00406000/0x14`, and `0x005FFC00/0x400`. The length correlations are strong, but this note intentionally does not assign exact host-file payload placement to the two secondary descriptors until the updater writer path is reconstructed.
+
+Dedicated private canonical-image regression for this frontier: **16/16 checks passed**. It verifies the canonical hash, segment descriptors, active-to-`0xFF` transition, final `RTS`, exact erased-fill extent, repeated trailer boundary, and host-tail geometry.
+
 ## `0x040000` is not a common semantic continuation
 
 Although all three images reach the physical coordinate `0x040000`, what follows differs:
 
 - AS3000 enters resource/string material.
 - NEO 2005 has only `0x18` bytes remaining in the file.
-- NEO 2013 enters executable 68k code and continues to a later repeated trailer.
+- NEO 2013 remains inside its main OS package, with an active region through raw `0x042E8D` followed by erased/unused `0xFF` fill through `0x05FF7F`.
 
 Therefore `0x040000` remains useful as a **cross-generation physical comparison coordinate**, but it is not evidence of one common object across generations and must not be promoted to an internal NEO 2013 bank/segment boundary. Subsequent classification must branch by generation and follow source-supported object boundaries.
 
 ## ABI consequence
 
-No Axxx syscall is promoted from any of the regions described here. The evidence is structural and explicitly refutes interpreting zero-fill or trailer metadata as dispatcher entries merely because an arithmetic A-line coordinate overlaps them.
+No Axxx syscall is promoted from any of the regions described here. The evidence is structural and explicitly refutes interpreting zero-fill, erased-fill, or trailer metadata as dispatcher entries merely because an arithmetic A-line coordinate overlaps them.
 
-Private regression against the canonical images: **60/60 checks passed**. That previously executed regression validates hashes, generation-specific zero-fill geometry, trailer layout, metadata fields, post-`0x040000` byte-class divergence, and the repeated NEO 2013 trailer pattern. The new semantic correction about NEO 2013 package coordinates is source-correlated; a dedicated canonical-image regression for that coordinate interpretation is **specified, not executed in this update**.
+Private canonical regressions are now **EJECUTADAS**: the earlier post-common/trailer suite passed **60/60**, and the dedicated NEO 2013 post-`0x040000` frontier suite passed **16/16**.
