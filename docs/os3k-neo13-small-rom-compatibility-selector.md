@@ -67,15 +67,29 @@ The eight mechanically simple wrappers contain no argument adaptation between th
 | wrapper runtime | Small ROM <1.4 | Small ROM >=1.4 | classification |
 | --- | --- | --- | --- |
 | `0x0041F864` | `0x00441550` | `0x00451344` | simple legacy/new pair |
-| `0x0041F890` | `0x0043FE3E` | `0x004515C6` | simple legacy/new pair; newer side in ISP1763 DC control-helper cluster |
-| `0x0041F8AA` | `0x0043FF18` | `0x00451602` | simple legacy/new pair; newer side in ISP1763 DC control-helper cluster |
-| `0x0041FB5E` | `0x0043FEAC` | `0x0045183C` | simple legacy/new pair; newer side in ISP1763 DC control-helper cluster |
-| `0x0041FC4E` | `0x0043FEF4` | `0x0045192A` | simple legacy/new pair; newer side in ISP1763 controller-helper cluster |
+| `0x0041F890` | `0x0043FE3E` | `0x004515C6` | simple legacy/new pair; newer side in controller setup/init path |
+| `0x0041F8AA` | `0x0043FF18` | `0x00451602` | simple legacy/new pair; newer side delegates to controller initialization |
+| `0x0041FB5E` | `0x0043FEAC` | `0x0045183C` | simple legacy/new pair; newer side performs role/OTG setup and initialization |
+| `0x0041FC4E` | `0x0043FEF4` | `0x0045192A` | simple legacy/new pair; newer side wraps controller initialization in an interrupt critical section |
 | `0x0041FD26` | `0x004416A4` | `0x00452176` | simple legacy/new pair |
-| `0x0041FD40` | `0x00441494` | `0x0045217E` | simple legacy/new pair; chip-ID stability path |
+| `0x0041FD40` | `0x00441494` | `0x0045217E` | simple legacy/new pair; controller identity/stability gate |
 | `0x0041FF82` | `0x0041EB8E` | `0x0045239A` | simple legacy/new pair; newer side is HC ATL/INT interrupt-service path |
 
 This table makes the compatibility layer useful as a reverse-engineering bridge: once one side of a simple pair is independently reconstructed, the other side inherits the same **wrapper-level role and caller-side contract hypothesis**, which must then be checked against its own body before any stronger semantic claim is promoted.
+
+## Per-pair semantic refinement
+
+Several newer-side callees are now independently correlated strongly enough to narrow the caller-visible role of their legacy partners without transferring vendor-specific internals.
+
+The newer targets `0x004515C6`, `0x00451602`, `0x0045183C`, and `0x0045192A` all converge on the newer Device Controller setup/initialization path. The first combines global/GPIO setup with initialization in an interrupt-critical section; the second delegates directly to initialization; the third performs controller role/OTG setup before the same initialization; and the fourth wraps initialization while preserving interrupt state. Consequently, the paired legacy targets `0x0043FE3E`, `0x0043FF18`, `0x0043FEAC`, and `0x0043FEF4` are strong hypotheses for the corresponding **caller-visible controller lifecycle operations**. Their controller identity, register map, electrical sequence, and internal implementation remain unresolved.
+
+Likewise, new `0x0045239A` is independently reconstructed as the newer HC ATL/INT interrupt-service path. Therefore legacy `0x0041EB8E` is a strong hypothesis for the same caller-visible interrupt-service role. This does not establish that the legacy controller is an ISP1763, and the ISP1763 name must not be propagated to that callee.
+
+New `0x0045217E` is a stronger anchor. It repeatedly reads the newer controller identification register, requires the expected identification value to be observed on five consecutive reads, resets the stability count after a mismatch, and delays before retrying. The paired legacy `0x00441494` can therefore be classified as the legacy **controller presence/identity/stability gate** at the caller boundary. Its expected identifier and hardware-specific implementation remain unresolved.
+
+### Emulation consequence
+
+The newer identity/stability gate can wait indefinitely if controller MMIO never produces the expected stable identification value. For NEO emulation this is a concrete diagnostic rule: an early firmware hang at this gate can indicate incomplete controller/MMIO emulation rather than a CPU-core or ROM-layout error. The same type of precondition is a strong hypothesis for the legacy branch, but its hardware-specific identifier must not be invented.
 
 ## Interpretation
 
@@ -101,7 +115,7 @@ A private canonical-image regression verifies:
 
 Result: **16/16 PASS**.
 
-The complete simple-pair table above is a derived correlation over those already executed checks; no additional binary regression is claimed for the documentation-only expansion.
+Separate previously executed canonical-image regressions cover the newer controller helper/initialization cluster (**79/79 PASS**) and the newer HC ATL/INT service (**36/36 PASS** in its focused regression). The per-pair refinements above are derived correlations over those already executed checks; no additional binary regression is claimed for this documentation update.
 
 ## Classification
 
@@ -110,6 +124,8 @@ The complete simple-pair table above is a derived correlation over those already
 - Selector values `{1,2}` and their conditions: **CONFIRMED**.
 - Use as legacy/new compatibility selector: **CONFIRMED**.
 - Eight simple wrappers as direct legacy/new contract-equivalence anchors: **CONFIRMED mechanically**.
-- Transfer of exact internal semantics or vendor names across a pair: **PROVISIONAL until each callee is independently correlated**.
+- Legacy controller-lifecycle and interrupt-service roles derived from independently reconstructed newer partners: **STRONG INFERENCE at caller-visible contract level**.
+- Legacy `0x00441494` as controller presence/identity/stability gate: **STRONG INFERENCE at caller-visible contract level**.
+- Transfer of exact internal semantics, identifiers, register maps, or vendor names across a pair: **UNRESOLVED / INSUFFICIENT EVIDENCE**.
 - Exact physical hardware distinction represented by the Small ROM threshold: **UNRESOLVED / INSUFFICIENT EVIDENCE**.
 - ABI status: **internal compatibility mechanism; not an A-line syscall**.
