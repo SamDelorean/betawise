@@ -4,53 +4,69 @@ This note records a source-first reconstruction of the Manager-side transaction 
 
 ## Source correlation
 
-Three independent public code bases support the same multi-request architecture. Selector `0x06` is only the initialization stage of an applet installation transaction; it is not the request that carries the applet payload itself.
+Public AlphaSync material, the current `neo-re` protocol layer, `alpha-core`, and the hardware-oriented `real-check` client converge on a multipart installation transaction. Selector `0x06` is only the initialization stage; it does not carry the applet payload itself.
 
-AlphaSync defines `WRITE_APPLET` as request `0x06`, describes request `0x07` as an unknown operation used while writing an applet, and describes request `0x0b` as another unknown operation used while writing an applet. Its response constants associate `0x46` with `WRITE_APPLET`, `0x47` with request `0x0b`, and `0x48` with request `0x07`.
+The current host-side sequence is:
 
-Neotools resolves the host-side ordering explicitly. Its applet installer performs these stages:
-
-1. Send `REQUEST_WRITE_APPLET (0x06)` with allocation/size requirements and wait for `RESPONSE_WRITE_APPLET (0x46)`.
-2. Split the applet image into blocks of at most `0x400` bytes.
-3. For every block, send `REQUEST_BLOCK_WRITE (0x02)` with block length and checksum, wait for `RESPONSE_BLOCK_WRITE (0x42)`, transfer the raw block bytes, and wait for `RESPONSE_BLOCK_WRITE_DONE (0x43)`.
-4. Send `REQUEST_PROGRAMMING_APPLET_BLOCK (0x0b)` and wait for `RESPONSE_PROGRAMMING_APPLET_BLOCK (0x47)` before advancing to the next block.
-5. After the last block, send `REQUEST_FINALIZE_WRITING_APPLET (0x07)` and wait for `RESPONSE_FINALIZE_WRITING_APPLET (0x48)`.
-
-The independent `neo-re` protocol implementation corroborates the control selectors directly: its applet-begin helper is tested against `command(0x06, ...)`, its program-applet helper against `command(0x0b, 0, 0)`, and its finalize helper against `command(0x07, 0, 0)`.
+1. Send `0x06` (add/write applet begin) and require response/status `0x46`.
+2. Split the image into chunks of at most `0x400` bytes.
+3. For each chunk, send `0x02` with `argument = chunk_length` and `trailing = sum16(chunk)`, then require `0x42`.
+4. Send the raw chunk bytes, then require `0x43`. This is a response after the raw transfer, not another Manager request selector.
+5. Send `0x0B` with zero argument/trailing and require `0x47`.
+6. Repeat steps 3–5 for every chunk.
+7. Send `0x07` with zero argument/trailing and require `0x48`.
 
 Therefore the source-supported transaction is:
 
-`0x06 init -> [0x02 raw-block 0x0b program] * N -> 0x07 finalize`
+`0x06 begin -> [0x02 announce -> raw bytes -> 0x43 response -> 0x0B program] * N -> 0x07 finalize`
 
-with each raw block no larger than `0x400` bytes in the neotools implementation.
+with `N = ceil(image_size / 0x400)` in the current implementations.
 
-## Important correction
+## `0x06` start-field packing
 
-`WRITE_APPLET (0x06)` must **not** be described as the chunk-transfer request. The chunked payload transport belongs to `BLOCK_WRITE (0x02)` plus the raw USB data transfer; request `0x0b` advances/programs each staged applet block, and `0x07` performs finalization.
+The current `neo-re` Python and Rust implementations independently derive the begin fields from the 0x84-byte SmartApplet header as follows:
 
-The two size fields sent by neotools in request `0x06` are derived from the applet header's ROM requirement and combined RAM/file-space requirement. Their exact firmware-side interpretation, allocation policy, bit packing, error paths, and persistence state remain to be established by canonical-ROM verification.
+```text
+combined_memory_size = base_memory_size + extra_memory_size
+argument = file_size | ((combined_memory_size & 0xFFFF0000) << 8)
+trailing = combined_memory_size & 0xFFFF
+```
+
+Under 32-bit arithmetic this means the low 24 bits of `argument` carry the file-size portion while bits 24..31 carry bits 16..23 of the combined memory requirement; `trailing` carries its low 16 bits. This is a source-level wire-packing observation, not yet a firmware-side semantic proof. The exact range checks, overflow policy, and allocator interpretation still require canonical-ROM verification.
+
+For the common case where `combined_memory_size < 0x10000`, `argument` is simply `file_size` and `trailing` is the combined memory requirement. The `alpha-core` regression example `file_size=0x1234`, `base_memory_size=0x0100`, `extra_memory_size=0x2000` produces `(argument,trailing)=(0x1234,0x2100)`.
+
+## Important correction: obsolete `0xFF` PoC step
+
+An older `poc/neotools` helper constructs an extra packet `command(0xFF,0,0)` after raw applet data and labels it `add_applet_chunk_commit`. That helper must not be promoted into the recovered Manager transaction.
+
+The newer `real-check` client and current Rust `alpha-core`/`alpha-cli` installation path do **not** send this `0xFF` packet. Instead they send the raw chunk and immediately read status `0x43`, then send `0x0B`. This also fits the independently reconstructed Manager request dispatcher, whose normal selector namespace is `0x00..0x1F`; treating `0xFF` as another ordinary dispatcher case would contradict that boundary.
+
+Accordingly, until direct firmware evidence proves a separate transport-level role, `0xFF` is classified as **PROVISIONAL / obsolete PoC artifact**, not part of the canonical Manager applet-installation sequence.
 
 ## Verification boundary
 
-Status of this note: **SOURCE-FIRST CONFIRMED / firmware correlation pending**.
+Status: **SOURCE-FIRST CONFIRMED / firmware correlation pending**.
 
-Confirmed here from independent public host implementations:
+Confirmed from current independent host implementations:
 
-- `0x06` is initialization for applet installation, response `0x46`;
-- applet bytes are transferred in blocks of at most `0x400` by the observed neotools host implementation;
-- `0x02` announces each block and its checksum, with responses `0x42` and `0x43` around the raw block transfer;
-- `0x0b` is issued after every block and receives `0x47` in the neotools transaction;
-- `0x07` finalizes the installation and receives `0x48`;
-- `neo-re` independently confirms the control-role mapping `0x06` begin, `0x0b` program block, and `0x07` finalize.
+- `0x06` begins applet installation and expects `0x46`;
+- `0x02` announces each raw block with byte count and 16-bit additive checksum and expects `0x42`;
+- raw block data are limited to `0x400` bytes per chunk by the current installers;
+- `0x43` is consumed after raw chunk transmission;
+- `0x0B` follows every raw block and expects `0x47`;
+- `0x07` finalizes installation and expects `0x48`;
+- the `0x06` host fields are deterministically packed from `file_size`, `base_memory_size`, and `extra_memory_size` as documented above.
 
-Not yet promoted to a firmware contract:
+Not yet promoted to firmware contracts:
 
-- exact branch bounds for cases `0x06`, `0x07`, `0x0b`, and their interaction with case `0x02`;
-- register-level argument interpretation;
-- allocation and rollback semantics;
+- exact branch bounds for cases `0x06`, `0x02`, `0x0B`, and `0x07`;
+- firmware-side unpacking and validation of the `0x06` packed sizes;
+- transfer-state globals shared by those cases;
+- allocation, rollback, and failure semantics;
 - exact validation performed during finalization;
 - internal helper/vendor names.
 
-The next canonical-ROM pass should treat the four selectors as one transaction family rather than trying to infer case `0x06` in isolation. That pass should verify the shared transfer-state globals and the transitions `init -> block staging -> program -> finalize`, then compare those mechanics across AS3000, NEO 2005, and NEO 2013.
+The next canonical-ROM pass should reconstruct the four selectors as one state machine and explicitly test the transitions `begin -> block announce -> raw-data completion -> program -> finalize` across AS3000, NEO 2005, and NEO 2013.
 
 No A-line ABI entry is implied. The Manager request namespace is independent of the A-line syscall frontier.
