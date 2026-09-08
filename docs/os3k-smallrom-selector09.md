@@ -1,67 +1,60 @@
-# OS3K Small ROM selector `0x09`: baud-rate negotiation
+# OS3K Small ROM selectors `0x09`, `0x0A`, and `0x19`
 
-This note documents a Manager/update-protocol handler in the AlphaSmart 3000 and NEO Small ROMs. It is **not** an A-line syscall and does not extend the demonstrated A-line ABI frontier.
+This note documents Manager/update-protocol handlers in the AlphaSmart 3000 and NEO Small ROMs. These are **not** A-line syscalls and do not extend the demonstrated A-line ABI frontier.
 
-## Source-first identity
+## Source-first identity of `0x09`
 
 AlphaSync defines request `0x09` as `SET_BAUDRATE` with a 32-bit baud-rate argument and identifies response `0x4A` as the baud-rate response. neotools carries the same request/response names and packet comments, but its own README states that its device driver was ported from AlphaSync. It is therefore useful corroboration of implementation lineage, **not an independent source** for the protocol identity.
 
-This distinction matters for neighboring unknown selectors as well: wording in neotools that is textually inherited from AlphaSync must not be counted as a second evidentiary vote.
-
 Both codebases leave response `0x49` unnamed. This note therefore does not invent a vendor name for `0x49`.
 
-## Direct firmware verification
+Direct comparison of the historical AlphaSmart 3000 Small ROM from AlphaSmart Manager 2.3 and the NEO Small ROM from NEO Manager 3.9.3 confirms that selector `0x09` accepts exactly five rates: 9600, 19200, 38400, 57600, and 115200 baud. Accepted values produce a preliminary `0x49`, serial/timer reconfiguration, a serial-status wait, and response `0x4A`; invalid values take an error path containing `0x92`.
 
-The historical AlphaSmart 3000 Small ROM from AlphaSmart Manager 2.3 and the NEO Small ROM from NEO Manager 3.9.3 use the same reverse-indexed Manager dispatcher namespace. Selector `0x09` resolves to file offset `0x2976` in the AlphaSmart 3000 image and `0x1FC2` in the NEO image.
+The request identity is therefore source-grounded and the argument/rate/register mechanics are independently firmware-confirmed. The exact protocol name of `0x49` and the vendor meaning of `0x92` remain unresolved.
 
-The two handler objects are each `0x108` bytes. Across all 264 bytes, only five bytes differ, all in the serial/timer programming portion of the handler.
+## Selector `0x19`: transport callback gate
 
-At entry, both handlers compare the 32-bit request value against exactly these five rates:
+AlphaSync leaves request `0x19` unknown and speculates that it may be AlphaHub-specific. neotools reproduces that comment through the AlphaSync-derived driver lineage, so the AlphaHub suggestion is **not independent evidence** and remains unsupported as an identity claim.
 
-```text
-9600
-19200
-38400
-57600
-115200
-```
+Direct firmware verification nevertheless closes the mechanics in both Small-ROM generations:
 
-No sixth comparison of the same `CMPI.L #rate,(A6)` form occurs in either object.
+- the request consumes a word argument;
+- zero clears a byte gate and nonzero sets it;
+- initialization sets that gate to enabled;
+- the handler emits response `0x57`;
+- exhaustive direct-reference accounting finds one operational consumer outside initialization/handler writes;
+- that consumer tests the gate before loading and invoking the active receive/dispatch callback used by the Small-ROM transport path.
 
-For an accepted rate, the shared protocol shape is:
+Therefore selector `0x19` **enables or inhibits invocation of the active transport receive/dispatch callback**. That caller-visible mechanical role is confirmed in both generations. A vendor request name, product-level purpose, and any AlphaHub association remain **UNRESOLVED / INSUFFICIENT EVIDENCE**.
 
-```text
-request 0x09(baud32)
-    -> response 0x49
-    -> serial/timer reconfiguration
-    -> wait for serial status
-    -> response 0x4A
-```
+## Selector `0x0A`: dynamic response-code replay
 
-The reconfiguration writes the same serial/timer MMIO register set in both generations (`F600`, `F602`, `F604`) and polls status at `F60B`. The rate-dependent divisor constants are where the small generational byte differences occur. The invalid-rate path contains response `0x92`.
+AlphaSync leaves request `0x0A` unknown. neotools repeats the same unknown/empirical-`0x90` observation through the same source lineage, so the reported `0x90` is not an independent protocol definition.
 
-AlphaSync supplies the historical name `SET_BAUDRATE`; direct firmware then independently confirms the argument width, accepted rate set, serial-register behavior, and `0x4A` success envelope. The exact protocol meaning of preliminary response `0x49` and the vendor name, if any, for error `0x92` remain intentionally unresolved.
+Direct firmware analysis resolves why the handler itself contains no fixed `0x90`:
 
-## Neighboring unresolved selectors
+- the common response builder records the response-code byte every time it emits a response;
+- the recorded byte has exactly one other direct consumer: selector `0x0A`;
+- `0x0A` reads that stored response code, supplies zero for the other response fields, and re-enters the common response-builder call path;
+- the mechanism is homologous in the AlphaSmart 3000 and NEO Small ROMs.
 
-The same Small-ROM dispatcher also contains selectors `0x0A` and `0x19`, but they are not promoted to named contracts here:
+Thus `0x0A` **re-emits the most recently recorded response code with zero argument/trailing fields**. A tool can consequently observe `0x90` when `0x90` was the relevant prior response, but `0x90` is not a fixed literal or invariant contract of selector `0x0A`.
 
-- `0x0A` remains unknown in AlphaSync; neotools repeats the same unknown/empirical-`0x90` comment through the AlphaSync-derived driver lineage, so that repetition is not independent evidence. Its Small-ROM handler is only `0x12` bytes in both generations and does not itself contain literal response `0x90`, despite the historical empirical report. Following the helper/state path is still required.
-- `0x19` remains unknown. Its `0x22`-byte handler is mechanically stable across both generations: it tests a word argument, sets or clears a byte flag, and emits response `0x57`. The often-repeated suggestion that the request "may be specific to AlphaHub devices" originates as an explicitly speculative AlphaSync comment and is copied into neotools. No independent AlphaHub contract/caller/source has been demonstrated. The AlphaHub association is therefore **DESCONOCIDO / unsupported as an identity claim**, not a corroborated provisional contract.
+The firmware mechanics are confirmed; the historical vendor request name and intended policy/use remain **UNRESOLVED / INSUFFICIENT EVIDENCE**. This note intentionally avoids inventing a source-level name such as “resend” or “retry.”
 
 ## Verification boundary
 
-A private reproducible two-image regression passes **45/45 assertions**. It verifies the two Small-ROM hashes, selector object sizes, five accepted baud rates, exact comparison set, `0x49`/`0x4A`/`0x92` protocol envelope, serial-register programming pattern, status wait, and the mechanically stable portions of selectors `0x0A` and `0x19`.
+The earlier baud-rate regression passes **45/45 assertions**. A second private two-generation regression focused on selectors `0x0A` and `0x19` passes **39/39 assertions**, covering canonical Small-ROM hashes, handler homology, gate initialization/reference accounting, callback gating, response-state reference accounting, common response-builder linkage, and the absence of any fixed `0x90` contract in `0x0A`.
 
 Status:
 
-- selector `0x09` request identity and argument: **CONFIRMED** (historical AlphaSync naming + independent firmware mechanics);
-- accepted baud-rate set: **CONFIRMED**;
-- two-generation handler homology: **CONFIRMED**;
-- response `0x4A` association with baud-rate negotiation: **CONFIRMED**;
+- selector `0x09` / historical `SET_BAUDRATE`: **CONFIRMED**;
+- accepted baud-rate set and two-generation mechanics: **CONFIRMED**;
 - exact semantic name of response `0x49`: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
-- selector `0x0A`: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
-- selector `0x19` boolean mechanics: **CONFIRMED**, nominal purpose **UNRESOLVED / INSUFFICIENT EVIDENCE**;
-- AlphaHub identity for `0x19`: **DESCONOCIDO; source-lineage speculation only**.
+- selector `0x19` transport callback-gate mechanics: **CONFIRMED**;
+- selector `0x19` vendor name / AlphaHub identity: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
+- selector `0x0A` dynamic last-response-code replay mechanics: **CONFIRMED**;
+- selector `0x0A` vendor name / intended policy: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
+- fixed-`0x90` interpretation for selector `0x0A`: **REFUTED**.
 
 No ROM bytes or extended disassembly are published here.
