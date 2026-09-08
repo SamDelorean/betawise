@@ -49,9 +49,25 @@ Accordingly, the final `0x800` host bytes are structurally two distinct transfer
 | `0x060000..0x060013` | 20-byte meaningful secondary payload | `0x00406000..0x00406013` |
 | `0x060014..0x0603FF` | zero padding to the recorded `0x400` span | `0x00406014..0x004063FF` |
 | `0x060400..0x06077F` | zero prefix of the high transfer span | `0x005FFC00..0x005FFF7F` |
-| `0x060780..0x0607FF` | `0x80`-byte fixed trailer | `0x005FFF80..0x005FFFFF` |
+| `0x060780..0x0607FF` | `0x80`-byte final trailer/revision variant | `0x005FFF80..0x005FFFFF` |
 
-The 20-byte secondary payload identifies the System 3 NEO package. The last `0x80` bytes are the fixed trailer/revision-record homolog described separately in the structural map.
+The 20-byte secondary payload identifies the System 3 NEO package.
+
+## Final trailer / revision variant
+
+The final `0x80` bytes are not an independent executable image rooted at `0x005FFF80`. Canonical comparison against the primary System trailer shows:
+
+- the complete first `0x40` bytes are identical;
+- all four absolute jumps target the same main-System entrypoints;
+- revision major, System name, and build-date string are identical;
+- the revision minor is `0x04` rather than `0x11`;
+- only the final twelve bytes differ otherwise: zero in the final trailer versus erased-value bytes in the primary trailer.
+
+In total, only thirteen bytes of the `0x80`-byte objects differ.
+
+No package literal points to the installed final-trailer base or its revision-record subaddress. The four jumps all target the main System image range rather than the high fixed-tail segment. This refutes interpreting the object as a self-contained firmware bank executing from the `0x005F...` region.
+
+It is also distinct from the updater Small ROM: that component has its own `OS 3KNeo Small ROM` identity and a different execution base. Therefore the conservative classification is **final trailer / revision-metadata variant**. The source-level purpose of the embedded `3.04` minor revision remains **DESCONOCIDO / EVIDENCIA_INSUFICIENTE**; no fallback, recovery-bank, or alternate-firmware policy is asserted without an independent caller or source symbol.
 
 ## Evidence classification
 
@@ -66,9 +82,10 @@ The 20-byte secondary payload identifies the System 3 NEO package. The last `0x8
 - programming-path selection of the current map entry, `base + length` boundary calculation, segment-index advance, and next-base load;
 - the three host-file transfer boundaries `0x000000 / 0x060000 / 0x060400 / 0x060800`;
 - placement of the secondary block at `0x00406000` and the high block at `0x005FFC00`;
-- installed fixed-trailer address `0x005FFF80`.
+- installed final-trailer address `0x005FFF80`;
+- final-trailer code/entrypoint identity with the main System trailer and the exact thirteen-byte difference set.
 
-The vendor/source-level names of the Small ROM mapper routines and its internal state objects remain **DESCONOCIDO / EVIDENCIA_INSUFICIENTE** and are not invented here.
+The vendor/source-level names of the Small ROM mapper routines, internal state objects, and the reason for the `3.04` metadata variant remain **DESCONOCIDO / EVIDENCIA_INSUFICIENTE** and are not invented here.
 
 ## Refutation attempt
 
@@ -76,14 +93,18 @@ A compact-concatenation model in which the third payload starts immediately afte
 
 Likewise, treating `0x060014..0x06077F` as one undifferentiated zero-fill region crosses a confirmed map boundary at host offset `0x060400`.
 
+The high final trailer also cannot be treated as an independent executable bank: its absolute jumps leave the high segment and enter the same main-System routines used by the primary trailer.
+
 ## Consequence for the revision-name comparator
 
-Elsewhere in the NEO 2013 firmware, an internal routine compares the NUL-terminated buffer at `0x00406000` against the `name` field of the fixed revision record and returns Boolean equality. With the Small ROM placement now directly established, `0x00406000` is **CONFIRMADO** as the installed address of the 20-byte secondary package payload. Calling that payload an identity/name object at source level remains conservative unless an independent vendor symbol is recovered.
+Elsewhere in the NEO 2013 firmware, an internal routine compares the NUL-terminated buffer at `0x00406000` against the `name` field of the fixed revision record and returns Boolean equality. With the Small ROM placement now directly established, `0x00406000` is **CONFIRMADO** as the installed address of the 20-byte secondary package payload. The exact Boolean equality contract is documented separately; no vendor symbol is asserted.
 
 ## Regression status
 
 The original private package-layout regression was **EJECUTADA: 15/15 PASS**. A second private regression over the actual NEO Manager 3.9.3 Small ROM plus the canonical NEO 2013 package was **EJECUTADA: 33/33 PASS**. It verifies the binary identities, dispatcher signatures, segment-map reset/append mechanics, address/length arrays, KiB-to-byte conversion, programming-path boundary transitions, canonical segment table, and the three derived host-to-flash spans.
 
+A third private canonical-package regression covering the final trailer's installed placement, exact primary/final byte differences, four absolute targets, metadata equality, and negative absolute-reference searches was **EJECUTADA: 21/21 PASS**.
+
 ROM bytes and extensive disassembly remain private with the project evidence set. This public note contains only functional, structural, and contract-level conclusions.
 
-Status: **PARCIAL_CERRADO** for source-level naming; placement mechanism **CERRADO A / CONFIRMADO**. No ABI promotion.
+Status: **PARCIAL_CERRADO** for source-level naming/policy; placement mechanism and final-trailer structural classification **CONFIRMADOS**. No ABI promotion.
