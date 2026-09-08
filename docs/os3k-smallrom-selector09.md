@@ -42,9 +42,19 @@ Thus `0x0A` **re-emits the most recently recorded response code with zero argume
 
 The firmware mechanics are confirmed; the historical vendor request name and intended policy/use remain **UNRESOLVED / INSUFFICIENT EVIDENCE**. This note intentionally avoids inventing a source-level name such as “resend” or “retry.”
 
+## Shared deferred restart/re-entry primitive
+
+AlphaSync provides an independent source anchor for request `0x08`: it names the request `RESTART`, describes it as causing the device to reset and restart as a HID device, and identifies response `0x52`. The neighboring request `0x07` remains historically unnamed, although AlphaSync records that it is used while writing an applet and receives response `0x48`.
+
+The Small-ROM firmware makes the relationship between the two requests explicit. In both the AlphaSmart 3000 and NEO generations, requests `0x08` and `0x07` set the **same deferred-transition flag** before returning their distinct responses. The transport path later tests and clears that flag before invoking one shared low-level helper.
+
+That helper is a bounded `0x34`-byte no-return object at runtime `0x0040051E` in the AlphaSmart 3000 Small ROM and `0x0040059E` in the NEO Small ROM. Its caller-visible mechanics are homologous across generations: it quiesces/reprograms low-level state, reloads the generation-specific stack pointer, clears the frame/base register used by the Small ROM, raises the status-register interrupt mask, and terminates by jumping to a generation-specific re-entry entrypoint rather than returning. After normalizing the stack immediate and final re-entry target, the two objects are otherwise identical.
+
+This closes the helper as the **shared deferred restart/re-entry primitive** used by the known `0x08` RESTART path. It also closes the mechanical effect of `0x07`: that request arms the same deferred restart/re-entry transition after its `0x48` response. The historical/vendor name and higher-level policy for `0x07` remain **UNRESOLVED / INSUFFICIENT EVIDENCE**; no name is invented here.
+
 ## Verification boundary
 
-The earlier baud-rate regression passes **45/45 assertions**. A second private two-generation regression focused on selectors `0x0A` and `0x19` passes **39/39 assertions**, covering canonical Small-ROM hashes, handler homology, gate initialization/reference accounting, callback gating, response-state reference accounting, common response-builder linkage, and the absence of any fixed `0x90` contract in `0x0A`.
+The earlier baud-rate regression passes **45/45 assertions**. A private two-generation regression focused on selectors `0x0A` and `0x19` passes **39/39 assertions**. A separate private two-generation regression for the shared deferred restart/re-entry primitive also passes **39/39 assertions**, covering the shared flag set by `0x07`/`0x08`, its guarded callers, exact helper size, no-return terminal jump, stack/base/status-register transition, and normalized two-generation homology.
 
 Status:
 
@@ -55,6 +65,8 @@ Status:
 - selector `0x19` vendor name / AlphaHub identity: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
 - selector `0x0A` dynamic last-response-code replay mechanics: **CONFIRMED**;
 - selector `0x0A` vendor name / intended policy: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
-- fixed-`0x90` interpretation for selector `0x0A`: **REFUTED**.
+- fixed-`0x90` interpretation for selector `0x0A`: **REFUTED**;
+- shared AS3000 `0x0040051E` / NEO `0x0040059E` deferred restart/re-entry helper: **CONFIRMED**;
+- request `0x07` deferred restart/re-entry effect: **CONFIRMED**, vendor name/policy **UNRESOLVED / INSUFFICIENT EVIDENCE**.
 
 No ROM bytes or extended disassembly are published here.
