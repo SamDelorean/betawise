@@ -6,7 +6,7 @@ This note records functional conclusions from correlated analysis of the fixed 0
 
 The fixed trailer contains four absolute entrypoint jumps followed by revision metadata. The entrypoints discussed here are **not A-line ABI slots**.
 
-The observations below were reproduced on canonical NEO 2005 and NEO 2013 images. Exact source-level/vendor names have not been recovered, so descriptive names are used only where the mechanical behavior supports them.
+The observations below were reproduced on canonical NEO images where stated. Exact source-level/vendor names have not been recovered, so descriptive names are used only where the mechanical behavior supports them.
 
 ## Slot 1 — bootstrap/startup entry
 
@@ -22,7 +22,7 @@ Classification:
 
 ## Slot 2 — DragonBall quiesce helper
 
-The NEO 2005 and NEO 2013 implementations are the same 0x20-byte operation except for a relocated RAM flag. Mechanically they:
+The NEO 2005 and NEO 2013 implementations are the same `0x20`-byte operation except for a relocated RAM flag. Mechanically they:
 
 1. set bit 7 in a RAM state byte;
 2. clear DragonBall `TCTL1`;
@@ -45,10 +45,25 @@ Classification:
 - role as controlled system re-entry/restart path: **strong inference**;
 - source-level meaning of the sentinels and original vendor symbol: **unknown**.
 
-## Slot 4 and revision record
+## Slot 4 — installed identity/name equality comparator
 
-Separate analysis established that the fourth entry compares the installed secondary identity payload with the name field in the trailer revision record. The comparison mechanics are confirmed; the source-level name of the entrypoint remains unknown.
+On canonical NEO 2013, slot 4 is a compact boolean comparator. It reads the installed secondary identity string and compares it byte-for-byte with the `name` field of the trailer revision record. Independent protocol tooling identifies revision-record offset `+0x06` as `name`, while the updater/Small-ROM segment mapper independently establishes the installed secondary-segment placement.
+
+The mechanical contract is:
+
+- compare the two NUL-terminated strings for exact equality;
+- return `1` when both strings match and terminate at the same point;
+- return `0` on a differing byte or when only one string terminates;
+- ignore bytes after the first NUL in either storage object.
+
+The canonical NEO 2013 package demonstrates the intended data relationship directly: the revision-record name and the secondary installed identity carry the same `System 3 Neo` identity string (including its fixed padding before the terminator). A byte stored after the secondary string terminator does not participate in the comparison.
+
+A complete absolute-reference search finds no ordinary in-ROM `JSR` caller of this entrypoint. Its demonstrated references are the fixed/repeated trailer jumps. Therefore the equality contract and the identity/name objects being compared are **confirmed**, but the external policy that consumes the boolean result and the original vendor symbol remain **unknown / insufficient evidence**. In particular, this note does not assign a speculative vendor name such as `version_check`.
+
+## Revision record
+
+Independent host-side tooling decodes the revision record with revision-major and revision-minor bytes followed by a fixed `name` field and build-date text. This independently anchors the field used by slot 4 without relying on inferred firmware naming.
 
 ## Structural consequence
 
-These fixed-trailer entrypoints are boot/runtime infrastructure, not evidence of additional A-line syscalls. The demonstrated A-line frontier therefore remains unchanged.
+The fixed-trailer entrypoints are boot/runtime infrastructure, not evidence of additional A-line syscalls. The demonstrated A-line frontier therefore remains unchanged at A470.
