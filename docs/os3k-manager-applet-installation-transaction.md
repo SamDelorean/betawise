@@ -59,6 +59,56 @@ The exact RAM addresses of the state variables move between generations, while t
 
 The finalizer is not byte-geometrically identical in all three images. AS3000 and NEO 2005 use a 0x284-byte physical branch; NEO 2013 uses 0x290 bytes, an additional 0x0C bytes. The existence of that extension is confirmed. Its source-level purpose is not yet demonstrated and remains `NO_RESUELTO / EVIDENCIA_INSUFICIENTE` rather than being assigned a speculative feature name.
 
+## Cross-firmware correlation: principal OS vs NEO Small ROM
+
+The NEO OS-update path shows that the block-transfer portion above is not applet-specific. The host first sends `0x18` while the principal OS is active and expects `0x56`, requesting entry into Small ROM. Once Small ROM is active, the host sends `0x16` and expects `0x54` to clear the OS segment map, then sends one `0x17(address, erase_kb)` per declared segment and expects `0x55` for each erase/registration operation.
+
+After this Small-ROM-specific destination preparation, the host invokes the exact same block engine used for SmartApplet installation:
+
+`[0x02(len,sum16) -> 0x42 -> raw bytes -> 0x43 -> 0x0B -> 0x47] * N -> 0x07 -> 0x48`
+
+The same implementation routine in current `neo-re` is used for both applet images and full OS images, with chunks of at most `0x400` bytes. This is significant because it separates **destination preparation** from a **common transfer/programming layer**.
+
+The most conservative recovered semantics are therefore:
+
+- `0x02`: announce/arm reception of the next raw block, including length and checksum. This is a generic transport primitive, not an applet-only operation. AlphaSync independently uses the same request for file/attribute payloads and identifies the `0x42`/`0x43` two-stage handshake.
+- raw-data completion / `0x43`: transport completion after the announced payload has actually arrived; not a selector-table command.
+- `0x0B`: program/commit the currently staged block in the active programming context. In the principal OS that context is the SmartApplet installation transaction; in Small ROM it is the OS flash transaction prepared by `0x16/0x17`.
+- `0x07`: finalize the active programming transaction. The older name “finalize applet update” is too narrow when viewed across both firmware contexts.
+- `0x06`: principal-OS SmartApplet destination/setup stage; it should not be generalized into the common block engine.
+- `0x16`/`0x17`: Small-ROM OS destination-map/erase setup; these are not part of normal SmartApplet installation.
+- `0x18`: transition request from the principal OS into Small ROM, preceding the Small-ROM command context.
+
+Private direct decoding of the canonical NEO Small ROM has already established the `0x16` reset of the segment map, `0x17` storage of ordered segment base/erase extent, and a programming route that advances through the registered segments and splits transfers at segment boundaries. The source-level cross-correlation above now explains how the common `0x02/raw/0x0B/0x07` transport feeds that mapper.
+
+This does **not** yet promote guessed vendor names or claim that the principal-OS and Small-ROM handlers are byte-identical. Their policy/state backends differ by design. Exact physical Small-ROM handler boundaries for the common selectors remain a separate firmware-correlation task and should be reported only after reproducible direct decoding.
+
+### Consequence for the recovered state machine
+
+A better model is now:
+
+```text
+principal OS SmartApplet install:
+    0x06 destination/setup
+      -> COMMON_BLOCK_ENGINE
+      -> 0x07 transaction finalization
+
+principal OS -> Small ROM OS update:
+    0x18 firmware-context transition
+      -> 0x16 clear map
+      -> 0x17 register/erase segments
+      -> COMMON_BLOCK_ENGINE
+      -> 0x07 transaction finalization
+
+COMMON_BLOCK_ENGINE per block:
+    0x02 announce(len,sum16)
+      -> raw payload
+      -> 0x43 completion
+      -> 0x0B program/commit
+```
+
+This model is more stable than assigning applet-specific names to the shared selectors and is directly useful for emulator work: an emulated updater must preserve the firmware-context transition and the destination-specific state while retaining the same Manager transport envelope.
+
 ## Important correction: obsolete `0xFF` PoC step
 
 An older `poc/neotools` helper constructs an extra packet `command(0xFF,0,0)` after raw applet data and labels it `add_applet_chunk_commit`. That helper must not be promoted into the recovered Manager transaction.
@@ -69,18 +119,20 @@ Accordingly, absent separate transport-level evidence, `0xFF` remains **PROVISIO
 
 ## Verification boundary
 
-Status: **structurally/mechanically closed across AS3000, NEO 2005, and NEO 2013 for transaction topology and state handoff**.
+Status: **structurally/mechanically closed across AS3000, NEO 2005, and NEO 2013 for the principal-OS SmartApplet transaction; cross-firmware Small-ROM correlation is SOURCE-FIRST CONFIRMED with mapper mechanics already confirmed, while exact Small-ROM handler boundaries for the common selectors remain pending direct publication-quality correlation**.
 
 Confirmed:
 
-- stage order and response codes `0x46`, `0x42`, `0x43`, `0x47`, `0x48`;
+- stage order and response codes `0x46`, `0x42`, `0x43`, `0x47`, `0x48` for principal-OS SmartApplet installation;
 - `0x02` block-announcement role and handoff into raw reception;
 - raw `0x43` completion as a transport result, not a request selector;
 - `0x06` establishment of staging/install state;
 - `0x0B` per-block commit/program stage and cumulative-state advance;
 - `0x07` finalization/validation stage;
-- physical branch geometry for the four selectors in each canonical generation;
-- the NEO 2013 `0x07` branch is 0x0C bytes longer than the earlier two generations.
+- physical branch geometry for the four selectors in each canonical principal OS generation;
+- the NEO 2013 principal-OS `0x07` branch is 0x0C bytes longer than the earlier two generations;
+- NEO OS update enters Small ROM with `0x18 -> 0x56`, prepares its segment map with `0x16 -> 0x54` and `0x17 -> 0x55`, then reuses the same `0x02/raw/0x0B/0x07` host-side block sequence and responses;
+- canonical Small-ROM mapper mechanics for `0x16/0x17` and segment-aware programming.
 
 Still unresolved or intentionally unnamed:
 
@@ -89,8 +141,9 @@ Still unresolved or intentionally unnamed:
 - source/vendor names of internal globals and helpers;
 - complete interpretation of internal status/error paths;
 - exact final validation policy;
-- source-level meaning of the NEO 2013 finalizer's additional 0x0C bytes.
+- source-level meaning of the NEO 2013 finalizer's additional 0x0C bytes;
+- exact direct Small-ROM physical handler boundaries and helper graph for `0x02`, raw completion, `0x0B`, and `0x07`.
 
-A private reproducible regression over the three canonical firmware hashes passes 111/111 assertions. Firmware bytes and extended disassembly remain private; this public note contains only the functional reconstruction.
+A private reproducible regression over the three canonical principal-OS firmware hashes passes 111/111 assertions. That regression is not being reused as proof of still-pending Small-ROM handler-boundary assertions. Firmware bytes and extended disassembly remain private; this public note contains only the functional reconstruction.
 
 No A-line ABI entry is implied. The Manager request namespace remains independent of the A-line syscall frontier, whose demonstrated endpoint remains A470.
