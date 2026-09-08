@@ -63,16 +63,21 @@ Several setup/finalization handlers retain exact physical geometry across both i
 
 The matching geometry is not used as the sole semantic proof; it corroborates the independently observed host protocol and direct handler behavior.
 
-## `0x0B` preserves the contract but evolves internally
+## `0x0B` preserves the contract and has one isolated NEO extension
 
-`0x0B` is where the strongest implementation difference appears:
+`0x0B` preserves the same mapped-block commit/program contract but differs physically:
 
 - AS3000 body: `0x188` bytes
 - NEO body: `0x1C4` bytes
+- net growth: `0x3C` bytes
 
-Both retain the mapped-block commit/program role, staging reset, and response `0x47`. The larger NEO body therefore represents a real generational change in internal policy/implementation without changing the surrounding transfer contract.
+A fresh word-aligned comparison of canonical Small ROMs resolves that growth completely. The entire `0x3C` delta is one contiguous NEO-only pre-programming path. It indexes the current segment entry, compares that segment base with `0x005FFC00`, and bypasses the complete extra path when the comparison does not match. When it does match, the firmware resets per-transfer state, rearms the staging cursor, prepares response `0x47` with the common response builder, and then rejoins the ordinary programming path.
 
-The additional NEO logic should not be assigned a vendor feature name until independently correlated. The important recovered invariant is the contract and state handoff, not byte identity.
+Removing exactly that 60-byte path from the structural comparison makes the NEO `0x0B` body the same `0x188` length as AS3000. The remaining differences are operand relocations and control-flow displacement changes rather than another added code block: 19 relocated global operands, five helper-target operands, and two branch displacements.
+
+This directly refutes the earlier possible explanation that NEO's larger handler represents introduction of the segment mapper itself. The mapped commit/program skeleton is already homologous; NEO adds a segment-specific policy path on top of it.
+
+The higher-level product reason why the segment at `0x005FFC00` receives special handling is not independently demonstrated. It therefore remains **UNRESOLVED / INSUFFICIENT EVIDENCE** and should not be labeled as a bank, fallback, recovery image, or similar architecture without additional evidence.
 
 ## Architectural result
 
@@ -85,16 +90,17 @@ DESTINATION_SETUP
        raw bytes -> validate sum16
        0x43 success / 0x8E rewind on checksum failure
        0x0B mapped program/commit
+          [NEO: optional segment-specific pre-path]
        0x47
     -> 0x07 deferred finalization
        0x48
 ```
 
-The same transport engine survived the transition from the AlphaSmart 3000 Small ROM to the later NEO Small ROM while the backend implementation, especially `0x0B`, evolved.
+The same transport engine survived the transition from the AlphaSmart 3000 Small ROM to the later NEO Small ROM. The generational change now isolated in `0x0B` is an added segment-specific path, not a replacement of the common transfer engine.
 
 ## Verification boundary
 
-A private reproducible two-image regression passes **74/74 assertions**. It verifies both image hashes and identities, both dispatcher tables, all eleven selector mappings, handler geometry for the invariant cases, the raw callback copy/checksum/success/error mechanics, and the `0x0B` response/staging-reset contract.
+The original private two-image regression passes **74/74 assertions** for dispatcher/engine homology. A second private regression focused on the `0x0B` delta passes **45/45 assertions** against freshly verified canonical Small ROM images. It checks image hashes, handler boundaries and sizes, the single `0x3C` insertion model, the unique NEO segment-key comparison, the exact common-continuation bypass, retained response/staging behavior, and the absence of another added opcode block outside the isolated path.
 
 Status:
 
@@ -102,7 +108,9 @@ Status:
 - common `0x02`/raw block receive state machine: **CONFIRMED**;
 - `0x16/0x17/0x18/0x07` structural homology: **CONFIRMED**;
 - `0x0B` common commit/program contract: **CONFIRMED**;
-- meaning of the additional NEO `0x0B` internal logic: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
-- exact identity/name of the helper invoked after deferred `0x07` completion: **UNRESOLVED / INSUFFICIENT EVIDENCE**.
+- complete physical explanation of the `0x188 -> 0x1C4` `0x0B` growth: **CONFIRMED**;
+- NEO-only segment-specific pre-programming path keyed by `0x005FFC00`: **CONFIRMED mechanically**;
+- higher-level product purpose of that special segment handling: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
+- deferred restart/re-entry helper used after `0x07`: **CONFIRMED mechanically across both Small ROM generations**, while the vendor name of `0x07` remains unresolved.
 
 No ROM image or large disassembly is published. No A-line ABI promotion is implied; the demonstrated A-line frontier remains A470.
