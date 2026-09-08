@@ -60,6 +60,23 @@ The compatibility layer includes pairs leading into the newer ISP1763 implementa
 
 The last two pairs are reached through wrappers that preserve a single transfer-structure pointer across both implementations.
 
+## Complete simple-pair inventory
+
+The eight mechanically simple wrappers contain no argument adaptation between the version gate and the selected direct call. At the wrapper boundary, the legacy and newer callees therefore occupy the same caller-visible operation slot. This is a **contract-equivalence anchor**, not permission to copy an internal vendor name or every implementation detail from one callee to the other.
+
+| wrapper runtime | Small ROM <1.4 | Small ROM >=1.4 | classification |
+| --- | --- | --- | --- |
+| `0x0041F864` | `0x00441550` | `0x00451344` | simple legacy/new pair |
+| `0x0041F890` | `0x0043FE3E` | `0x004515C6` | simple legacy/new pair; newer side in ISP1763 DC control-helper cluster |
+| `0x0041F8AA` | `0x0043FF18` | `0x00451602` | simple legacy/new pair; newer side in ISP1763 DC control-helper cluster |
+| `0x0041FB5E` | `0x0043FEAC` | `0x0045183C` | simple legacy/new pair; newer side in ISP1763 DC control-helper cluster |
+| `0x0041FC4E` | `0x0043FEF4` | `0x0045192A` | simple legacy/new pair; newer side in ISP1763 controller-helper cluster |
+| `0x0041FD26` | `0x004416A4` | `0x00452176` | simple legacy/new pair |
+| `0x0041FD40` | `0x00441494` | `0x0045217E` | simple legacy/new pair; chip-ID stability path |
+| `0x0041FF82` | `0x0041EB8E` | `0x0045239A` | simple legacy/new pair; newer side is HC ATL/INT interrupt-service path |
+
+This table makes the compatibility layer useful as a reverse-engineering bridge: once one side of a simple pair is independently reconstructed, the other side inherits the same **wrapper-level role and caller-side contract hypothesis**, which must then be checked against its own body before any stronger semantic claim is promoted.
+
 ## Interpretation
 
 This explains why the NEO 2013 system image contains two substantial generations of low-level controller code in parallel. The runtime does not select them by A-line syscall number; it selects them through an internal compatibility layer keyed to the Small ROM version.
@@ -84,11 +101,15 @@ A private canonical-image regression verifies:
 
 Result: **16/16 PASS**.
 
+The complete simple-pair table above is a derived correlation over those already executed checks; no additional binary regression is claimed for the documentation-only expansion.
+
 ## Classification
 
 - Small ROM major/minor source: **CONFIRMED**.
 - Threshold 1.4: **CONFIRMED**.
 - Selector values `{1,2}` and their conditions: **CONFIRMED**.
 - Use as legacy/new compatibility selector: **CONFIRMED**.
+- Eight simple wrappers as direct legacy/new contract-equivalence anchors: **CONFIRMED mechanically**.
+- Transfer of exact internal semantics or vendor names across a pair: **PROVISIONAL until each callee is independently correlated**.
 - Exact physical hardware distinction represented by the Small ROM threshold: **UNRESOLVED / INSUFFICIENT EVIDENCE**.
 - ABI status: **internal compatibility mechanism; not an A-line syscall**.
