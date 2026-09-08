@@ -8,9 +8,11 @@ AlphaSync defines request `0x09` as `SET_BAUDRATE` with a 32-bit baud-rate argum
 
 Both codebases leave response `0x49` unnamed. This note therefore does not invent a vendor name for `0x49`.
 
-Direct comparison of the historical AlphaSmart 3000 Small ROM from AlphaSmart Manager 2.3 and the NEO Small ROM from NEO Manager 3.9.3 confirms that selector `0x09` accepts exactly five rates: 9600, 19200, 38400, 57600, and 115200 baud. Accepted values produce a preliminary `0x49`, serial/timer reconfiguration, a serial-status wait, and response `0x4A`; invalid values take an error path containing `0x92`.
+Direct comparison of the historical AlphaSmart 3000 Small ROM from AlphaSmart Manager 2.3 and the NEO Small ROM from NEO Manager 3.9.3 confirms that selector `0x09` accepts exactly five rates: 9600, 19200, 38400, 57600, and 115200 baud. Accepted values produce a preliminary `0x49`, serial/timer reconfiguration, a serial-status wait, and response `0x4A`; both Small ROM generations also preserve the same later `0x92` path.
 
-The request identity is therefore source-grounded and the argument/rate/register mechanics are independently firmware-confirmed. The exact protocol name of `0x49` and the vendor meaning of `0x92` remain unresolved.
+A fresh canonical two-generation revalidation further shows that the complete `0x09` handlers are both exactly `0x108` bytes and differ in only five bytes. Those five differences occur at the same relative positions in the per-rate programming-parameter block, one for each supported rate. The comparison/control prefix, the complete tail, the `0x49`/`0x4A`/`0x92` response geometry, and the relevant DragonBall serial/timer MMIO accesses are otherwise identical. Neither Small ROM handler contains the fixed `0x86` unsupported-rate response used by the NEO principal-OS implementation.
+
+The request identity is therefore source-grounded and the argument/rate/register mechanics are directly confirmed across both Small-ROM generations. The exact protocol name of `0x49` and the precise trigger/vendor meaning of `0x92` remain unresolved.
 
 ## Selector `0x19`: transport callback gate
 
@@ -54,13 +56,15 @@ This closes the helper as the **shared deferred restart/re-entry primitive** use
 
 ## Verification boundary
 
-The earlier baud-rate regression passes **45/45 assertions**. A private two-generation regression focused on selectors `0x0A` and `0x19` passes **39/39 assertions**. A separate private two-generation regression for the shared deferred restart/re-entry primitive also passes **39/39 assertions**, covering the shared flag set by `0x07`/`0x08`, its guarded callers, exact helper size, no-return terminal jump, stack/base/status-register transition, and normalized two-generation homology.
+The earlier multi-selector Small-ROM regression passes **45/45 assertions**. A new direct AS3000↔NEO `0x09` regression passes **42/42 assertions**, covering both canonical hashes, exact `0x108` handler boundaries, the five accepted rates at matching offsets, complete-handler difference accounting, preserved response geometry, MMIO references, and absence of a fixed `0x86` Small-ROM response. A private two-generation regression focused on selectors `0x0A` and `0x19` passes **39/39 assertions**. A separate two-generation regression for the shared deferred restart/re-entry primitive also passes **39/39 assertions**.
 
 Status:
 
 - selector `0x09` / historical `SET_BAUDRATE`: **CONFIRMED**;
-- accepted baud-rate set and two-generation mechanics: **CONFIRMED**;
+- accepted baud-rate set and direct AS3000↔NEO Small-ROM mechanics: **CONFIRMED**;
+- complete AS3000↔NEO handler homology except five per-rate programming-parameter bytes: **CONFIRMED**;
 - exact semantic name of response `0x49`: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
+- exact trigger/vendor meaning of the preserved `0x92` path: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
 - selector `0x19` transport callback-gate mechanics: **CONFIRMED**;
 - selector `0x19` vendor name / AlphaHub identity: **UNRESOLVED / INSUFFICIENT EVIDENCE**;
 - selector `0x0A` dynamic last-response-code replay mechanics: **CONFIRMED**;
@@ -69,4 +73,4 @@ Status:
 - shared AS3000 `0x0040051E` / NEO `0x0040059E` deferred restart/re-entry helper: **CONFIRMED**;
 - request `0x07` deferred restart/re-entry effect: **CONFIRMED**, vendor name/policy **UNRESOLVED / INSUFFICIENT EVIDENCE**.
 
-No ROM bytes or extended disassembly are published here.
+No ROM bytes or extended disassembly are published here. No A-line ABI promotion is implied; the demonstrated A-line frontier remains A470.
