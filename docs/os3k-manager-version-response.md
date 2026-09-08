@@ -16,6 +16,16 @@ Public AlphaSync/neotools-compatible protocol definitions identify:
 
 As an independent selector cross-check, request `0x08` is `REQUEST_RESTART` and its response is `0x52`.
 
+## Manager request namespace
+
+The public protocol sources define a continuous 32-selector request namespace, `0x00` through `0x1f`. The firmware-side Manager dispatcher has the same physical width: a 32-entry indexed table. NEO 2013 additionally verifies the command-domain guard before that table, while the earlier canonical generations retain the homologous indexed-dispatch pattern.
+
+This is a protocol namespace, not an A-line syscall table. Functional names are retained only where supported by public protocol evidence and, where claimed as a firmware contract, by a matching firmware branch.
+
+Examples include VERSION (`0x00`), BLOCK_WRITE (`0x02`), LIST_APPLETS (`0x04`), REMOVE_APPLET (`0x05`), WRITE_APPLET (`0x06`), RESTART (`0x08`), settings/applet/file operations, and the updater controls at `0x16` through `0x18`. Requests `0x01`, `0x03`, `0x0a`, and `0x19` remain semantically unknown in the public protocol sources.
+
+One source-history correction is worth preserving: the older AlphaSync header omitted a request definition for selector `0x05`, but later neotools identifies it as REMOVE_APPLET, and neo-re independently emits the corresponding request as command `0x05` with the established `(5, index)` arguments. Selector `0x05` therefore must not be treated as an unused hole merely because one historical header omitted the define.
+
 ## Cross-generation structural invariant
 
 The canonical images declare these primary OS segments:
@@ -46,11 +56,12 @@ This explains the functional need for the repeated **revision-record subobject**
 
 ## Verification status
 
-A private reproducible regression covering the three canonical images checks image identity, main-segment geometry, terminal revision-record placement, the VERSION dispatcher path, payload sizing, and the RESTART control case. The completed run passed all 61 checks.
+A private reproducible regression covering the three canonical images checks image identity, main-segment geometry, terminal revision-record placement, the VERSION dispatcher path, payload sizing, and the RESTART control case. The completed run passed all 61 checks. A separate NEO 2013 dispatcher regression passed all 26 checks and directly verifies the 32-entry dispatch geometry and command-domain guard.
 
 Confidence:
 
 - Manager command dispatch role: **confirmed**.
+- 32-selector Manager request namespace as the dispatch domain: **confirmed as a structural/protocol correlation**; individual branch contracts are not implied by this statement.
 - `0x00` -> VERSION response contract: **confirmed**.
 - terminal revision record as VERSION payload source in AS3000, NEO 2005, and NEO 2013: **confirmed**.
 - cross-generation terminal-metadata invariant: **confirmed**.
