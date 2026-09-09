@@ -41,13 +41,32 @@ A subsequent private two-generation Small ROM verification now constrains the de
 
 Therefore, within command `0x17`, zero is **not** an internal `erase-to-end` sentinel and it is also **not** a no-op. It causes at least one flash-helper invocation before the loop can terminate. This behavior is **CONFIRMADO** in both compared Small ROM generations.
 
-What remains `NO_RESUELTO / EVIDENCIA_INSUFICIENTE` is the exact physical flash span affected by that single helper pass. That question belongs to the copied-to-RAM flash routine and flash geometry, not to the `0x17` loop-control field itself.
+## Physical flash worker closure
+
+A later private NEO Small ROM decode closes the previously open physical-helper question without publishing ROM bytes or long disassembly. Command `0x17` reaches a trampoline that copies a 0x1C2-byte flash worker to RAM and executes the RAM copy. The worker:
+
+- enters Common Flash Interface query mode and validates the `QRY` signature;
+- reads the device-size and erase-region geometry fields;
+- walks the erase-region descriptors and derives block boundaries from the live device geometry;
+- reads the primary command-set identifier;
+- follows an AMD/Fujitsu-style unlock and sector-erase path for the accepted command-set family;
+- polls the target for completion and returns a status value.
+
+The worker therefore does **not** erase in a fixed 1 KiB quantum. It dynamically resolves the physical erase block that contains the requested address from CFI geometry. No fixed 1 KiB or 64 KiB erase quantum is embedded in this worker.
+
+Combining this with the post-test `0x17` loop gives a narrower and stronger zero-length result: `erase_kb = 0` still performs the first block-level erase attempt, and that attempt targets the single CFI erase block containing the requested base address. The byte span of that block is hardware-dependent and must not be universalized without the actual chip/CFI geometry.
+
+One correction is important: an intermediate reverse-engineering hypothesis interpreted the worker's final `D0` as an erase-block size. That is false. The final return is status; the CFI-derived block size is internal working state. That earlier interpretation is retracted.
 
 ## Firmware correlation and regression status
 
 Private canonical-firmware work establishes the cross-ROM transition and the Small ROM segment-mapping family without publishing ROM bytes or extended disassembly. The NEO13 host package contains a segment descriptor for `0x005FFC00`, and the private Small ROM mapper verification places the secondary transfer unit there.
 
-The zero-length control-flow property was rechecked mechanically across the older and NEO Small ROM generations with `verify_smallrom_command17_zero_length_posttest_2026-09-09.py`. The executed regression reports **21/21 PASS**. The script, output, firmware binaries and extended disassembly remain in the private evidence archive.
+The zero-length control-flow property was rechecked mechanically across the older and NEO Small ROM generations with `verify_smallrom_command17_zero_length_posttest_2026-09-09.py`: **21/21 PASS**.
+
+The copied-to-RAM CFI worker was then checked mechanically against the NEO Small ROM with `verify_neo_smallrom_cmd17_cfi_erase_worker_2026-09-09.py`: **35/35 PASS**. That regression verifies the trampoline/copy envelope, CFI query and `QRY` checks, erase-region descriptor parsing, command-set tests, unlock/sector-erase sequence, completion poll, status return, the post-test relationship, and negative checks against fixed 1 KiB/64 KiB erase quanta.
+
+Scripts, outputs, firmware binaries and extended disassembly remain in the private evidence archive.
 
 ## Refutation checks
 
@@ -57,11 +76,13 @@ The following narrower interpretations are rejected by source and firmware corre
 - `0x17` is not a generic zero-argument mode switch: it is issued once per parsed segment and carries both destination address and an erase-size field.
 - `0x17.trailing` is not merely an arbitrary host token in the normal path: it is computed as `ceil(segment.length / 0x400)` KiB.
 - `erase_kb = 0` is not decoded by command `0x17` as an `erase-to-end` sentinel.
-- `erase_kb = 0` is not a no-op: the post-test loop invokes the flash helper at least once.
+- `erase_kb = 0` is not a no-op: the post-test loop invokes the flash worker before its first end comparison.
+- the worker does not use `erase_kb` as a direct physical block size; flash geometry is read through CFI.
+- the worker's final `D0` is not the physical erase-block size.
 - the `0x18/0x16/0x17` family is not evidence for new Line-A syscalls; it is an updater-protocol sequence.
 
 ## Remaining verification target
 
-The next physical-object closure target is the flash helper/routine copied to RAM and invoked by command `0x17`. The goal is to determine the erase/program quantum and thereby bound the exact physical span affected by the zero-length special case. Until that helper and the relevant flash geometry are independently correlated, no broader erase-range policy should be assigned.
+The generic firmware-side erase quantum is now closed as **one CFI erase block at a time**. What remains hardware-specific is the exact block size and boundaries on each NEO board revision. That should be resolved from direct chip identification or captured CFI geometry, then fed into the hardware and emulator fronts. A board report identifying an ST M29W320EB is useful corroboration, but it is not treated as a universal NEO bill of materials.
 
 Firmware binaries, full disassembly and private regression artifacts intentionally remain outside the public repository.
