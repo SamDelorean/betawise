@@ -1,176 +1,251 @@
 # AlphaSmart NEO SD / removable-media hardware reverse engineering
 
-Status: **hardware hypothesis under investigation**.  
-Scope: AlphaSmart NEO / NEO 2 hardware and OS3K firmware.  
+Status: **SD footprint confirmed; electrical implementation still under reconstruction**.  
+Scope: AlphaSmart NEO / NEO 2 hardware and OS3K firmware.
 
-This note records the current evidence for reconstructing the unpopulated card-socket footprint observed on NEO logic boards and testing whether it is related to the SD/MMC interface used in the AlphaSmart Dana family.
+This note records the current evidence for reconstructing the unpopulated SD/MMC circuit found on NEO logic boards. The objective is to distinguish confirmed board facts from firmware inference, reconstruct the missing support components, and eventually verify the interface using a reversible OS3K diagnostic application.
 
-The goal is deliberately narrower than claiming that the NEO already has a complete SD implementation. The present objective is to identify the electrical interface first, then correlate it with firmware and finally compare it with Dana hardware/software.
+## Current conclusions
 
-## Working hypothesis
+The NEO board contains a nine-contact footprint whose silkscreen numbering, in the photographed orientation, is:
 
-A NEO logic-board footprint appears mechanically compatible with a memory-card socket. Because AlphaSmart Dana products use SD/MMC storage, a plausible hypothesis is that the NEO PCB retained part of a related hardware design but left the socket and/or supporting components unpopulated.
+`8 7 6 5 4 3 2 1 9`
 
-This is **not yet confirmed**. The footprint must be traced electrically.
+This matches the reversed physical contact order of a standard SD card interface. The working classification is therefore:
 
-## Processor evidence
+- **CONFIRMED:** the unpopulated connector footprint is intended for SD/MMC-class card hardware.
+- **UNRESOLVED:** the complete electrical route from the socket to the processor or intermediate logic.
+- **UNRESOLVED:** which support components must be populated.
+- **UNRESOLVED:** whether production OS3K contains dormant SD support.
 
-NEO uses the Motorola/Freescale **MC68VZ328 DragonBall VZ** family. The processor contains two SPI units. SPI unit 1 is routed through Port J:
+The standard SD contact functions are:
 
-| Function | MC68VZ328 pin function |
+| Pin | Function |
 | --- | --- |
-| MOSI | PJ0 / MOSI |
-| MISO | PJ1 / MISO |
-| clock | PJ2 / SPICLK1 |
-| chip select | PJ3 / SS |
-| optional data-ready | PK0 / DATA_READY |
+| 1 | DAT3 / CS in SPI mode |
+| 2 | CMD / DI in SPI mode |
+| 3 | VSS1 |
+| 4 | VDD |
+| 5 | CLK |
+| 6 | VSS2 |
+| 7 | DAT0 / DO in SPI mode |
+| 8 | DAT1 |
+| 9 | DAT2 |
 
-The relevant Port J registers are:
+In the photographed NEO orientation the visible sequence is therefore:
 
-| Register | Address |
-| --- | --- |
-| PJDIR | `0xFFFFF438` |
-| PJDATA | `0xFFFFF439` |
-| PJPUEN | `0xFFFFF43A` |
-| PJSEL | `0xFFFFF43B` |
+`DAT1, DAT0, VSS2, CLK, VDD, VSS1, CMD, DAT3, DAT2`.
 
-SPI unit 1 uses:
+## Processor
 
-| Register | Address |
-| --- | --- |
-| SPIRXD | `0xFFFFF700` |
-| SPITXD | `0xFFFFF702` |
-| SPICONT1 | `0xFFFFF704` |
-| SPIINTCS | `0xFFFFF706` |
+The NEO hardware examined by this project uses the **MC68VZ328 DragonBall VZ**, not the later MC68SZ328 Super VZ. This distinction matters because the MC68VZ328 does not provide the integrated MMC/SD controller present in the Super VZ family.
 
-## Firmware result: SPI1 is real hardware in NEO 2013
+## SPI1 result: active, but associated with another subsystem
 
-Reverse engineering of the canonical NEO 2013 OS3K image confirms an active firmware path that directly accesses the MC68VZ328 SPI1 register block.
+Reverse engineering of the canonical NEO 2013 OS3K image confirms active use of MC68VZ328 SPI1 through:
 
-A private byte-transfer helper associated with the NEO-2013-only A3B4/A3B8 extension:
+- PJ0 / MOSI
+- PJ1 / MISO
+- PJ2 / SPICLK1
+- PJ3 / SS
 
-- waits on SPI interrupt/status state;
-- writes a transmit byte through `SPITXD`;
-- programs `SPICONT1`;
-- performs the exchange;
-- reads the received byte from `SPIRXD`.
+The firmware explicitly configures Port J for its dedicated SPI1 functions and performs synchronous 8-bit master transfers.
 
-This moves SPI1 from a datasheet-based possibility to a **confirmed actively used NEO 2013 peripheral**.
+Further caller analysis links this transaction family to the NEO 2 wireless subsystem. The working classification is therefore:
 
-The observed SPI control word is `0x6707`. Decoding it against the MC68VZ328 register definition gives the following working interpretation:
+- **CONFIRMED:** SPI1 is actively used by NEO 2013.
+- **STRONG INFERENCE:** the currently reconstructed A3B4/A3B8 SPI1 family belongs to the NEO 2 wireless path rather than being the SD driver.
+- **NOT EXCLUDED:** SPI1 could still have been electrically shareable through external selection, buffering or unpopulated logic.
 
-- master mode;
-- SPI enabled;
-- exchange initiated;
-- 8-bit transfer;
-- SS active low;
-- clock idle low / phase 0 (SPI mode 0);
-- DATA_READY handshake not used by this transfer;
-- clock divider consistent with SYSCLK/32.
+The absence of an SD-like command sequence in this firmware path must not be treated as evidence that the PCB lacks SD routing.
 
-Therefore the most important board traces to test first are **PJ0, PJ1, PJ2 and PJ3**.
+## PB5 / CSD1 result
 
-## Auxiliary GPIO observed in the same hardware path
+The second Group-D chip-select initially appeared interesting because the MC68VZ328 address map permits another external window. Firmware reconstruction, however, shows that PB5/CSD1 remains configured as GPIO and is actively used as one row of the keyboard scan matrix.
 
-The same NEO 2013 transaction family also accesses GPIO state outside Port J:
+Therefore:
 
-- **PF2** is sampled through `PFDATA` (`0xFFFFF429`);
-- **PB6** is sampled through `PBDATA` (`0xFFFFF409`);
-- **PB7** is actively forced low while the other Port B bits are preserved.
+- **CONFIRMED:** PB5 is used as a keyboard matrix drive line in the examined firmware.
+- **EXCLUDED:** PB5/CSD1 as a direct active SD chip-select in that configuration.
+- **NOT EXCLUDED:** an external multiplexer, buffer, ASIC, CPLD or DNP device could still reuse or reroute signals in a different hardware configuration.
 
-Their exact meanings are still unknown. They must not yet be labeled card-detect, write-protect, power-enable, reset, or similar names.
+## External bus map
 
-For board tracing, however, they form a useful secondary candidate set:
+Small-ROM initialization maps the principal external chip-select regions as follows:
 
-`PJ0, PJ1, PJ2, PJ3, PF2, PB6, PB7`
+| Group | Base | Current interpretation |
+| --- | ---: | --- |
+| A | `0x00400000` | Flash / ROM |
+| B | `0x00000000` | RAM |
+| C | `0x01000000` | LCD subsystem |
+| D | `0x02000000` | USB controller region |
 
-## SD-in-SPI-mode correspondence
+The populated NEO board photographed by this project contains **U9 = ISP1161ABD**, an external USB Host/Device controller. Its physical proximity to the SD footprint does not by itself establish an SD connection; the ISP1161A has no native SD/MMC interface.
 
-If the unpopulated footprint is an SD socket operated in SPI mode, the expected core mapping would be approximately:
+## Unpopulated support circuit around the SD socket
 
-| SD signal in SPI mode | Candidate NEO signal |
-| --- | --- |
-| CMD / DI | PJ0 / MOSI |
-| DAT0 / DO | PJ1 / MISO |
-| CLK | PJ2 / SPICLK1 |
-| DAT3 / CS | PJ3 / SS |
+The photographed NEO board shows several unpopulated support positions immediately below the SD footprint, including:
 
-This correspondence is electrically attractive, but it is still a **hypothesis until PCB continuity is demonstrated**.
+- `R51..R55`
+- `C60..C63`
+- `U11`
+- `Q9`
 
-Unused SD-native data pins, power, ground, mechanical card-detect and write-protect contacts must also be identified from the board.
+The present interpretation is deliberately provisional.
 
-## Important negative result
+### R51..R55
 
-The currently reconstructed A3B4 transaction must **not** be renamed an SD driver.
+Five nearby resistor footprints are an especially good match for the five pull-ups normally required by native SD wiring:
 
-Its higher-level framing includes private protocol behavior (including an `0xA5` marker) that does not immediately resemble the ordinary low-level SD SPI command/response sequence. SPI1 may therefore be servicing another peripheral, or the observed path may represent only one user of a shared SPI bus.
+- CMD
+- DAT0
+- DAT1
+- DAT2
+- DAT3
 
-Current classification:
+This is a **strong topology-based inference**, not yet a measured net assignment.
 
-- **CONFIRMED:** MC68VZ328 SPI1 exists and is actively used by NEO 2013 firmware.
-- **CONFIRMED:** NEO 2013 performs synchronous 8-bit master SPI transfers through the SPI1 register block.
-- **CONFIRMED:** the related hardware path also uses PF2, PB6 and PB7.
-- **STRONG CANDIDATE:** PJ0-PJ3 are the first signals to trace from the suspected card footprint.
-- **UNRESOLVED:** whether that footprint is electrically connected to SPI1.
-- **UNRESOLVED:** whether the footprint is actually SD/MMC.
-- **UNRESOLVED:** whether the A3B4/A3B8 transaction family is related to removable media.
+### U11, C60..C63 and Q9
 
-## Generational warning
+The arrangement around U11 looks more like a power stage than a digital data buffer.
 
-The callable A3B4/A3B8 hardware-backed extension is present in the canonical NEO 2013 firmware but is not represented by valid callable handlers in the canonical AlphaSmart 3000 2005 and NEO 2005 images examined by this project.
+Visual observations currently support the following working model:
 
-This prevents us from assuming that the discovered SPI transaction describes every NEO board revision. Hardware revision, NEO vs NEO 2, and firmware generation must remain separate axes of evidence.
+- C60 and C62 appear to sit on opposite supply-side nodes of U11 and may be bulk input/output capacitors;
+- C61 and C63 are plausible high-frequency bypass capacitors;
+- U11 appears to use a small approximately five-pin package compatible with an LDO or load switch;
+- Q9 appears connected toward U11 through R52, suggesting an enable/shutdown or bias-control path.
 
-## PCB verification plan
+A plausible topology is:
 
-The next physical investigation should proceed from the suspected socket footprint rather than from guessed signal names:
+```text
+system rail (possibly 5 V)
+        |
+       C60
+        |
+       U11  ---- R52 ---- Q9 ---- control GPIO / logic
+        |
+       C62
+        |
+      VDD_SD
+        |
+     SD pin 4
+```
 
-1. photograph both PCB sides at sufficient macro resolution;
-2. number every footprint contact and mechanical contact;
-3. identify ground and supply contacts first;
-4. trace candidate CLK/CMD/DAT0/DAT3 contacts;
-5. test continuity toward MC68VZ328 PJ0-PJ3 or intermediate components;
-6. trace any remaining contacts toward PF2, PB6, PB7 or another IC;
-7. record resistors, pull-ups, series resistors, capacitors and unpopulated support footprints;
-8. distinguish direct CPU SPI wiring from a possible external SD/MMC controller.
+The input voltage is **not yet confirmed**. A 5 V source is plausible for a 3.3 V SD regulator stage but must be measured on the real board before component selection.
 
-A useful evidence table will be maintained in the form:
+## Why missing software does not disprove missing hardware
 
-`socket pad -> PCB net -> component/pad -> MC68VZ328 pin or external controller -> firmware register -> confidence`
+The board may have been designed for a feature that was not populated in production. In that case all of the following can be true at once:
 
-## Firmware follow-up
+- the SD socket is absent;
+- support passives or an intermediate IC are absent;
+- production OS3K never initializes the interface;
+- direct CPU-to-socket continuity does not exist because a DNP device interrupts the route.
 
-The highest-priority firmware search is now the initialization of Port J, especially writes affecting:
+For that reason every software-based exclusion in this project is scoped narrowly. A pin being used by another subsystem does not eliminate the possibility of external multiplexing, buffering, tri-state sharing, programmable glue or an unpopulated controller.
 
-`PJSEL = 0xFFFFF43B`
+## Dana comparison
 
-Finding the code that selects PJ0-PJ3 for their dedicated SPI1 functions should reveal when the bus is enabled and may expose the surrounding peripheral initialization sequence.
+AlphaSmart Dana remains a useful reference because it implements working SD/MMC storage around the same MC68VZ328 processor family. Dana PCB photographs show two populated SD/MMC sockets with intermediate logic below them.
 
-Additional searches should include:
+Dana is now treated as a **secondary reference**, not the primary research path. A full reverse engineering of its Palm OS slot driver is deferred unless the NEO board investigation reaches an ambiguity that Dana can resolve efficiently.
 
-- SPI1 initialization outside the known A3B4/A3B8 path;
-- all readers/writers of PF2, PB6 and PB7;
-- 512-byte block-transfer patterns;
-- SD/MMC command-like constants and response state machines;
-- removable-media, volume or filesystem abstractions;
-- board-revision-dependent initialization.
+## Physical verification plan
 
-## Dana comparison stage
+The next board investigation should proceed from the SD footprint outward, with the unit unpowered first:
 
-Once the NEO electrical nets are known, the AlphaSmart Dana becomes a reference implementation rather than a source of assumptions.
+1. confirm VSS pins 3 and 6;
+2. trace pin 4 VDD toward C60/C62/U11;
+3. verify whether C60 and C62 are respectively U11 input and output capacitors;
+4. trace R52 between U11 and Q9;
+5. identify the remaining Q9 terminal destinations;
+6. map R51..R55 against CMD and DAT0..DAT3;
+7. trace CLK separately and identify any series resistor or protection element;
+8. follow every signal through vias and DNP footprints rather than assuming direct CPU continuity;
+9. photograph and trace the reverse PCB side where necessary.
 
-The intended comparison is:
+The canonical evidence record is:
 
-1. identify Dana SD/MMC socket wiring and any external controller;
-2. identify the corresponding Dana low-level driver/register access;
-3. compare Dana and NEO signal topology;
-4. extract only the hardware-facing behavior needed to understand the interface;
-5. implement a clean OS3K-side driver if the NEO hardware supports the interface.
+`SD pin -> PCB net -> passive / DNP device -> IC pin -> CPU/GPIO/MMIO -> confidence`
 
-Palm OS / Dana filesystem layers are not assumed to be directly reusable on OS3K. The useful target is the hardware abstraction and low-level transaction behavior.
+## Preferred active test: OS3K diagnostic application
+
+Before considering a replacement firmware or bare-metal monitor, the preferred active test vehicle is a small **`.os3kapp` diagnostic application** running on top of normal OS3K.
+
+OS3K would be used only for application loading, keyboard input and display output. The diagnostic code would access known MC68VZ328 GPIO/MMIO registers directly, using 68k assembly or tightly controlled C/assembly helpers.
+
+This has several advantages:
+
+- no ROM replacement;
+- no bootloader modification;
+- immediate text feedback on the NEO display;
+- controlled one-line-at-a-time experiments;
+- register state can be saved and restored before exit.
+
+### Stage 1: passive register monitor
+
+Read and display selected `DIR`, `DATA`, `SEL` and `PUEN` registers without changing them.
+
+### Stage 2: controlled GPIO toggle
+
+Only after continuity identifies a candidate control net, save its original register state, configure only the required bit, and toggle it slowly while observing the corresponding board node with a multimeter or oscilloscope.
+
+Conceptual 68k sequence:
+
+```asm
+; save original byte
+move.b  $FFFFFxxx,D0
+move.b  D0,saved_reg
+
+; alter only the verified target bit
+bset    #n,D0
+move.b  D0,$FFFFFxxx
+
+; perform measurement
+
+; restore original state
+move.b  saved_reg,$FFFFFxxx
+```
+
+The actual implementation must use verified register addresses and preserve all unrelated bits.
+
+### Stage 3: SD power-control test
+
+Once the Q9/R52/U11 path is electrically understood, the application can toggle only the suspected enable line while measuring:
+
+- U11 input;
+- U11 output;
+- SD pin 4 VDD.
+
+No SD card is required for this stage.
+
+### Stage 4: mechanical-input tests
+
+If the socket exposes card-detect or write-protect contacts, monitor their candidate GPIO inputs while mechanically actuating them.
+
+### Stage 5: bus connectivity
+
+After the netlist is known, the application can drive or observe individual verified bus lines to prove CPU-to-footprint connectivity.
+
+### Stage 6: minimum SD transaction
+
+Only after voltage levels, bus direction and pin assignments are confirmed should the application attempt a real card transaction, beginning with the minimum initialization sequence required to establish card response.
+
+## Safety rule for the diagnostic app
+
+The diagnostic application must never perform a blind GPIO sweep. OS3K already owns keyboard, LCD, USB, wireless and other hardware. Every writable test must therefore:
+
+1. target only a net already identified by continuity;
+2. save the original register state;
+3. modify the minimum possible bit set;
+4. restore the original state on normal exit and error paths;
+5. avoid enabling a supply until its destination and voltage range are known.
+
+A bare-metal monitor remains a fallback only if OS3K ownership of the required hardware prevents a safe application-level test.
 
 ## Publication boundary
 
-This repository documents independently reconstructed behavior and register-level observations. Proprietary ROM images and bulk firmware disassembly are intentionally not distributed here.
+This repository documents independently reconstructed behavior and hardware observations. Proprietary ROM images and bulk firmware disassembly are intentionally not distributed here.
 
-The purpose of this document is to make the investigation reproducible from publicly documented MC68VZ328 hardware behavior, independently obtained board observations, and project-derived functional conclusions.
+The purpose is to make the investigation reproducible from public MC68VZ328 documentation, board-level observations and clean-room functional conclusions.
