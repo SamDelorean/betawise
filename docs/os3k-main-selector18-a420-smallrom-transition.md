@@ -1,50 +1,62 @@
-# OS3K Manager selector 0x18: main OS to Small ROM correlation
+# OS3K Manager selector 0x18: cross-ROM Small ROM entry
 
-This note records only the reproducible functional contract and intentionally excludes ROM bytes, disassembly dumps, and proprietary firmware.
+This note records only reproducible functional behavior and intentionally excludes ROM bytes, extensive disassembly, and proprietary firmware.
 
-## Source correlation
+## Critical correction: address `0x00400420` is not syscall opcode `A420`
 
-The host-side updater flow sends Manager command `0x18` and waits for status `0x56`. The Small ROM implementation of selector `0x18` is a minimal acknowledgement handler that returns `0x56`.
+A previous revision conflated two numerically similar but structurally different objects:
 
-A source-first cross-check against `ioma8/neo-re` pinned at commit `732814871fe493e80ed1ab1f959d8dad174ee540` provides an important framing constraint: `alpha-core/src/protocol.rs` constructs the enter-Small-ROM request as `command(0x18, 0, 0)`. AlphaSync independently models the same transition as an enter-updater request followed by the Small-ROM `0x56` confirmation. Therefore the additional value later consumed by A420 is not a hidden field transported in the Manager `0x18` wire request.
+- `0x00400420` is a **runtime address** in the NEO Small ROM image;
+- `A420` is a **Motorola 68k Line-A opcode** used by the neutral index-264 syscall stub.
 
-The `neo-re` BetaWise SDK `syscall.c` also contains nominal index-generated stubs through A470, including A3DC and A420. Those generated names are useful correlation evidence, but they are not treated as proof that every nominal A-line slot is a real syscall or as proof of a functional contract.
+The canonical Small ROM object at runtime `0x00400420` begins with privileged interrupt-mask setup and an absolute jump to another Small ROM routine. Its first word is not opcode `A420`. Therefore the NEO 2013 main Manager selector `0x18` does **not** call syscall A420 when it loads `0x00400420` and executes `JSR (A4)`.
 
-## Main OS behavior (NEO 2013)
+This refutes the prior inferred chain `Manager18 -> A420 -> A3DC` and all derived claims about an inherited Manager-frame context being supplied to A420 by this caller.
 
-The main-OS Manager dispatcher maps selector `0x18` to a distinct handler. That handler does **not** construct response `0x56` directly. Instead, it loads ABI slot address `0x00400420` (A420) into an address register and calls it indirectly. After the call it removes two locally-pushed 32-bit arguments, does not consume the returned `D0`, and exits through the shared Manager epilogue.
+## Source-first correlation
 
-The literal A420 slot address occurs only once in the canonical NEO 2013 image, in this selector-0x18 handler. This corrects an earlier direct-xref scan that reported no A420 callers because it searched direct JSR/JMP/BSR encodings only and therefore missed a literal-loaded indirect call.
+`ioma8/neo-re`, pinned at commit `732814871fe493e80ed1ab1f959d8dad174ee540`, provides two independent constraints:
 
-The handler selects among several mechanically distinct call variants using an internal byte state and constants 3, 4, and 5. No vendor names are assigned to those state values or modes.
+1. `alpha-core/src/protocol.rs` constructs the host enter-Small-ROM request as `command(0x18, 0, 0)` and expects status `0x56`.
+2. `smartapplets/betawise-sdk/syscall.c` defines syscall stubs by **emitting** `.word 0xA000 + 4*index` at the stub symbol. For index 264 this emits opcode `A420`; it does not establish that syscall A420 resides at absolute runtime address `0x00400420`.
 
-## Corrected A420 call-frame geometry
+This distinction is exactly the structural rule required by the ABI audit: physical address space and nominal A-line opcode numbering must not be conflated.
 
-Earlier notes described A420 mechanically as receiving three stack slots. The selector-0x18 caller proves that this wording needs refinement.
+## Main OS selector `0x18`
 
-The Manager dispatcher creates a local stack frame and reaches selector cases through an intra-function indexed jump. Selector `0x18` explicitly pushes only two 32-bit values before calling the A420 veneer. The A-line dispatcher removes the exception frame before jumping to the resolved A420 handler. At A420 entry, after A420 saves one address register, its access at `0x10(SP)` resolves exactly to the Manager dispatcher's stack pointer immediately before selector `0x18` pushed those two explicit values. In other words, A420 obtains the first longword of the Manager dispatcher's local frame, not a third wire parameter and not an ordinary third C argument explicitly supplied by selector `0x18`.
+The canonical NEO 2013 main-OS Manager selector `0x18` loads runtime address `0x00400420` into an address register and calls it indirectly. It supplies two 32-bit stack arguments. The first is selected from `3`, `4`, `5`, or `0` according to Manager state; the second is either zero or a zero-extended byte from Manager state. After the call returns, the selector removes exactly eight argument bytes and continues through the shared Manager flow.
 
-A420 then treats that inherited longword as a pointer and consumes at least four 32-bit fields from the pointed object before delegating further. The mechanical identity can therefore be recorded provisionally as `manager_dispatcher_local0_context_ptr`. The producer and semantic type of that object are still unresolved; no vendor name is assigned.
+The literal `0x00400420` occurs once in the canonical main OS image, in this selector.
 
-This correction refutes the hypothesis that the extra A420 context comes from the `0x18` Manager payload.
+## Small ROM entry at `0x00400420`
 
-## Relationship to A420 and A3DC
+The independently stored canonical Small ROM maps runtime `0x00400420` to a real executable entry. Mechanically, that entry:
 
-The selector-0x18 caller is independent firmware evidence that A420 participates in the OS-updater transition path. A420 delegates into A3DC, but the exact transition mechanism below A420/A3DC is not yet demonstrated, so this relationship remains classified as **strong inference**, not a vendor-level semantic name.
+- raises the status-register interrupt mask to `0x2700`;
+- transfers control by absolute jump to Small ROM runtime `0x00401642`.
 
-The caller ignores `D0`, so it does not resolve A420's contractual return type.
+Because the entry uses `JMP`, the return address created by the main OS `JSR (A4)` is retained. The target routine at `0x00401642` later returns with `RTS`, so this is a direct cross-ROM call path rather than an A-line dispatch.
 
-## Main-vs-Small distinction
+The target routine saves three registers and then reads the low byte of the caller's first 32-bit argument. It explicitly distinguishes values `3`, `4`, and `5`. In each corresponding path it prepares status `0x56` before executing mode-specific Small ROM work. This closes the previously unresolved end-to-end observation: the main Manager `0x18` handler itself does not locally construct `0x56`, but the Small ROM routine that it directly calls does.
 
-The evidence supports the following separation:
+No vendor semantic names are assigned to modes `3`, `4`, or `5`.
 
-- main OS selector `0x18`: invokes A420 as part of the transition/update path; it does not directly build status `0x56`;
-- Small ROM selector `0x18`: acknowledges with status `0x56` once Small ROM is servicing the protocol.
+## Consequences for A420 and A3DC
 
-The exact mechanism by which the single host request crosses the transition boundary remains unresolved. No assumption is made that the main handler itself emits the Small-ROM acknowledgement.
+This correction removes the only claimed firmware caller of syscall A420 that had been inferred from Manager selector `0x18`. The independently reconstructed A420 handler and its A420-to-A3DC mechanical wrapper remain valid as standalone ABI findings, but **they are not part of the demonstrated Manager `0x18` -> Small ROM path**.
+
+Accordingly:
+
+- the historical direct-xref result for syscall A420 remains zero for JSR/JMP/BSR encodings in the canonical NEO 2013 main ROM;
+- `manager_dispatcher_local0_context_ptr` is withdrawn as an A420 argument interpretation derived from Manager `0x18`;
+- the search for an A3DC helper that performs the Small ROM transition is terminated as based on the false chain;
+- A3DC remains independently reconstructed for its own callers and contracts;
+- no A-line slot is opened, closed, or renamed solely from this cross-ROM address coincidence.
 
 ## Verification
 
-A private static regression against the canonical NEO 2013 image verifies the Manager dispatcher local-frame geometry, indexed selector dispatch, the selector-0x18 two-argument call shape, A-line exception-frame removal, A420's inherited-context access, and the four-field dereference pattern. Final run for this correction: **17/17 PASS**. Earlier transition checks covering main/Small-ROM separation remain independently archived.
+A private regression revalidates both canonical NEO 2013 images, the main selector call shape, the unique main-ROM literal, the Small ROM entry object, the fact that its first opcode is not `A420`, its jump to `0x00401642`, the target's `3/4/5` dispatch, status `0x56` construction, and terminal return. Final run: **26/26 PASS / OVERALL PASS**.
 
-Status: `PARCIAL_CERRADO / NO_RESUELTO` for the producer/type of the inherited dispatcher context and the deep transition mechanism. No new ABI slot is promoted; A470 remains the current ABI frontier.
+Dynamic/emulator-first validation remains `ESPECIFICADA / NO EJECUTADA`.
+
+Status: **CERRADO A** for the structural correction `address 0x00400420 != opcode A420` and for the static cross-ROM call path. A420's standalone contractual return remains `DESCONOCIDO`; A470 remains the demonstrated ABI frontier.
