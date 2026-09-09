@@ -2,11 +2,11 @@
 
 ## Status
 
-`PARCIAL_CERRADO / NO_RESUELTO` at the protocol-policy level. The host-side contract and sequencing are reproducible; exact vendor-internal helper names and every flash-policy edge case are not claimed. These selectors belong to the Manager/Small ROM updater protocol and are **not** promoted into the A-line ABI.
+`PARCIAL_CERRADO / NO_RESUELTO` at the protocol-policy level. The host-side contract, sequencing, and the Small ROM behavior of the `0x17` zero-length case are reproducible; the exact physical flash span affected by one helper invocation and vendor-internal helper names are not claimed. These selectors belong to the Manager/Small ROM updater protocol and are **not** promoted into the A-line ABI.
 
 ## Source-first contract
 
-Primary reproducible correlation source: `ioma8/neo-re` commit `732814871fe493e80ed1ab1f959d8dad174ee540`, `alpha-core/src/neo_client.rs` and `alpha-core/src/protocol.rs`.
+Primary reproducible correlation source: `ioma8/neo-re` commit `732814871fe493e80ed1ab1f959d8dad174ee540`, `alpha-core/src/neo_client.rs` and `alpha-core/src/protocol.rs`, plus the later `real-check` client path used to exercise the updater transaction.
 
 For a NEO OS image, the host implementation performs this sequence before entering the common `0x02 -> raw -> 0x0B -> 0x07` programming engine:
 
@@ -28,27 +28,40 @@ The exact function names used by neo-re are analyst nomenclature, not demonstrat
 
 The `0x17` trailing field is therefore not an opaque checksum in this flow: the source-side caller computes it mechanically from the segment length in KiB, rounded upward.
 
-## Special host policy
+## Special host policy and zero-length device behavior
 
-neo-re exposes an optional `reformat_rest_of_rom` policy. When enabled and the segment destination is exactly `0x005FFC00`, the host sends `erase_kb = 0` rather than the rounded segment length. This is **CONFIRMADO as host behavior** at the pinned commit. The precise Small ROM interpretation of zero for this case remains `NO_RESUELTO / EVIDENCIA_INSUFICIENTE` here until independently demonstrated from the handler; it must not be paraphrased as a vendor-defined "erase to end" contract without that verification.
+neo-re exposes an optional `reformat_rest_of_rom` policy. When enabled and the segment destination is exactly `0x005FFC00`, the host sends `erase_kb = 0` rather than the rounded segment length. This is **CONFIRMADO as host behavior** at the pinned source lineage.
 
-## Firmware correlation already established privately
+A subsequent private two-generation Small ROM verification now constrains the device side as well:
 
-Existing private canonical-firmware work establishes the cross-ROM transition and the Small ROM segment-mapping family without publishing ROM bytes or extended disassembly. In particular, the NEO13 host package contains a segment descriptor for `0x005FFC00`, and the private Small ROM mapper verification places the secondary transfer unit there. The previously archived two-generation `0x16/0x17/0x18` regression remains the binary evidence surface for this protocol family.
+- command `0x17` converts its trailing KiB field to a byte length by shifting it left by 10 bits;
+- it computes the end address as `base + byte_length`, so `erase_kb = 0` produces `length = 0` and `end = base`;
+- there is no pre-helper branch that recognizes zero as a special `erase-to-end` sentinel;
+- the flash-helper loop is post-tested: the helper is invoked before the first comparison against the computed end address.
 
-This document adds a source-first semantic constraint to that evidence rather than claiming a new binary execution run.
+Therefore, within command `0x17`, zero is **not** an internal `erase-to-end` sentinel and it is also **not** a no-op. It causes at least one flash-helper invocation before the loop can terminate. This behavior is **CONFIRMADO** in both compared Small ROM generations.
+
+What remains `NO_RESUELTO / EVIDENCIA_INSUFICIENTE` is the exact physical flash span affected by that single helper pass. That question belongs to the copied-to-RAM flash routine and flash geometry, not to the `0x17` loop-control field itself.
+
+## Firmware correlation and regression status
+
+Private canonical-firmware work establishes the cross-ROM transition and the Small ROM segment-mapping family without publishing ROM bytes or extended disassembly. The NEO13 host package contains a segment descriptor for `0x005FFC00`, and the private Small ROM mapper verification places the secondary transfer unit there.
+
+The zero-length control-flow property was rechecked mechanically across the older and NEO Small ROM generations with `verify_smallrom_command17_zero_length_posttest_2026-09-09.py`. The executed regression reports **21/21 PASS**. The script, output, firmware binaries and extended disassembly remain in the private evidence archive.
 
 ## Refutation checks
 
-The following narrower interpretations are rejected by the source correlation:
+The following narrower interpretations are rejected by source and firmware correlation:
 
 - `0x16` is not a per-segment erase request: it is issued once before the segment loop and carries zero fields.
 - `0x17` is not a generic zero-argument mode switch: it is issued once per parsed segment and carries both destination address and an erase-size field.
 - `0x17.trailing` is not merely an arbitrary host token in the normal path: it is computed as `ceil(segment.length / 0x400)` KiB.
-- The `0x18/0x16/0x17` family is not evidence for new Line-A syscalls; it is an updater-protocol sequence.
+- `erase_kb = 0` is not decoded by command `0x17` as an `erase-to-end` sentinel.
+- `erase_kb = 0` is not a no-op: the post-test loop invokes the flash helper at least once.
+- the `0x18/0x16/0x17` family is not evidence for new Line-A syscalls; it is an updater-protocol sequence.
 
 ## Remaining verification target
 
-The next firmware-first closure target is the zero-length `0x17` special case at destination `0x005FFC00`: identify the exact Small ROM branch/effect, compare available Small ROM generations, and either confirm a concrete erase-range policy or retain it as `NO_RESUELTO / EVIDENCIA_INSUFICIENTE`.
+The next physical-object closure target is the flash helper/routine copied to RAM and invoked by command `0x17`. The goal is to determine the erase/program quantum and thereby bound the exact physical span affected by the zero-length special case. Until that helper and the relevant flash geometry are independently correlated, no broader erase-range policy should be assigned.
 
 Firmware binaries, full disassembly and private regression artifacts intentionally remain outside the public repository.
