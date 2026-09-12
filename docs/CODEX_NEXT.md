@@ -44,7 +44,7 @@ Do not expose A468 or A46C unless an actual repository consumer requires them an
    - one representative applet clean build
 7. Update the relevant canonical/continuity documentation.
 8. Write a concise result to `docs/CODEX_RESULT.md`.
-9. Commit and push only if the change is evidence-supported, build-valid, and the remote branch can be updated safely without force-push.
+9. Include `docs/CODEX_RESULT.md` in the same iteration commit. Commit and push only if the change is evidence-supported, build-valid, and the remote branch can be updated safely without force-push.
 
 If no defensible low-risk correction exists, make no source change and document that result instead.
 
