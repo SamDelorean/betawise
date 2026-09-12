@@ -1,7 +1,7 @@
 CORES = $(shell nproc)
 TARGET = m68k-elf
 PREFIX = ${HOME}/.local
-BINUTILS_VERSION = binutils-2.46.0
+BINUTILS_VERSION = binutils-2.46.1
 GCC_VERSION = gcc-16.1.0
 NEWLIB_VERSION = newlib-4.6.0.20260123
 

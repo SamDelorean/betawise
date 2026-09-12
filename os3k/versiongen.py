@@ -5,7 +5,8 @@ import subprocess
 slug = subprocess.getoutput('git describe --tags')
 if '-' in slug:
     tag, commits, hash = slug.split('-')
-    version_revision = chr(0x60 + int(commits))
+    commit_count = int(commits)
+    version_revision = chr(0x60 + commit_count) if 1 <= commit_count <= 26 else '+'
 else:
     tag = slug
     version_revision = ' '
