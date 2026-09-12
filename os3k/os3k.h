@@ -199,11 +199,24 @@ void DisplayMessage(const char* str);
 KeyMod_e GetKey(bool process_special_keys);
 void DrainKeyBuffer();
 bool IsKeyReady();
-// Returns KeyMod_e values shifted right by 8.
-uint8_t GetKeyModifiers();
+
+// Raw OS3K A0A0/A0AC modifier-state pair. These are the canonical trap names.
+// GetModifierKeys returns the complete 16-bit KEY_MOD_* bitmask in D0.W.
+uint16_t GetModifierKeys(void);
+void SetModifierKeys(uint16_t modifiers);
+
+// Historical BetaWise source-compatibility spellings. The old getter was
+// documented as returning the modifier word shifted right by 8; keep that
+// behavior here without misrepresenting the raw A0A0 contract.
+static inline uint8_t GetKeyModifiers(void) {
+    return (uint8_t)(GetModifierKeys() >> 8);
+}
+static inline void SetKeyModifiers(uint16_t mask) {
+    SetModifierKeys(mask);
+}
+
 void ScanKeyboard();
 void QueueKey(KeyMod_e key);
-void SetKeyModifiers(uint16_t mask);
 bool IsKeyDownNow();
 
 void SleepCentiseconds(uint32_t centiseconds);
@@ -227,6 +240,16 @@ void ShowBatteryPercentage(uint8_t time_seconds); // display battery graphic
 if time>zero shows battery icon for n seconds */
 
 char TranslateKeyToChar(KeyMod_e key);
+
+// Binary File API primitives. file_id 0 resolves the active descriptor.
+// FileWriteBuffer returns bytes actually written, or a negative System 3 status.
+// write_mode: 1=append, 2=insert at cursor, 3=overwrite at cursor.
+int32_t FileWriteBuffer(uint16_t file_id, const uint8_t* buffer,
+    uint32_t count, uint8_t write_mode);
+
+// FileReadBuffer returns bytes actually read, 0 at EOF, or a negative status.
+// Reads are clamped at EOF and advance the descriptor cursor.
+int32_t FileReadBuffer(uint16_t file_id, uint8_t* buffer, uint32_t count);
 
 // Irreversibly zero-fills the active file and clears current/recoverable size
 // and cursor. Returns the active file's canonical 16-bit token, or 0 if no
@@ -312,6 +335,10 @@ uint8_t AppletGetName(uint32_t index, char* name_out);
 // the low return byte is contractual: 1 on successful dispatch, 0 on rejection.
 uint8_t AppletSendMessage(uint32_t index, Message_e message, uint32_t param, uint32_t* status);
 
+// Raw getter for the file-password protection state. The firmware returns the
+// stored byte verbatim; callers normally use values 0/1.
+uint8_t SYS_A248(void);
+
 // Non-interactive master-password comparison. Only the low byte is contractual.
 uint8_t SYS_A24C(const char *password);
 
@@ -326,6 +353,15 @@ void SYS_A258(uint8_t protection_state);
 
 // action_mask bits are dispatched independently; bit 3 handles special keys.
 int32_t SYS_A25C(uint32_t action_mask, KeyMod_e key);
+
+// SmartApplet runtime mask table. A260 returns the raw 32-bit entry. A264 sets
+// bit 0; A268 clears the whole entry; A26C/A270 add/remove the dynamically
+// selected reason bit. Valid mutating indices are 1..31.
+uint32_t SYS_A260(uint32_t applet_index);
+void SYS_A264(uint32_t applet_index);
+void SYS_A268(uint32_t applet_index);
+void SYS_A26C(uint32_t applet_index);
+void SYS_A270(uint32_t applet_index);
 
 uint32_t CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
 
