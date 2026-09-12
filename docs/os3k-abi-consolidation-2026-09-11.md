@@ -44,3 +44,18 @@ SDK reconciliation commit: `e53a44d4adb9f24728d53da9481f6c76078513c2`.
 ## Operational conclusion
 
 The sequential syscall-discovery phase is complete for the corroborated `A000..A470` range. Further work should prioritize emulator-facing contracts and validation of the public SDK surface. Small ROM analysis should be reopened only when it resolves a concrete emulator or ABI dependency.
+
+## SDK header reconciliation — batch 2A validation
+
+The first part of the second SDK-header reconciliation batch is now build-validated on the Linux 64-bit development host.
+
+The historical SYS_A32C and SYS_A334 declarations were corrected to the already-closed ABI contracts: SYS_A32C returns uint32_t and SYS_A334 returns int32_t, both with void parameter lists.
+
+Validation after the header change:
+
+- clean rebuild of os3k/libos3k.a: PASS;
+- clean build and link of applets/HelloWorld: PASS;
+- toolchain: Linux 64-bit host with m68k-elf-gcc;
+- no additional ABI contracts were strengthened or exposed in this batch.
+
+Status: BUILD_VALIDATED.

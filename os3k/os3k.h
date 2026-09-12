@@ -366,9 +366,9 @@ void SYS_A270(uint32_t applet_index);
 uint32_t CallSysInt(uint32_t unused_zero, SysInt_e info, void* output);
 
 // Standard library functions.
-void SYS_A32C();
+uint32_t SYS_A32C(void);
 int getchar(void);
-void SYS_A334();
+int32_t SYS_A334(void);
 void abort(void);
 int atoi(const char *str);
 long atol(const char *str);
