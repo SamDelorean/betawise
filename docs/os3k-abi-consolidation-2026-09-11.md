@@ -83,3 +83,15 @@ Validation after the header change:
 - no A3C4-A400, A408-A434, or A43C-A454 limited-evidence entries were promoted.
 
 Status: BUILD_VALIDATED.
+
+## SDK reconciliation — A250 correction
+
+The public SDK declaration and consolidated documentation for SYS_A250 were reconciled with the later source-first closure. Firmware consumes the low byte of the first ABI slot; it is therefore exposed as uint8_t prompt_variant rather than an unused uint32_t reserved slot. All direct native callers found in each canonical ROM pass selector value 2, while the original semantic name and selector meaning remain unresolved.
+
+Validation after the header correction:
+
+- clean rebuild of os3k/libos3k.a: PASS;
+- clean build and link of applets/HelloWorld: PASS;
+- password_runtime.h, os3k.h, the canonical ABI index, and the consolidated A248-A258 reference now agree.
+
+Status: BUILD_VALIDATED.

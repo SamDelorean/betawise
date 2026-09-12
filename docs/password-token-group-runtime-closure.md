@@ -126,13 +126,13 @@ recorded without promoting the name.
 Reconstructed form:
 
 ```c
-uint8_t SYS_A250(uint32_t reserved, const char *prompt);
+uint8_t SYS_A250(uint8_t prompt_variant, const char *optional_text);
 ```
 
-The handler consumes two 32-bit caller slots. The first slot is not read anywhere
-in the compared implementations. All six direct System 3 callers in each ROM use
-value 2 in that slot, so SDK code that must reproduce native calling patterns
-should use 2 while treating the parameter as reserved/legacy.
+The handler consumes two 32-bit caller slots. Firmware reads the low byte of the
+first slot and passes it into the prompt/UI setup path. All six direct System 3
+callers found in each canonical ROM pass value 2. The exact higher-level meaning
+of this selector remains unknown, so `prompt_variant` is intentionally neutral.
 
 The second argument is an optional string pointer. When non-NULL the handler
 prints that text as part of the prompt sequence.
@@ -149,9 +149,9 @@ The verification loop is mechanically closed:
    waits 200 centiseconds through A0D4, clears/restores the input area and loops
    for another attempt.
 
-Only the low return byte is contractual. The first argument remains intentionally
-unnamed beyond `reserved`: the current firmware does not consume it, and its
-historical purpose has not been recovered.
+Only the low return byte is contractual. The first argument's low byte is
+contractual because the firmware consumes it; only its original semantic name
+and the meaning of selector value 2 remain unrecovered.
 
 A250 is used internally for several protected System 3 settings, not only the
 file-password-protection toggle. It is therefore a generic interactive master-

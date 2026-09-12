@@ -351,8 +351,8 @@ uint8_t SYS_A248(void);
 // Non-interactive master-password comparison. Only the low byte is contractual.
 uint8_t SYS_A24C(const char *password);
 
-// Interactive master-password gate. Native callers pass 2 for reserved; prompt may be NULL.
-uint8_t SYS_A250(uint32_t reserved, const char *prompt);
+// Interactive master-password gate. Firmware consumes the low byte of the first ABI slot; native callers pass 2. optional_text may be NULL.
+uint8_t SYS_A250(uint8_t prompt_variant, const char *optional_text);
 
 // Resolve current or explicit File API token group; optionally copy its name.
 uint8_t SYS_A254(uint8_t token_group, char *group_name_out);
