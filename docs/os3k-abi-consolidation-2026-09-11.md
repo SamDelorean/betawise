@@ -24,24 +24,23 @@ The consolidation expands historical compact rows and fills representation gaps,
 
 Late NEO-only entries whose mechanics are known but whose return or source-level contract is explicitly unknown remain closed with an evidence limit rather than being promoted to a complete public C prototype.
 
-## SDK reconciliation item: keyboard modifier API
+## SDK reconciliation: keyboard modifier API
 
-The branch currently has a header/stub naming mismatch around `A0A0` and `A0AC`:
+The historical header/stub mismatch around `A0A0` and `A0AC` is now resolved without removing the older source-level spellings.
 
-- `os3k/syscall.c` exports raw traps as `GetModifierKeys` and `SetModifierKeys`.
-- `os3k/os3k.h` still declares the older `GetKeyModifiers` / `SetKeyModifiers` interface and describes a shifted 8-bit getter.
-
-The recovered raw contracts are:
+Canonical raw trap contracts:
 
 ```c
-KeyMod_e GetModifierKeys(void);       /* raw A0A0: unshifted 16-bit modifier word */
+uint16_t GetModifierKeys(void);       /* raw A0A0: complete unshifted modifier word */
 void SetModifierKeys(uint16_t value); /* raw A0AC: replaces the complete 16-bit word */
 ```
 
-Backward compatibility, if required, should be implemented as explicit wrappers/aliases rather than by assigning the historical shifted-8-bit behavior to the raw traps.
+`GetKeyModifiers()` and `SetKeyModifiers()` remain available as source-compatibility inline wrappers. The historical getter retains its documented shifted-byte behavior by returning `(uint8_t)(GetModifierKeys() >> 8)`; it is therefore no longer confused with the raw `A0A0` trap. The historical setter forwards directly to the raw 16-bit replacement operation.
 
-No compatibility wrapper is introduced by this documentation-only commit; this prevents an accidental source-level API break while making the discrepancy explicit for the next SDK patch.
+The public header also now exposes already-closed contracts that had remained absent from `os3k.h`: `FileWriteBuffer`, `FileReadBuffer`, `SYS_A248`, and the `A260/A264/A268/A26C/A270` SmartApplet mask-table family. No unresolved late-NEO contract was promoted to a stronger public prototype.
+
+SDK reconciliation commit: `e53a44d4adb9f24728d53da9481f6c76078513c2`.
 
 ## Operational conclusion
 
-The sequential syscall-discovery phase is complete for the corroborated `A000..A470` range. Further work should prioritize SDK/header cleanup and emulator-facing contracts. Small ROM analysis should be reopened only when it resolves a concrete emulator or ABI dependency.
+The sequential syscall-discovery phase is complete for the corroborated `A000..A470` range. Further work should prioritize emulator-facing contracts and validation of the public SDK surface. Small ROM analysis should be reopened only when it resolves a concrete emulator or ABI dependency.
