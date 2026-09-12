@@ -4,7 +4,7 @@ Status: **AUDIT_FINDING / NEXT_BUILD_BATCH**
 
 ## Finding
 
-The canonical ABI index and focused auxiliary headers already expose several mechanically closed System 3 contracts in the `A274–A28C` range, while the public umbrella header `os3k/os3k.h` does not currently surface them.
+The canonical ABI index and focused auxiliary headers already expose mechanically closed System 3 contracts throughout the `A274–A28C` range, while the public umbrella header `os3k/os3k.h` does not currently surface them.
 
 This is a public-surface consistency gap, not unfinished reverse engineering.
 
@@ -12,6 +12,7 @@ This is a public-surface consistency gap, not unfinished reverse engineering.
 
 ```c
 void SYS_A274(void);
+void *SYS_A278(void);
 
 void SYS_A27C(
     const uint8_t **cursor,
@@ -46,22 +47,36 @@ uint8_t SYS_A28C(
 Sources:
 
 - `os3k/printer_selection.h`
+- `os3k/applet_settings.h`
 - `os3k/record_cursor.h`
 - `os3k/record_writer.h`
 - `os3k/record_search.h`
 - `os3k/transport_payload.h`
 - `os3k/irda_state_init.h`
+- `docs/applet-current-settings-closure.md`
 - `docs/abi-reconstruction-index.md`
 
 The corresponding veneers are already present in `os3k/syscall.c` at indices 157–163.
 
+## A278 correction from the continued audit
+
+An earlier version of this audit note conservatively left A278 outside the proposed batch pending status verification. That caution is now superseded.
+
+`docs/applet-current-settings-closure.md` explicitly closes A278 mechanically across AS3000 2005, NEO 2005 and NEO 2013 and gives the usable public form:
+
+```c
+void *SYS_A278(void);
+```
+
+The trap consumes no arguments and returns either the current SmartApplet settings-region pointer or `NULL` in full `D0`. `os3k/applet_settings.h` already carries the same declaration. Therefore A278 belongs in the same umbrella-header reconciliation batch on exactly the same evidence policy as A274/A27C/A280/A284/A288/A28C.
+
 ## Scope boundary
 
-This finding does **not** imply that every trap numerically between A274 and A28C should be added to `os3k.h`.
+This finding does **not** imply promotion of neighboring traps outside the mechanically closed focused-header set.
 
-- A274, A27C, A280, A284, A288 and A28C have focused closure documents and explicit usable C contracts.
-- A278 and neighboring entries should be treated according to their own consolidated status and existing dedicated documentation, not promoted merely to make a contiguous numerical run.
-- No `CERRADA_CON_LÍMITE_DE_EVIDENCIA` entry should be strengthened just to fill an umbrella-header gap.
+- A274, A278, A27C, A280, A284, A288 and A28C have focused closure documents/headers and explicit usable C contracts.
+- No `CERRADA_CON_LÍMITE_DE_EVIDENCIA` entry should be strengthened merely to produce a contiguous numerical run.
+- A290/A294 and later entries remain governed by their own consolidated status and should not be inferred from adjacency.
 
 ## Recommended integration pattern
 
