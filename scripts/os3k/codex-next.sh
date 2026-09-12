@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-repo="$HOME/Projects/alphasmart/betawise-abi"
-branch="sdk/abi-automation"
+repo="$HOME/Projects/alphasmart/betawise-os3k"
+branch="os3k/base-analysis"
 task="$repo/docs/OS3K_ANALYSIS_NEXT.md"
 result="$repo/docs/OS3K_ANALYSIS_RESULT.md"
 

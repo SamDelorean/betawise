@@ -4,95 +4,63 @@
 
 This is the foundational and transversal OS3K reverse-engineering front.
 
-Its findings feed:
+The initial runtime/file-storage consolidation is complete. Do not repeat it.
 
-- AlphaSmart 2000 reconstruction when applicable;
-- AlphaSmart 3000 emulator;
-- BetaWise / OS3K SDK;
-- OS3K RAM and persistence documentation;
-- BetaCalc / NeoSheet;
-- later NEO work.
+## Current frontier
 
-This front is not the BetaWise SDK publication task. Do not modify SDK
-headers or implementation merely because an ABI contract exists.
+Resolve as far as the evidence permits the initialization and ownership of the
+OS3K file descriptor table and file-storage arena, starting with AS3000 System 3
+November 2005.
 
-## Evidence discipline
+The previous analysis specifically left unresolved:
 
-Preserve these distinctions:
+- descriptor-table root and exact bounds;
+- file-storage arena root/end;
+- initialization writers;
+- cold/default initialization versus warm/resume behavior;
+- relocation/compaction ownership;
+- relationship between descriptor storage pointers and allocator state.
 
-- mechanically/directly demonstrated fact;
-- strong historical or cross-version continuity;
-- implementation inference;
-- unresolved question.
+## Method
 
-Do not strengthen an inference into a fact.
+Use source-first correlation before blind binary exploration.
 
-Keep AS3000, early NEO, and NEO 2013 behavior separate whenever the
-evidence differs.
+Begin from the existing closures and canonical map, including:
 
-Do not add proprietary ROMs, firmware images, application binaries,
-manager distributions, dumps, or captured proprietary payloads to Git.
-
-## First milestone
-
-Create or update:
-
-    docs/os3k-runtime-memory-storage.md
-
-The purpose of this first milestone is to consolidate the existing project
-evidence into a canonical map of OS3K runtime memory and file/storage behavior.
-
-Do NOT restart reverse engineering that is already closed.
-
-Begin from at least:
-
+- docs/os3k-runtime-memory-storage.md
 - docs/file-api-current-reference.md
 - docs/file-api-reconstruction.md
 - docs/file-core-operations.md
 - docs/file-space-accounting.md
 - docs/file-identity-dynamic-closure.md
 - docs/fileopen-fileclose-closure.md
-- docs/clipboard-buffer-closure.md
-- docs/clipboard-state-capacity-closure.md
-- docs/packed-record-cursor-closure.md
-- docs/packed-record-search-closure.md
-- docs/packed-record-writer-closure.md
-- docs/applet-runtime-api-closure.md
 - docs/abi-reconstruction-index.md
-- docs/os3k-abi-consolidation-2026-09-11.md
-- relevant SYS_Axxx closure documents
+- relevant SYS_A1xx/A2xx source-first closures
 
-## Questions to organize
+When locally available, canonical firmware/Ghidra/private evidence may be read
+to resolve exact writers, globals and boundaries. Do not commit proprietary
+material or extensive extracted disassembly.
 
-Document, with evidence level, what is currently known about:
+For each proposed root, pointer or boundary:
 
-1. OS3K RAM regions and runtime-owned structures.
-2. File descriptor table layout and lifetime.
-3. File data buffers and storage/base pointers.
-4. Active descriptor and namespace state.
-5. Clipboard storage and its relationship to file storage.
-6. Record-oriented structures.
-7. Allocation units, minimum allocation, maximum capacity, reclaimable space.
-8. Volatile state versus persistent state.
-9. What FileOpen/FileClose actually do.
-10. What operations modify data immediately versus merely changing runtime state.
-11. What is known, and not known, about physical persistence/backing storage.
-12. Differences among AS3000, early NEO and NEO 2013.
-13. Implications for emulator implementation.
-14. Implications for BetaWise applications.
-15. Implications for a spreadsheet application that must eventually save files.
+1. identify the writer/initializer;
+2. identify readers/consumers;
+3. distinguish pointer storage from pointed-to storage;
+4. establish width and lifetime where possible;
+5. identify cold/warm/reset behavior where evidence exists;
+6. compare with NEO only after the AS3000 unit is mechanically coherent;
+7. actively test alternative interpretations;
+8. mark anything not demonstrated as unresolved.
 
-Do not assume that a RAM storage pointer proves the physical persistent
-medium or commit mechanism. Explicitly mark that boundary.
+Do not infer physical persistence merely from a RAM pointer or runtime allocator.
 
-## Change boundary for this iteration
+## Allowed substantive output
 
-Documentation only.
-
-Allowed substantive output:
-
+- docs/os3k-descriptor-storage-init-closure.md
 - docs/os3k-runtime-memory-storage.md
 - docs/OS3K_ANALYSIS_RESULT.md
+
+Documentation only for this iteration.
 
 Do not modify:
 
@@ -102,24 +70,23 @@ Do not modify:
 - MAME repositories
 - private evidence files
 
-If a useful change is identified outside this boundary, record it as a
-cross-project handoff rather than making the change.
-
 ## Result
 
-Replace docs/OS3K_ANALYSIS_RESULT.md with a concise report containing:
+Replace `docs/OS3K_ANALYSIS_RESULT.md` with a concise report containing:
 
 - evidence reviewed;
-- facts consolidated;
-- unresolved RAM questions;
-- unresolved persistence/storage questions;
-- AS3000/NEO differences found;
-- emulator-facing implications;
-- BetaWise-facing implications;
-- spreadsheet-facing implications;
+- descriptor-table roots/bounds demonstrated;
+- storage-arena roots/bounds demonstrated;
+- initialization writers found;
+- cold/warm behavior demonstrated or unresolved;
+- alternative hypotheses rejected or retained;
+- AS3000/NEO implications;
+- emulator-facing handoff;
+- BetaWise-facing handoff;
+- spreadsheet/storage-facing handoff;
 - exact files changed;
-- git diff --check result;
-- recommended next OS3K analysis frontier.
+- validation performed;
+- recommended next frontier.
 
-Commit and push only if the documentation is coherent, evidence-preserving,
-and the remote branch can be updated by fast-forward without force-push.
+Commit and push only if the result remains inside this scope and
+`origin/os3k/base-analysis` can be updated by fast-forward.
