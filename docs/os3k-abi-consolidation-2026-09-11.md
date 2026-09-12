@@ -59,3 +59,15 @@ Validation after the header change:
 - no additional ABI contracts were strengthened or exposed in this batch.
 
 Status: BUILD_VALIDATED.
+
+## SDK header reconciliation — batch 2B validation
+
+The closed raw contracts SYS_A0B8, SYS_A0BC, SYS_A0C0, SYS_A0C4, SYS_A0C8, SYS_A0CC, and SYS_A0D0 are now exposed in os3k.h using neutral SYS_Axxx names only. No higher-level vendor semantics were assigned.
+
+Validation after the header change:
+
+- clean rebuild of os3k/libos3k.a: PASS;
+- clean build and link of applets/HelloWorld: PASS;
+- no CERRADA_CON_LÍMITE_DE_EVIDENCIA contract was promoted.
+
+Status: BUILD_VALIDATED.

@@ -215,6 +215,15 @@ static inline void SetKeyModifiers(uint16_t mask) {
     SetModifierKeys(mask);
 }
 
+// Closed raw OS3K contracts; higher-level vendor semantics remain unassigned.
+uint8_t SYS_A0B8(void);
+uint8_t SYS_A0BC(void);
+void SYS_A0C0(uint8_t state);
+uint8_t SYS_A0C4(void);
+uint16_t SYS_A0C8(void);
+uint8_t SYS_A0CC(void);
+void SYS_A0D0(uint8_t enabled);
+
 void ScanKeyboard();
 void QueueKey(KeyMod_e key);
 bool IsKeyDownNow();
