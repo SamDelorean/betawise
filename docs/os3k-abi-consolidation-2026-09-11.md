@@ -71,3 +71,15 @@ Validation after the header change:
 - no CERRADA_CON_LÍMITE_DE_EVIDENCIA contract was promoted.
 
 Status: BUILD_VALIDATED.
+
+## SDK header reconciliation — batch 2C validation
+
+The closed NEO13-only raw contracts SYS_A3B4, SYS_A3B8, SYS_A3BC, SYS_A3C0, SYS_A404, SYS_A41C, SYS_A438, and SYS_A470 are now exposed in os3k.h in a clearly marked NEO13-only section. Their neutral SYS_Axxx names are retained because source-level/vendor identities remain unknown.
+
+Validation after the header change:
+
+- clean rebuild of os3k/libos3k.a: PASS;
+- clean build and link of applets/HelloWorld: PASS;
+- no A3C4-A400, A408-A434, or A43C-A454 limited-evidence entries were promoted.
+
+Status: BUILD_VALIDATED.

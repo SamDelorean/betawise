@@ -410,6 +410,17 @@ int tolower(int c);
 int toupper(int c);
 int ungetc(int c, FILE* stream);
 
+// NEO13-only closed raw contracts. These traps are not callable on AS3000/NEO05.
+// Source-level/vendor identities remain unknown; keep neutral SYS_Axxx names.
+uint16_t SYS_A3B4(void *record);
+uint8_t SYS_A3B8(uint16_t arg1, void *arg2, uint16_t arg3, uint8_t arg4);
+uint8_t SYS_A3BC(void);
+uint8_t SYS_A3C0(void);
+uint8_t SYS_A404(void);
+void *SYS_A41C(uint8_t selector);
+char *SYS_A438(char *dst);
+uint16_t SYS_A470(void);
+
 // Betawise library functions.
 void BwProcessMessage(Message_e message, uint32_t param, uint32_t* status);
 int fputs(const char* str, FILE* stream);
