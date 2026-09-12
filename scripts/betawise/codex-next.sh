@@ -33,7 +33,7 @@ if [ "$local_head" != "$remote_head" ]; then
     exit 1
 fi
 
-cat "$repo/AGENTS.md" "$task" |     codex exec --approve-for-me -C "$repo" -
+cat "$repo/AGENTS.md" "$task" |     script -qefc "codex exec --dangerously-bypass-approvals-and-sandbox -C \"$repo\" -" /dev/null
 
 echo
 echo "=== CODEX RESULT ==="
