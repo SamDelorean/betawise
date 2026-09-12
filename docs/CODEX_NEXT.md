@@ -6,6 +6,22 @@ The project now has a Linux integration workspace at `~/Projects/alphasmart`, co
 
 The global workspace is an orchestration layer only. BetaWise retains its own publication branch and history. Any BetaWise source change must still be made on `sdk/abi-automation`; do not merge or copy the global `work` branch into BetaWise automatically.
 
+## Global Codex setup scope
+
+Configuring Codex to operate correctly from the Linux global workspace is now an explicit project deliverable, not an external prerequisite.
+
+The setup must establish and verify all of the following before autonomous project work is considered ready:
+
+1. Codex starts with working directory `~/Projects/alphasmart` for global-project tasks.
+2. The global repository is on branch `work` before Codex edits any global orchestration file.
+3. Codex reads the global `AGENTS.md`, `CLAUDE.md`, and `README.md` before repository-specific instructions.
+4. Any launcher/script used for unattended iterations must fail closed if the global branch is not `work`, the worktree is unexpectedly dirty, or the requested child repository is on the wrong publication branch.
+5. Child repositories keep their own branch rules. In particular, BetaWise work remains on `sdk/abi-automation`; the global `work` branch must never be pushed into or substituted for that branch.
+6. Codex must report the resolved workspace path, active global branch, selected child repository/branch, exact validation commands, and final commit/result for every iteration.
+7. Perform a non-destructive smoke test of the configuration before relying on it for unattended changes. Record the outcome in the global continuity/handoff documentation.
+
+If any of these conditions cannot be verified, stop before making source changes and report the configuration gap.
+
 ## Goal
 
 Perform one low-risk SDK consistency audit against the already reconstructed OS3K ABI.
@@ -44,7 +60,7 @@ If the safest result is that no additional declaration should be exposed, make n
 
 ## Required workflow
 
-1. Verify the global Linux workspace state and then the BetaWise repository state separately.
+1. Verify the global Linux workspace state and complete/confirm the Codex setup scope above before any unattended source-editing iteration.
 2. In BetaWise, require branch `sdk/abi-automation`, a clean worktree, and synchronization with `origin/sdk/abi-automation` before editing.
 3. Audit closed contracts against public/auxiliary SDK declarations and choose one candidate only.
 4. Trace chronology when documentation disagrees; later evidence does not automatically win unless it is technically better supported.
