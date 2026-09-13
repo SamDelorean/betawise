@@ -92,7 +92,7 @@ uses `0x48`-byte descriptors, with the following identified fields.
 | `+0x0C` | maximum allocated capacity | 32-bit `max_size` |
 | `+0x10` | minimum allocation | 32-bit `min_size` |
 | `+0x14` | current cursor | 32-bit byte position |
-| `+0x18` | password | at most five characters plus NUL |
+| `+0x18` | password | at most six characters plus NUL |
 | `+0x20` | per-file state flags | masks known; semantic bit names open |
 | `+0x24` | storage-pointer mirror binding | caller address |
 | `+0x28` | current-size mirror binding | caller address |
