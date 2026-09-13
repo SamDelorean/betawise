@@ -36,7 +36,7 @@ understand the reconstructed API are:
 | `+0x0C` | maximum allocated capacity | A |
 | `+0x10` | minimum allocation / `min_size` | A |
 | `+0x14` | current cursor/file position | A |
-| `+0x18` | NUL-terminated file password, maximum 5 chars + NUL | A |
+| `+0x18` | NUL-terminated file password, maximum 6 chars + NUL | A |
 | `+0x20` | per-file state flags | A mechanically; bit names open |
 | `+0x24` | caller address bound as live storage-pointer mirror | A |
 | `+0x28` | caller address bound as live current-size mirror | A |
@@ -250,8 +250,9 @@ int32_t SYS_A1DC(uint16_t file_id, char *password, uint8_t read_back);
 uint32_t SYS_A1D8(void);
 ```
 
-A1DC gets/sets descriptor `+0x18`. Set strings of length >=6 return raw `-8`;
-therefore the normal password limit is five characters plus NUL.
+A1DC gets/sets descriptor `+0x18`. In modern OS3K write mode, strings of length
+0..6 are accepted; lengths greater than 6 return raw `-8`. The historical 2000
+five-character rule must not be projected onto the modern A1DC contract.
 
 A1D8 is an interactive, destructive master-password-gated reset that sets every
 file password in the current group to factory string `write` and returns the
