@@ -26,11 +26,13 @@ Labels used below describe individual claims, independently of inventory status:
 
 A mechanically understood routine can retain a source-level evidence limit.
 Neutral `SYS_Axxx` names, unknown flag names and unknown return meanings stay
-unchanged. Nothing here promotes A468/A46C or another limited-evidence entry.
-“Persistent binding” in File API notes means retained across calls; it does not
-mean retained across loss of power. Static regression results cited by closures
-are prior results, not tests rerun in this iteration; their pending dynamic
-regressions remain pending.
+unchanged. Nothing here promotes any `CERRADA_CON_LÍMITE_DE_EVIDENCIA` entry.
+A468 and A46C are already mechanically `CERRADA`; their omission from the
+umbrella SDK header is a publication-policy choice, not an evidence-limit
+classification. “Persistent binding” in File API notes means retained across
+calls; it does not mean retained across loss of power. Static regression results
+cited by closures are prior results, not tests rerun in this iteration; their
+pending dynamic regressions remain pending.
 
 The [current File API reference](file-api-current-reference.md) takes precedence
 over the chronological [reconstruction log](file-api-reconstruction.md).
