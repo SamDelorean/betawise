@@ -30,6 +30,12 @@ validation status and concrete audit references.
 
 ## Current reconstructed blocks
 
+The table below covers the canonical index through A28C. Continue with
+[`abi-reconstruction-index-a290-a470.md`](abi-reconstruction-index-a290-a470.md)
+for A290–A470. That continuation uses the same evidence policy; inclusion there
+does not promote `CERRADA_CON_LÍMITE_DE_EVIDENCIA` entries to public SDK
+contracts.
+
 | Trap/range | Current identity | Status | Canonical documentation |
 | --- | --- | --- | --- |
 | A000 | raw `_OS3K_ClearScreen(void)` / public `ClearScreen(void)` | mechanical A; clears display, hides OS cursor and restores OS cursor to 1,1; BetaWise wrapper additionally resets its private scroll/start-line state | [`clear-screen-closure.md`](clear-screen-closure.md), `os3k/os3k.h` |
@@ -98,179 +104,13 @@ Evidence is normally assembled from several independent layers:
    Calculator and ControlPanel.
 3. **System 3 internal callers and strings**, especially when an operation is
    encapsulated rather than directly invoked by SmartApplets.
-4. **Original AS3000 source/object material (1998–2000)** for genealogy and
-   names, without assuming ABI identity.
-5. **Independent reverse engineering** such as BetaWise/Ghidra/neo-re as
-   comparative evidence rather than authority over direct firmware behavior.
-6. **Emulator/hardware regression** as an observable verification layer after
-   the machine contract is known.
+4. **Original AS3000 source/object material (1998–2000)** used as historical
+   genealogy, not as automatic proof of modern ABI identity.
+5. **Regression probes/matrices** used as executable specifications; runtime
+   execution is reported separately from static reconstruction.
 
-## Platform and generation rule
+## Safety policy
 
-Claims shared by AlphaSmart 3000 and NEO require direct comparison of the
-relevant handler/data flow. Known generation differences remain explicit. For
-example, A1D0/A1D4 accept mask `0x0D` in the 2005 ROMs and add `0x10` in NEO
-2013. A210 also demonstrates why this rule matters: the 2005 filtered-read path
-passes an uninitialized local as the filter helper's initial output limit,
-whereas NEO 2013 explicitly initializes the output limit from caller `count`.
-
-A000 preserves one public display/cursor contract across AS3000 and NEO while
-using generation-specific hardware paths. AS3000 issues clear-display commands
-to its two character-LCD halves. NEO explicitly clears both graphical LCD
-controllers and its character shadow. Both hide the OS cursor and restore
-logical position 1,1; raw A000 does not promise to normalize the NEO LCD
-start-line, which remains a BetaWise-wrapper responsibility in extended-font
-mode.
-
-A22C–A234 are stable across the compared ROMs apart from relocated runtime
-globals, mask-table helper and applet-header table addresses. A22C relies on the
-normal runtime-index domain established by the surrounding applet machinery
-rather than performing its own explicit bounds test.
-
-A238–A244 are likewise structurally stable across all three compared ROMs.
-A238/A23C/A240 differ only in relocated table/library addresses, while A244 adds
-relocated current-applet state, selection-block helper and per-applet A5-context
-locations. The message-normalization and callback sequence are unchanged.
-
-A248–A258 are also stable across the three compared ROMs. A248/A258 remain a
-byte getter/setter pair over the relocated file-password-protection global;
-A24C and A250 use the relocated master-password buffer but preserve comparison
-and UI control flow; A254 preserves the four 30-byte token-group name slots and
-returns the group byte used as the high byte by A1FC.
-
-A25C preserves the same 32-bit mask/key-slot ABI and 0/8/-9 return contract in
-the compared ROMs. NEO/System 3.15 adds one stage to the bit-0 service path
-without changing the public contract.
-
-A260–A270 retain the same 32-entry longword table model, per-service mutations
-and validation boundaries in all three compared ROMs.
-
-A274 is a deliberate example of a platform-visible difference that must not be
-normalized away: the AS3000 2005 handler enumerates seven printer records,
-including ImageWriter and StyleWriter, and contains an additional StyleWriter
-validation/warning path; the two compared NEO handlers enumerate five printer
-records and use the compact commit path.
-
-A27C is byte-identical across all three compared ROMs. Each image also contains
-three structurally equivalent internal callers that pass five pointer slots and
-ignore the return register. The two leading 16-bit record fields remain neutral;
-the third word is the payload byte count used for even-byte cursor progression.
-
-A280 preserves the same mechanical writer contract in all three ROMs. The only
-handler-byte difference is the relocated address of an identical forward-copy
-helper. Two equivalent internal callers per ROM pass five slots, allocate six
-plus the even-rounded payload size, and ignore the residual return register.
-
-A284 is byte-identical across all three compared ROMs. One equivalent internal
-caller per ROM passes five slots and tests the full 32-bit 0/-1 return. Its
-alternate path invokes A27C on the same record sequence, independently
-correlating the shared layout and cursor semantics.
-
-A288 is mechanically identical across all three compared ROMs after relocating
-one 16-bit global. It returns that global minus six in D0.W. An equivalent
-internal send-path consumer in each ROM independently establishes the result as
-the admitted payload-byte limit; the original transport and vendor names remain
-unknown.
-
-A28C is likewise byte-identical after neutralizing seven relocated fields of
-one singleton IrDA state block. All three ROMs preserve the same four-slot ABI,
-callback shapes, byte return and unsafe second-string loop that tests the first
-string's counter. The defect is documented rather than normalized away.
-
-## Current File API usage path
-
-For A000 display clearing and the distinction between the raw System 3 trap and
-the BetaWise scrolling wrapper, use
-[`clear-screen-closure.md`](clear-screen-closure.md).
-
-For application development, start with
-[`file-api-current-reference.md`](file-api-current-reference.md) for the core
-namespace/token/descriptor lifecycle, `min_size`, live mirrors, passwords,
-dynamic descriptors and A200–A208 clipboard editing. The A1A8 SDK consolidation
-is recorded separately in
-[`filegetcurrentfile-closure.md`](filegetcurrentfile-closure.md), while the deeper
-A1A0/A1A8 research evidence remains in
-[`file-core-operations.md`](file-core-operations.md). Use the focused clipboard
-closure documents for A20C–A228 until those later members are folded into the
-single current-reference narrative.
-
-The A22C–A234 selected-applet context is documented separately in
-[`applet-selection-closure.md`](applet-selection-closure.md), because it belongs
-to dispatcher/SmartApplet state rather than the File or clipboard API.
-
-For cross-applet discovery and messaging, use
-[`applet-runtime-api-closure.md`](applet-runtime-api-closure.md). A238's
-SDK-facing consolidation, prefix-search semantics, const input and 32-bit
-start-index/return correction are recorded separately in
-[`appletfindbyname-closure.md`](appletfindbyname-closure.md). A23C's SDK-facing
-consolidation and the supersession of the old 8-bit return are recorded in
-[`appletfindbyid-closure.md`](appletfindbyid-closure.md). A240's validated
-runtime-index rules, 36-byte name-field copy and byte-only return contract are
-recorded in [`appletgetname-closure.md`](appletgetname-closure.md). A244's SDK
-consolidation, target validation, message normalization, byte-only return and
-OS-owned A5/current-applet context transition are recorded in
-[`appletsendmessage-closure.md`](appletsendmessage-closure.md).
-
-For the immediately following runtime services, use
-[`password-token-group-runtime-closure.md`](password-token-group-runtime-closure.md).
-It separates the A248/A24C/A250/A258 master/file-password runtime state from the
-A254 File API token-group helper instead of treating numeric adjacency as one
-subsystem. A248's SDK-facing consolidation, byte-only return contract and
-neutral-name policy are recorded separately in
-[`sys-a248-closure.md`](sys-a248-closure.md).
-
-The A25C global-service dispatcher is documented in
-[`system-service-dispatch-closure.md`](system-service-dispatch-closure.md).
-Its neutral name and unresolved bit-0–2 service labels are intentional.
-
-The A260–A270 selection-block mask services are documented in
-[`applet-selection-mask-closure.md`](applet-selection-mask-closure.md). The
-32-bit aggregate mask and the distinct clear-all/clear-one operations are part
-of the contract.
-
-The A274 printer-selection UI is documented in
-[`printer-selection-closure.md`](printer-selection-closure.md). Its AS3000 and
-NEO record sets are intentionally documented separately because they differ in
-both available printer families and validation flow.
-
-The A27C packed-record cursor is documented in
-[`packed-record-cursor-closure.md`](packed-record-cursor-closure.md). Its
-five-pointer contract is closed, while the original symbol and the semantic
-names of the first two record fields intentionally remain unresolved.
-
-The complementary A280 packed-record writer is documented in
-[`packed-record-writer-closure.md`](packed-record-writer-closure.md). It shares
-the neutral field labels, writes exact payload bytes, leaves odd padding
-untouched, and advances the cursor with 16-bit even rounding.
-
-The A284 packed-record search is documented in
-[`packed-record-search-closure.md`](packed-record-search-closure.md). It searches
-for the first exact neutral-field pair, exposes optional size/payload outputs,
-and documents the zero sentinel, cursor-on-failure, and 16-bit wrap behavior.
-
-The A288 transport payload-limit getter is documented in
-[`transport-payload-limit-closure.md`](transport-payload-limit-closure.md). Its
-16-bit return width, modular subtraction, dynamic default and neutral naming are
-part of the contract; the emulator-first regression remains specified but not
-executed.
-
-The A28C IrDA singleton-state initializer is documented in
-[`irda-state-init-closure.md`](irda-state-init-closure.md). Its mandatory and
-optional callbacks, partial mutation on error, byte return and cross-ROM
-secondary-string overflow are part of the current contract.
-
-Use the focused closure notes when exact evidence, historical genealogy, ROM
-addresses, raw errors, generation-specific quirks, or safety edge cases matter.
-
-## Traceability rule for future work
-
-When a new block is closed, update all applicable layers in the same milestone:
-
-1. implementation/stub/header if ready for use;
-2. closure/current-reference document with the complete contract;
-3. this index;
-4. README;
-5. project ABI map and master bitacora in Google Drive.
-
-If later evidence corrects an earlier conclusion, preserve the research history
-where useful but make the canonical reference state the correction explicitly.
+Destructive operations are documented explicitly. File/clipboard/password
+experiments should use disposable emulator state before hardware. No ROM image,
+proprietary binary, password or user data belongs in this repository.
