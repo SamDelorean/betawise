@@ -25,6 +25,8 @@ uint32_t SYS_A1B0(uint16_t file_id);
 /*
  * Ordinary 16-bit tokens return current_size. Selectors 0xFC..0xFF access
  * confirmed active/global accounting variants documented by the SDK notes.
+ * Ordinary-token and 0xFC resolution failures preserve the resolver-provided
+ * auxiliary result; callers must not assume that every failure returns zero.
  */
 uint32_t SYS_A1B4(uint16_t file_id_or_selector);
 
