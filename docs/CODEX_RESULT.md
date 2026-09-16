@@ -17,7 +17,17 @@ The structurally consistent repair candidate is therefore direct declarations in
 
 A further audit of A1D0/A1D4/A1D8/A1DC resolves an earlier umbrella-header candidate without source changes: `file_password_state.h` explicitly states that reliable original System 3 public symbols have **not** been recovered and intentionally retains neutral `SYS_Axxx` names. `syscall.c` likewise retains `SYS_A1D0` through `SYS_A1DC`. Their absence from `os3k.h` is therefore **not currently a demonstrated public-SDK visibility defect**. Do not expose them merely because their mechanical contracts are closed. This supersedes earlier inventory language that treated `file_password_state.h` as a candidate umbrella/public-header gap.
 
-A name-provenance audit of A1A0/A1A8 adds an important distinction: `FileSmashFile` and `FileGetCurrentFile` are current SDK names, but repository history does not presently establish them as recovered historical BetaWise spellings. Commit `9f474207db34685d96e57753bee88dbc7d7dc6e2` introduced those names in 2026 from neutral veneers; immediately before the rename A1A0 explicitly said `historical-name correlation pending`. Keep their closed mechanical contracts separate from the weaker historical-name claim. Until independent historical evidence is found, treat these as reconstruction-assigned/descriptive names and do not use them as controls for promoting other neutral `SYS_Axxx` contracts into the historical public SDK.
+### Corrected A1A0/A1A8 name provenance
+
+An earlier continuity paragraph incorrectly classified `FileSmashFile` and `FileGetCurrentFile` as reconstruction-assigned/descriptive names merely because commit `9f474207db34685d96e57753bee88dbc7d7dc6e2` performs the modern veneer rename. That conclusion is superseded.
+
+The primary historical evidence had already been recorded in `docs/file-core-operations.md` by commit `7531b63142385c0c1c5053a30b726f1746e6b519`: the original AS3000 2000 `FileModule.c` / `FileModule.h` contains both `FileSmashFile` and `FileGetCurrentFile`. The modern handlers were independently matched across AS3000 2005, NEO 2005, and NEO 2013 firmware, with behavior/ABI confidence A and name-continuity confidence B (strong). Commit `9f474207...` is therefore the integration point for historically grounded names, not their evidentiary origin.
+
+Classify both as:
+
+`PUBLIC_COMPILATION_SURFACE / HISTORICAL_AS3000_NAME_RECOVERED / MODERN_OS3K_NAME_CONTINUITY_STRONG_NOT_SYMBOL-TABLE-PROVEN`
+
+The modern ABI evolution remains explicit: A1A0 returns a canonical 16-bit token although historical `FileSmashFile` returned `void`; A1A8 returns the modern canonical 16-bit token rather than the historical 1-based `UInt8` file number. Historical name genealogy must not be confused with byte-for-byte ABI identity.
 
 ## Architectural rule
 
@@ -35,7 +45,7 @@ Reconcile each contract individually as:
 
 Do not create a parallel subheader-based public SDK architecture.
 
-Historical symbol provenance is an independent dimension from mechanical ABI closure. A descriptive/reconstruction-assigned symbol may be retained by an explicit extended-SDK compatibility decision, but must not be represented as a recovered original BetaWise symbol without independent evidence.
+Historical symbol provenance is an independent dimension from mechanical ABI closure. A descriptive/reconstruction-assigned symbol may be retained by an explicit extended-SDK compatibility decision, but must not be represented as a recovered original BetaWise symbol without independent evidence. Conversely, a modern veneer rename is not evidence that the name itself was invented during reconstruction when primary historical source already establishes the name genealogy.
 
 ## ABI/SDK guardrails
 
@@ -59,4 +69,4 @@ Do not mark a source/header change `BUILD_VALIDATED` unless both commands actual
 
 ## Next safe frontier
 
-Continue the closed-contract consistency audit using historical symbol provenance as a discriminator. Prefer demonstrated public-name/header asymmetries such as A20C/A210/A214. Where the focused header itself says original public names are unrecovered, as for A1D0-A1DC, retain the neutral reconstruction surface and do not manufacture a public API. Also audit current named veneers introduced during reconstruction so descriptive SDK names are not accidentally documented as recovered vendor spellings.
+Continue the closed-contract consistency audit using historical symbol provenance as a discriminator. Prefer demonstrated public-name/header asymmetries such as A20C/A210/A214. Where the focused header itself says original public names are unrecovered, as for A1D0-A1DC, retain the neutral reconstruction surface and do not manufacture a public API. Audit current named veneers against all available primary historical-source notes before classifying them as reconstruction-assigned; the date of the veneer rename alone is insufficient provenance evidence.
