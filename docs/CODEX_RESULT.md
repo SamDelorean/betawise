@@ -2,18 +2,36 @@
 
 ## Current audit state
 
-The SDK/ABI audit is active on `sdk/abi-automation`. This file previously remained at the placeholder `Pending.` even though the branch already contained the completed A-line reconstruction and subsequent ABI/documentation reconciliation work. That placeholder was stale continuity metadata, not evidence that the audit had not run.
+The SDK/ABI audit is active on `sdk/abi-automation`. The continuity result is maintained as an operational summary; detailed evidence remains in the dated audit documents.
 
 ## Latest safe reconciliation
 
-The current branch tip before this update was `dd45803ebe2ceb79ed9da07ec73c146c990a5e88` (`docs: reconcile AS3000 physical file storage evidence`). The File allocator/storage documentation imported from the divergent `master` history has now been reconciled selectively into the audit corpus without merging or rebasing `master`.
+The current audit has established a traceable Clipboard declaration-surface inconsistency without changing source/header files:
 
-Safe conclusions carried forward:
+- Git history shows `ClipboardSet`, `ClipboardGet`, and `ClipboardClear` were assigned directly to A20C/A210/A214 in `syscall.c` in 2022, before the 2026 focused reconstruction header existed.
+- The mechanically closed A20C/A210/A214 signatures are now documented in `file_clipboard_buffer.h`.
+- `os3k.h` still does not declare those historical direct-veneer symbols.
+- No evidence currently indicates an `os3k.c` wrapper layer for them; `syscall.c` exports the symbols directly.
 
-- AS3000 file payload storage is writable SRAM-backed storage; Flash remains firmware/application storage.
-- The independent System 3 documentation corroborates the reconstructed allocator minimum of 512 characters (`0x200`).
-- Later physical allocator evidence supersedes earlier provisional unknowns about exact allocator pool/placement/compaction behavior; older documents must not be treated as reopening those resolved mechanics.
-- Allocator mechanics and file-system validation remain distinct layers; allocator evidence alone does not justify stronger public File API semantics or vendor names.
+The structurally consistent repair candidate is therefore direct declarations in the existing BetaWise `os3k.h` organization, not inclusion of reconstructed focused headers.
+
+A further audit of A1D0/A1D4/A1D8/A1DC resolves an earlier umbrella-header candidate without source changes: `file_password_state.h` explicitly states that reliable original System 3 public symbols have **not** been recovered and intentionally retains neutral `SYS_Axxx` names. `syscall.c` likewise retains `SYS_A1D0` through `SYS_A1DC`. Their absence from `os3k.h` is therefore **not currently a demonstrated public-SDK visibility defect**. Do not expose them merely because their mechanical contracts are closed. This supersedes earlier inventory language that treated `file_password_state.h` as a candidate umbrella/public-header gap.
+
+## Architectural rule
+
+Preserve the original BetaWise organization unless concrete evidence requires correction:
+
+- reconstructed ABI evidence determines the mechanical syscall contract;
+- `os3k.h` is the historical public C/SDK declaration surface;
+- `syscall.c` contains A-line veneers;
+- `os3k.c` contains wrappers/adaptations where the historical SDK requires them;
+- reconstructed focused headers are evidence/reconstruction artifacts, not automatic public subheaders.
+
+Reconcile each contract individually as:
+
+`closed ABI contract <-> syscall.c veneer <-> os3k.c wrapper if historically required <-> historical/direct os3k.h representation`
+
+Do not create a parallel subheader-based public SDK architecture.
 
 ## ABI/SDK guardrails
 
@@ -21,20 +39,20 @@ Safe conclusions carried forward:
 - Do not reopen a closed syscall without a concrete dependency or contradictory primary evidence.
 - Do not expose A468/A46C absent a repository consumer plus independently justified exact C contract.
 - Treat A0B4 cautiously; mechanical confidence alone is insufficient for a public C prototype.
-- Preserve the BetaWise layering distinction between raw veneers, wrappers/adapters, and the public `os3k.h` surface.
-- Auxiliary reconstruction headers are evidence artifacts first; their existence does not by itself require inclusion from `os3k.h`.
+- `CERRADA` is mechanical ABI closure, not proof of recovered vendor symbol or public SDK status.
+- Neutral `SYS_Axxx` names remain neutral unless historical/public identity is independently evidenced.
 
 ## Build status
 
-This update is documentation-only. No m68k compilation was executed for this update and it is **not** `BUILD_VALIDATED`.
+The latest audit work is documentation-only. No m68k compilation was executed and nothing new is `BUILD_VALIDATED`.
 
-Any future change to `os3k.h`, `os3k.c`, or syscall veneers remains pending the required m68k build gates:
+Any future change to `os3k.h`, `os3k.c`, or syscall veneers remains pending:
 
 - `make -C os3k clean all`
 - one representative applet clean build
 
-Do not mark such a source/header change `BUILD_VALIDATED` unless both commands actually run and pass on the configured Linux/m68k toolchain.
+Do not mark a source/header change `BUILD_VALIDATED` unless both commands actually run and pass on the configured Linux/m68k toolchain.
 
 ## Next safe frontier
 
-Continue the closed-contract consistency audit by comparing mechanically `CERRADA` entries against `syscall.c`, historical wrappers/adapters in `os3k.c`, the public declarations/types in `os3k.h`, and auxiliary reconstruction headers. Select only one small, mechanically justified inconsistency per source-changing iteration. If no exact public C contract is independently demonstrated, prefer a documentation-only finding over exposing a guessed API.
+Continue the closed-contract consistency audit using historical symbol provenance as a discriminator. Prefer demonstrated public-name/header asymmetries such as A20C/A210/A214. Where the focused header itself says original public names are unrecovered, as for A1D0-A1DC, retain the neutral reconstruction surface and do not manufacture a public API.
