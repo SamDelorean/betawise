@@ -17,6 +17,8 @@ The structurally consistent repair candidate is therefore direct declarations in
 
 A further audit of A1D0/A1D4/A1D8/A1DC resolves an earlier umbrella-header candidate without source changes: `file_password_state.h` explicitly states that reliable original System 3 public symbols have **not** been recovered and intentionally retains neutral `SYS_Axxx` names. `syscall.c` likewise retains `SYS_A1D0` through `SYS_A1DC`. Their absence from `os3k.h` is therefore **not currently a demonstrated public-SDK visibility defect**. Do not expose them merely because their mechanical contracts are closed. This supersedes earlier inventory language that treated `file_password_state.h` as a candidate umbrella/public-header gap.
 
+A name-provenance audit of A1A0/A1A8 adds an important distinction: `FileSmashFile` and `FileGetCurrentFile` are current SDK names, but repository history does not presently establish them as recovered historical BetaWise spellings. Commit `9f474207db34685d96e57753bee88dbc7d7dc6e2` introduced those names in 2026 from neutral veneers; immediately before the rename A1A0 explicitly said `historical-name correlation pending`. Keep their closed mechanical contracts separate from the weaker historical-name claim. Until independent historical evidence is found, treat these as reconstruction-assigned/descriptive names and do not use them as controls for promoting other neutral `SYS_Axxx` contracts into the historical public SDK.
+
 ## Architectural rule
 
 Preserve the original BetaWise organization unless concrete evidence requires correction:
@@ -32,6 +34,8 @@ Reconcile each contract individually as:
 `closed ABI contract <-> syscall.c veneer <-> os3k.c wrapper if historically required <-> historical/direct os3k.h representation`
 
 Do not create a parallel subheader-based public SDK architecture.
+
+Historical symbol provenance is an independent dimension from mechanical ABI closure. A descriptive/reconstruction-assigned symbol may be retained by an explicit extended-SDK compatibility decision, but must not be represented as a recovered original BetaWise symbol without independent evidence.
 
 ## ABI/SDK guardrails
 
@@ -55,4 +59,4 @@ Do not mark a source/header change `BUILD_VALIDATED` unless both commands actual
 
 ## Next safe frontier
 
-Continue the closed-contract consistency audit using historical symbol provenance as a discriminator. Prefer demonstrated public-name/header asymmetries such as A20C/A210/A214. Where the focused header itself says original public names are unrecovered, as for A1D0-A1DC, retain the neutral reconstruction surface and do not manufacture a public API.
+Continue the closed-contract consistency audit using historical symbol provenance as a discriminator. Prefer demonstrated public-name/header asymmetries such as A20C/A210/A214. Where the focused header itself says original public names are unrecovered, as for A1D0-A1DC, retain the neutral reconstruction surface and do not manufacture a public API. Also audit current named veneers introduced during reconstruction so descriptive SDK names are not accidentally documented as recovered vendor spellings.
