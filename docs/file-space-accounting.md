@@ -41,6 +41,23 @@ This supersedes the earlier neutral project label
 `accounting/reservation_threshold`. The accounting mechanics previously derived
 from A1AC remain correct; the field now has a stronger name and origin.
 
+### Correlation with the official System 3 documentation
+
+The 2005 *AlphaSmart 3000 System 3 Addendum* independently exposes the same
+minimum/maximum model to users through AlphaSmart Manager. It states that
+AlphaWord Plus minimum and maximum file sizes are configurable and gives these
+limits:
+
+- minimum file size: 512 characters;
+- default maximum: 51,200 characters;
+- maximum configurable size: 102,400 characters.
+
+The public minimum of 512 characters is exactly `0x200`, independently matching
+the floor present in A1E8. The manual also explains that total device space is
+shared: increasing file capacity can reduce space available to other files and
+data. This is consistent with the reconstructed dynamic allocator/accounting
+model rather than a collection of permanently fixed buffers.
+
 ## A1B0 — unused capacity already assigned to one descriptor
 
 ```c
@@ -59,7 +76,7 @@ current maximum allocation, not total system free space.
 AlphaWord Plus contains thirteen A1B0 callers and AlphaQuiz contains two.
 Callers promote a 16-bit token into the ABI slot. AlphaWord Plus also uses
 reserved token `0x00CB`, proving the operation applies to the clipboard
- descriptor as well.
+descriptor as well.
 
 ## A1BC — descriptor maximum capacity
 
@@ -189,4 +206,6 @@ No emulator or hardware regression is claimed as already executed.
 - A1B0 mechanics: closed, confidence A; public name pending.
 - A1BC mechanics: closed, confidence A; public name pending.
 - A1AC mechanics: closed, confidence A; public name pending.
-- Descriptor `+0x10 = min_size`: closed, confidence A from A1E8 + ROM diagnostic.
+- Descriptor `+0x10 = min_size`: closed, confidence A from A1E8 + ROM diagnostic
+  and independently consistent with the official System 3 minimum-file-size
+  documentation.
