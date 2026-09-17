@@ -28,17 +28,27 @@ Perform one low-risk SDK consistency audit against the already reconstructed OS3
 
 The sequential A-line discovery phase through A470 is complete. Do not search for new traps merely to extend the sequence. Instead, identify exactly one mechanically closed contract whose current public SDK representation is missing, stale, duplicated, or inconsistent with later source-first evidence.
 
-## Starting evidence
+## Starting evidence and architecture authority
 
 Use these as primary project state:
 
 - `docs/abi-reconstruction-index.md`
 - `docs/os3k-abi-consolidation-2026-09-11.md`
 - the relevant closure/source-first document for the candidate
+- `os3k/syscall.c`
+- `os3k/os3k.c`
 - `os3k/os3k.h`
-- auxiliary headers under `os3k/`
+- BetaWise source/history for the affected API family
 
-Already reconciled and not to be repeated: A32C/A334, A0B8-A0D0, the closed NEO13 raw batch A3B4/A3B8/A3BC/A3C0/A404/A41C/A438/A470, and A250.
+**Publication authority is the original BetaWise structure and history.** Reconstructed focused headers under `os3k/` (for example `file_*.h`, `applet_*.h`, transport/state headers, and similar reconstruction artifacts) are secondary mechanical ABI evidence only. They do not define a replacement SDK architecture, do not decide whether a function belongs in the public umbrella header, and must not be included from `os3k.h` merely to expose reconstructed contracts.
+
+For every publication decision, cross-audit:
+
+`BetaWise source/history ↔ syscall.c veneer ↔ os3k.c wrapper/adaptation (if any) ↔ os3k.h public surface`
+
+A neutral `SYS_Axxx` contract in a reconstructed focused header is not sufficient evidence for public promotion. Conversely, a historically recovered BetaWise veneer name or an existing BetaWise wrapper is positive provenance that may justify checking for a missing direct declaration in `os3k.h`, provided the exact C contract is mechanically closed.
+
+Already reconciled and not to be repeated: A32C/A334, A0B8-A0D0, the closed NEO13 raw batch A3B4/A3B8/A3BC/A3C0/A404/A41C/A438/A470, A250, and the publication-boundary audits already recorded for the neutral filesystem/transport ranges. A20C/A210/A214 (`ClipboardSet`/`ClipboardGet`/`ClipboardClear`) remain the demonstrated public-header repair candidate; any reapplication must be a zero-unrelated-diff edit and remains `PENDING_M68K_BUILD` until both build gates actually pass.
 
 ## Candidate selection rules
 
@@ -46,8 +56,8 @@ Prefer a candidate that:
 
 1. is already `CERRADA` with mechanically demonstrated argument and return widths;
 2. requires no new semantic guess;
-3. has a clear inconsistency between canonical documentation, `os3k.h`, and/or an auxiliary header;
-4. can be corrected without wrappers or unrelated architectural changes;
+3. has a clear inconsistency between canonical documentation and the actual BetaWise public structure/history;
+4. can be corrected without new wrappers or unrelated architectural changes;
 5. is smaller and safer than alternative candidates.
 
 Do not promote `CERRADA_CON_LÍMITE_DE_EVIDENCIA` entries.
@@ -62,9 +72,9 @@ If the safest result is that no additional declaration should be exposed, make n
 
 1. Verify the global Linux workspace state and complete/confirm the Codex setup scope above before any unattended source-editing iteration.
 2. In BetaWise, require branch `sdk/abi-automation`, a clean worktree, and synchronization with `origin/sdk/abi-automation` before editing.
-3. Audit closed contracts against public/auxiliary SDK declarations and choose one candidate only.
+3. Audit one candidate against BetaWise source/history, `syscall.c`, `os3k.c`, `os3k.h`, and the mechanically closed ABI evidence. Do not use a reconstructed focused header as publication authority.
 4. Trace chronology when documentation disagrees; later evidence does not automatically win unless it is technically better supported.
-5. Make the minimum coherent correction.
+5. Make the minimum coherent correction. Public declarations belong directly in `os3k.h` when that matches the historical BetaWise architecture; do not create or include a parallel public-header hierarchy.
 6. Run:
    - `make -C os3k clean all`
    - one representative applet clean build
@@ -72,7 +82,7 @@ If the safest result is that no additional declaration should be exposed, make n
 8. Write a concise result to `docs/CODEX_RESULT.md` including: candidate, files changed, exact build commands, PASS/FAIL, evidence basis, and next safe frontier.
 9. Include `docs/CODEX_RESULT.md` in the same iteration commit. Commit and push only if the change is evidence-supported, build-valid, and the remote branch can be updated safely without force-push.
 
-Do not call a change `BUILD_VALIDATED` unless both build gates actually ran on the Linux machine and passed.
+Do not call a change `BUILD_VALIDATED` unless both build gates actually ran on the Linux machine and passed. If a safe header repair is prepared outside the m68k build environment, label it `PENDING_M68K_BUILD`; do not convert that state to `BUILD_VALIDATED` from static inspection alone.
 
 ## Cross-project handoff
 
