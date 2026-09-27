@@ -115,3 +115,41 @@ DBG_BIND_RAM_RESTORE:
         TAP
         PSHY
         RTS
+
+
+; Atomic physical RAM byte write for EDIT.
+; Input: A=bank 0..3, B=value, X=lower-half CPU address.
+; The function owns the complete mapping interval so it never relies on
+; workspace visibility while another bank is selected.
+        .globl DBG_BIND_RAM_WRITE
+DBG_BIND_RAM_WRITE:
+        PSHX
+        PULY                    ; Y = target address
+        PSHB                    ; saved byte value
+        TAB                     ; B = requested bank
+        TPA
+        PSHA                    ; saved CCR
+        LDAA    0x0000
+        PSHA                    ; saved PORTA
+
+        ANDA    #0x8f
+        ORAA    #0x40
+        ASLB
+        ASLB
+        ASLB
+        ASLB
+        ANDB    #0x30
+        ABA
+        SEI
+        STAA    0x0000
+
+        TSX                     ; X = first stacked byte (SP+1)
+        LDAA    2,X             ; saved original B value
+        STAA    0,Y
+
+        PULA                    ; restore PORTA
+        STAA    0x0000
+        PULA                    ; restore exact incoming CCR
+        TAP
+        PULB                    ; restore original value
+        RTS
