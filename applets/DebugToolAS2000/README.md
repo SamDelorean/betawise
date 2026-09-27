@@ -90,6 +90,7 @@ The project is controlled by these documents:
 - `INCREMENT4_MEM_RESULT.md` — MEM implementation, size and MAME evidence.
 - `INCREMENT5_GOTO_RESULT.md` — GOTO parser, keyboard path and MAME evidence.
 - `INCREMENT6_EDIT_RESULT.md` — HEX/ASCII EDIT, protected-write policy and MAME evidence.
+- `INCREMENT7_CALL_RESULT.md` — native HC11 CALL engine, stock/DynFS tests and MAME evidence.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -113,11 +114,12 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 4 — MEM only: **CLOSED / PASS**
 - Increment 5 — GOTO only: **CLOSED / PASS**
 - Increment 6 — EDIT only: **CLOSED / PASS**
-- Increment 7 — CALL only: **NEXT**
+- Increment 7 — CALL only: **CLOSED / PASS**
+- Increment 8 — INFO only: **NEXT**
 
-Increment 6 edits the selected physical RAM byte in HEX or ASCII, uses an
-atomic banked-RAM write binding, and refuses upper-half/ROM writes. Tests proved
-first-nibble non-write, second-nibble commit, banked targets, ASCII mode,
-physical-keyboard Tab switching, protected ROM and MEM redraw. Current measured
-code is 675 bytes core + 94 bytes diagnostic binding; fixed workspace remains
+Increment 7 implements the native HC11 CALL probe with A/B(D)/X/Y inputs and
+A/B/X/Y/CCR capture. The stack-built RTS mechanism passed a synthetic target,
+stock $9350 and the actual placement-free DynFS FS_BLOCK_MAP source, plus a
+full physical-keyboard CALL path in as2kdiag. Current measured code is
+1039 bytes core + 102 bytes diagnostic binding; fixed workspace remains
 30 bytes.
