@@ -18,6 +18,7 @@
         .word DBG_BIND_KEY_GETCHAR
         .word DBG_BIND_RAM_ENTER
         .word DBG_BIND_RAM_RESTORE
+        .word DBG_BIND_RAM_WRITE
         .word DBG_BIND_STOCK_FSLOT
         .word DBG_BIND_STOCK_VIEW
         .word DBG_BIND_STOCK_CURSOR
