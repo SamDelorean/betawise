@@ -16,10 +16,23 @@
         .extern DBG_BIND_BYTE_TO_HEX
         .extern DBG_BIND_KEY_DEQUEUE
 
-        ; Mapping adapter contract, implementation intentionally late-bound.
-        ; ENTER_RAM receives requested bank in A (0..3).
-        ; It must make banked RAM visible and preserve enough environment
-        ; state for RESTORE to reinstate the prior mapping.
+        ; Immediate, non-nestable RAM mapping pair used by MEM/EDIT.
+        ;
+        ; DBG_BIND_RAM_ENTER:
+        ;   input A = requested bank 0..3
+        ;   preserves X
+        ;   may clobber A/B/Y/CCR
+        ;   makes lower-half RAM visible and leaves a private mapping frame on
+        ;   the internal CPU stack for the matching RESTORE.
+        ;
+        ; DBG_BIND_RAM_RESTORE:
+        ;   must be the matching next mapping operation;
+        ;   preserves B and X;
+        ;   restores the pre-ENTER mapping and CCR and removes the private
+        ;   mapping frame.
+        ;
+        ; Portable code must not access DebugTool workspace between ENTER and
+        ; RESTORE because that workspace may itself live in banked memory.
         .extern DBG_BIND_RAM_ENTER
         .extern DBG_BIND_RAM_RESTORE
 
