@@ -153,3 +153,15 @@ DBG_BIND_RAM_WRITE:
         TAP
         PULB                    ; restore original value
         RTS
+
+
+; Environment mapping helpers used by CALL.
+        .globl DBG_BIND_ENV_GET
+DBG_BIND_ENV_GET:
+        LDAA    0x0000
+        RTS
+
+        .globl DBG_BIND_ENV_SET
+DBG_BIND_ENV_SET:
+        STAA    0x0000
+        RTS
