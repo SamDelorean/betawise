@@ -355,7 +355,7 @@ firmware routines.
 
 ### Core mechanism
 
-Status: **CANDIDATE, architecture frozen**
+Status: **VERIFIED in Increment 7**
 
 Contract:
 
@@ -368,6 +368,16 @@ Contract:
 
 No BetaWise six-`uint32_t` ABI and no 68k A-line syscall mechanism are
 dependencies.
+
+Increment 7 proved the same native engine against:
+
+- a synthetic A/B/X/Y verifier/return target;
+- stock `$9350`;
+- the actual placement-free DynFS `FS_BLOCK_MAP` source assembled into the
+  disposable MAME test image.
+
+The diagnostic binding also exposes verified PORTA snapshot/restore helpers
+`DBG_BIND_ENV_GET/SET`. Final resident target addresses remain late-bound.
 
 ### DebugTool entry/exit
 
