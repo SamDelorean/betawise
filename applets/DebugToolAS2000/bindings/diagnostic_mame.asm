@@ -30,18 +30,12 @@
         .set DBG_BIND_KEY_DEQUEUE,   0x938C
 
         ; Stock raw-key -> character path.
-        ; $A33C consumes the raw queue code in A and publishes the translated
-        ; character through stock byte $0070 when V=0.
+        ; $A33C consumes the raw queue code in A and returns the translated
+        ; character directly in A with V=0. Stock caller $90B9 immediately
+        ; TABs this returned A into the LCD byte output path.
         .globl DBG_BIND_KEY_CHAR
 DBG_BIND_KEY_CHAR:
-        JSR     0xA33C
-        BVS     DBG_BIND_KEY_CHAR_BAD
-        LDAA    0x0070
-        CLV
-        RTS
-DBG_BIND_KEY_CHAR_BAD:
-        SEV
-        RTS
+        JMP     0xA33C
 
         ; Stock editor loops call $89B6 before consuming $938C.  Mirror that
         ; exact pump/dequeue/translate sequence behind one portable binding.
