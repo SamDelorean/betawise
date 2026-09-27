@@ -82,3 +82,15 @@ Increment 6 delta versus Increment 5 is **+226 B core** and **+40 B binding**,
 with **0 B RAM growth**. EDIT-specific core cost is **226 B**, inside its
 230-byte hard planning ceiling. Current executable checkpoint is **769 B**
 (core + diagnostic binding).
+
+
+| Increment 7 CALL | 1039 B | 102 B | 30 B | MEM + GOTO + EDIT + native CALL |
+
+Increment 7 delta versus Increment 6 is **+364 B core** and **+8 B binding**,
+with **0 B RAM growth**. The CALL state/parser + native execute/capture engine
+occupies **215 B**, inside the 260-byte CALL hard planning ceiling. Its compact
+interaction/result wrapper is accounted under the separate UI/dispatcher and
+string/output budget categories.
+
+Current executable checkpoint is **1141 B** (core + diagnostic binding), inside
+the **ACCEPTABLE 1025-1536 B** project range.
