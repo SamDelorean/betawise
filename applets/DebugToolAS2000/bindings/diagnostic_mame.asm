@@ -29,6 +29,20 @@
         .globl DBG_BIND_KEY_DEQUEUE
         .set DBG_BIND_KEY_DEQUEUE,   0x938C
 
+        ; Stock raw-key -> character path.
+        ; $A33C consumes the raw queue code in A and publishes the translated
+        ; character through stock byte $0070 when V=0.
+        .globl DBG_BIND_KEY_CHAR
+DBG_BIND_KEY_CHAR:
+        JSR     0xA33C
+        BVS     DBG_BIND_KEY_CHAR_BAD
+        LDAA    0x0070
+        CLV
+        RTS
+DBG_BIND_KEY_CHAR_BAD:
+        SEV
+        RTS
+
         .globl DBG_BIND_STOCK_FSLOT
         .set DBG_BIND_STOCK_FSLOT,   0x018E
         .globl DBG_BIND_STOCK_VIEW
