@@ -46,6 +46,11 @@
         .extern DBG_BIND_RAM_ENTER
         .extern DBG_BIND_RAM_RESTORE
 
+        ; Atomic banked-RAM byte write used by EDIT.
+        ; input A = bank 0..3, B = byte value, X = lower-half CPU address.
+        ; May clobber A/X/Y/CCR. The mapping is restored before return.
+        .extern DBG_BIND_RAM_WRITE
+
         ; Stock/DynFS compatibility-state references.
         .extern DBG_BIND_STOCK_FSLOT
         .extern DBG_BIND_STOCK_VIEW
