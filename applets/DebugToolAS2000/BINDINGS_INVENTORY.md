@@ -163,6 +163,13 @@ Decision:
 
 ## 3. Keyboard dependency
 
+### `ROM_KEY_SCAN_PUMP` -> stock `$89B6`
+
+Status: **VERIFIED**
+
+Retained stock keyboard loops call this before dequeuing. A DebugTool polling
+loop must not treat `$938C` alone as a complete keyboard service.
+
 ### `ROM_KEY_DEQUEUE` -> stock `$938C`
 
 Status: **VERIFIED**
@@ -170,22 +177,41 @@ Status: **VERIFIED**
 Observed contract:
 
 - consumes the stock local keyboard ring queue;
-- returns key code in A with V=0 when one is available;
+- returns raw key code in A with V=0 when one is available;
 - returns V=1 when the queue is empty;
 - queue cursors are stock `$008E/$008F`;
 - the retained queue storage is `$0090-$009F`.
 
-Use:
+### `ROM_KEY_TRANSLATE` -> stock `$A33C`
 
-- DebugTool polling/input loop.
+Status: **VERIFIED**
+
+Observed contract:
+
+- input A = raw dequeued key code;
+- returns translated character directly in A with V=0;
+- V=1 means no character translation;
+- stock caller `$90B9` immediately transfers returned A to B and writes it to
+  the LCD, confirming A is the translated character;
+- stock byte `$0070` is raw/dequeued key state, not the translated output.
+
+### DebugTool keyboard service
+
+Status: **VERIFIED**
+
+The diagnostic binding exposes one non-blocking `DBG_BIND_KEY_GETCHAR` that
+performs:
+
+`$89B6 -> $938C -> $A33C`
+
+and returns A=character/V=0 or V=1 when no usable character is available.
 
 Decision:
 
-- DebugTool consumes already-decoded stock keys.
-- Do not scan the keyboard matrix or reproduce debounce/modifier decoding.
+- reuse the complete stock scan/dequeue/translate path;
+- do not reproduce matrix scan, debounce, modifier or character-table logic.
 
-Optional stock `$93A3` peek behavior is not needed by v0 and is not a
-dependency.
+Optional stock `$93A3` queue peek behavior is not needed by v0.
 
 ---
 
