@@ -89,6 +89,7 @@ The project is controlled by these documents:
 - `INCREMENT3_BINDING_RESULT.md` — binding/relocation build evidence.
 - `INCREMENT4_MEM_RESULT.md` — MEM implementation, size and MAME evidence.
 - `INCREMENT5_GOTO_RESULT.md` — GOTO parser, keyboard path and MAME evidence.
+- `INCREMENT6_EDIT_RESULT.md` — HEX/ASCII EDIT, protected-write policy and MAME evidence.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -111,10 +112,12 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 3 — binding interface skeleton: **CLOSED / PASS**
 - Increment 4 — MEM only: **CLOSED / PASS**
 - Increment 5 — GOTO only: **CLOSED / PASS**
-- Increment 6 — EDIT only: **NEXT**
+- Increment 6 — EDIT only: **CLOSED / PASS**
+- Increment 7 — CALL only: **NEXT**
 
-Increment 5 accepts `AAAA` and `b:AAAA`, validates banks 0..3, commits only
-after four address digits, and cancels on Escape without altering committed
-state. The complete physical-keyboard path was validated in `as2kdiag`
-through the stock scan/dequeue/translate chain. Current measured code is
-449 bytes core + 54 bytes diagnostic binding; fixed workspace remains 30 bytes.
+Increment 6 edits the selected physical RAM byte in HEX or ASCII, uses an
+atomic banked-RAM write binding, and refuses upper-half/ROM writes. Tests proved
+first-nibble non-write, second-nibble commit, banked targets, ASCII mode,
+physical-keyboard Tab switching, protected ROM and MEM redraw. Current measured
+code is 675 bytes core + 94 bytes diagnostic binding; fixed workspace remains
+30 bytes.
