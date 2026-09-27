@@ -348,9 +348,7 @@ DBG_GOTO_RUN:
         JSR     DBG_BIND_LCD_PUTS
 
 DBG_GOTO_KEY_LOOP:
-        JSR     DBG_BIND_KEY_DEQUEUE
-        BVS     DBG_GOTO_KEY_LOOP
-        JSR     DBG_BIND_KEY_CHAR
+        JSR     DBG_BIND_KEY_GETCHAR
         BVS     DBG_GOTO_KEY_LOOP
 
         CMPA    #0x0d
