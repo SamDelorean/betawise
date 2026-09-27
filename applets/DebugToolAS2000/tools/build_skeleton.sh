@@ -14,6 +14,15 @@ mkdir -p "$OUT"
 
 INC="-I$ROOT/include"
 
+# Portable core/interface must not contain 16-bit absolute addresses.
+if grep -En '0x[0-9A-Fa-f]{4}|\\$[0-9A-Fa-f]{4}' \
+  "$ROOT/core/debugtool_core.asm" \
+  "$ROOT/include/debugtool_state.inc" \
+  "$ROOT/include/debugtool_bindings.inc"; then
+  echo "ERROR: absolute 16-bit address leaked into portable core/interface" >&2
+  exit 1
+fi
+
 "$AS" -m68hc11 $INC -o "$OUT/core.o" "$ROOT/core/debugtool_core.asm"
 "$AS" -m68hc11 $INC -o "$OUT/binding.o" "$ROOT/bindings/diagnostic_mame.asm"
 "$AS" -m68hc11 $INC -o "$OUT/smoke.o" "$ROOT/tests/binding_smoke.asm"
