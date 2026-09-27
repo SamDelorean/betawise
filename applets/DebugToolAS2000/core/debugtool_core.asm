@@ -220,10 +220,8 @@ DBG_MEM_ASCII_LOOP:
 ;   b:AAAA    select RAM bank 0..3 plus 16-bit CPU address
 ;
 ; Parser consumes translated characters. No text buffer is allocated.
-; DBG_GOTO_ACCEPT_A returns:
-;   B=0 continue / ignored
-;   B=1 committed
-;   B=2 cancelled
+; DBG_GOTO_ACCEPT_A returns B=0 while collecting/ignoring input and B=1 when
+; the transaction finishes by commit or Escape cancellation.
 ; ===========================================================================
 
         .globl DBG_GOTO_RESET
@@ -232,14 +230,15 @@ DBG_MEM_ASCII_LOOP:
 
         .type DBG_GOTO_RESET, @function
 DBG_GOTO_RESET:
+        LDX     #DBG_WS_BASE
         LDAA    #DBG_MODE_GOTO
-        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        STAA    DBG_WS_UI_MODE,X
         CLRA
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        STAA    DBG_WS_INPUT_DIGITS,X
+        CLRB
+        STD     DBG_WS_INPUT_VALUE,X
         LDAA    #DBG_INPUT_NO_BANK
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        STAA    DBG_WS_INPUT_BANK,X
         RTS
         .size DBG_GOTO_RESET, .-DBG_GOTO_RESET
 
@@ -250,18 +249,11 @@ DBG_HEX_TO_NIBBLE_A:
         BLO     DBG_HEX_BAD
         CMPA    #':'
         BLO     DBG_HEX_DIGIT
+        ANDA    #0xdf                   ; lowercase -> uppercase
         CMPA    #'A'
         BLO     DBG_HEX_BAD
         CMPA    #'G'
-        BLO     DBG_HEX_UPPER
-        CMPA    #'a'
-        BLO     DBG_HEX_BAD
-        CMPA    #'g'
         BHS     DBG_HEX_BAD
-        SUBA    #'a'-10
-        CLV
-        RTS
-DBG_HEX_UPPER:
         SUBA    #'A'-10
         CLV
         RTS
@@ -284,77 +276,69 @@ DBG_GOTO_ACCEPT_A:
 
         JSR     DBG_HEX_TO_NIBBLE_A
         BVS     DBG_GOTO_CONTINUE
-
-        LDAB    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        LDX     #DBG_WS_BASE
+        LDAB    DBG_WS_INPUT_DIGITS,X
         CMPB    #4
         BHS     DBG_GOTO_CONTINUE
 
-        STAA    DBG_WS_BASE+DBG_WS_TMP0
-        LDD     DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        STAA    DBG_WS_TMP0,X
+        LDD     DBG_WS_INPUT_VALUE,X
         ASLD
         ASLD
         ASLD
         ASLD
-        ORAB    DBG_WS_BASE+DBG_WS_TMP0
-        STD     DBG_WS_BASE+DBG_WS_INPUT_VALUE
-        INC     DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        ORAB    DBG_WS_TMP0,X
+        STD     DBG_WS_INPUT_VALUE,X
+        INC     DBG_WS_INPUT_DIGITS,X
 
 DBG_GOTO_CONTINUE:
         CLRB
         RTS
 
 DBG_GOTO_COLON:
-        LDAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        LDX     #DBG_WS_BASE
+        LDAA    DBG_WS_INPUT_BANK,X
         CMPA    #DBG_INPUT_NO_BANK
         BNE     DBG_GOTO_CONTINUE
-        LDAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        LDAA    DBG_WS_INPUT_DIGITS,X
         CMPA    #1
         BNE     DBG_GOTO_CONTINUE
-        LDAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
-        BNE     DBG_GOTO_CONTINUE
-        LDAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        LDAA    DBG_WS_INPUT_VALUE+1,X
         CMPA    #4
         BHS     DBG_GOTO_CONTINUE
 
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        STAA    DBG_WS_INPUT_BANK,X
         CLRA
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
-        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        STAA    DBG_WS_INPUT_DIGITS,X
         CLRB
+        STD     DBG_WS_INPUT_VALUE,X
         RTS
 
 DBG_GOTO_ENTER:
-        LDAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        LDX     #DBG_WS_BASE
+        LDAA    DBG_WS_INPUT_DIGITS,X
         CMPA    #4
         BNE     DBG_GOTO_CONTINUE
-
-        LDD     DBG_WS_BASE+DBG_WS_INPUT_VALUE
-        STD     DBG_WS_BASE+DBG_WS_MEM_ADDR
-
-        LDAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        LDD     DBG_WS_INPUT_VALUE,X
+        STD     DBG_WS_MEM_ADDR,X
+        LDAA    DBG_WS_INPUT_BANK,X
         CMPA    #DBG_INPUT_NO_BANK
-        BEQ     DBG_GOTO_COMMIT_MODE
-        STAA    DBG_WS_BASE+DBG_WS_MEM_BANK
-
-DBG_GOTO_COMMIT_MODE:
-        LDAA    #DBG_MODE_MEM
-        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
-        LDAB    #1
-        RTS
+        BEQ     DBG_GOTO_DONE
+        STAA    DBG_WS_MEM_BANK,X
+        BRA     DBG_GOTO_DONE
 
 DBG_GOTO_CANCEL:
+        LDX     #DBG_WS_BASE
+
+DBG_GOTO_DONE:
         LDAA    #DBG_MODE_MEM
-        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
-        LDAB    #2
+        STAA    DBG_WS_UI_MODE,X
+        LDAB    #1
         RTS
 
         .size DBG_GOTO_ACCEPT_A, .-DBG_GOTO_ACCEPT_A
 
 ; Blocking user-facing GOTO transaction.
-; It consumes decoded stock keyboard events through the environment binding,
-; echoes printable translated characters, and returns to MEM after commit or
-; Escape cancellation.
         .type DBG_GOTO_RUN, @function
 DBG_GOTO_RUN:
         JSR     DBG_GOTO_RESET
@@ -366,7 +350,6 @@ DBG_GOTO_RUN:
 DBG_GOTO_KEY_LOOP:
         JSR     DBG_BIND_KEY_DEQUEUE
         BVS     DBG_GOTO_KEY_LOOP
-
         JSR     DBG_BIND_KEY_CHAR
         BVS     DBG_GOTO_KEY_LOOP
 
@@ -383,7 +366,6 @@ DBG_GOTO_NO_ECHO:
         JSR     DBG_GOTO_ACCEPT_A
         TSTB
         BEQ     DBG_GOTO_KEY_LOOP
-
         JSR     DBG_MEM_REDRAW
         RTS
 
