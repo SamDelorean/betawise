@@ -230,7 +230,12 @@ The target:
 - must leave SP balanced to its entry value before RTS;
 - may clobber A/B/X/Y/CCR;
 - receives no debugger-owned hidden argument frame;
+- must return with the DebugTool workspace still addressable long enough for
+  the capture stub to store results and restore the saved environment map;
 - is not sandboxed or fault-contained.
+
+Increment 7 validated this contract against a synthetic target, stock ROM
+routine $9350 and the actual placement-free DynFS FS_BLOCK_MAP primitive.
 
 CALL itself does not add a bank field. The target is interpreted in the
 normal CPU execution map supplied by the environment binding. The current
