@@ -43,6 +43,18 @@ DBG_BIND_KEY_CHAR_BAD:
         SEV
         RTS
 
+        ; Stock editor loops call $89B6 before consuming $938C.  Mirror that
+        ; exact pump/dequeue/translate sequence behind one portable binding.
+        .globl DBG_BIND_KEY_GETCHAR
+DBG_BIND_KEY_GETCHAR:
+        JSR     0x89B6
+        JSR     DBG_BIND_KEY_DEQUEUE
+        BVS     DBG_BIND_KEY_GETCHAR_BAD
+        JMP     DBG_BIND_KEY_CHAR
+DBG_BIND_KEY_GETCHAR_BAD:
+        SEV
+        RTS
+
         .globl DBG_BIND_STOCK_FSLOT
         .set DBG_BIND_STOCK_FSLOT,   0x018E
         .globl DBG_BIND_STOCK_VIEW
