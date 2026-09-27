@@ -74,3 +74,26 @@ increment.
 7. Assemble and exercise it in the instrumented AS2000 MAME diagnostic build.
 
 See `PORTING_MAP.md` for the first-pass mapping.
+
+## Controlling documents
+
+The project is controlled by these documents:
+
+- `ARCHITECTURE.md` — frozen CPU/address/calling model and DynFS diagnostic
+  role.
+- `WORKPLAN.md` — rigid increment-by-increment execution order and stop
+  conditions.
+- `PORTING_MAP.md` — mapping from the original BetaWise DebugTool behavior.
+- `SIZE_BUDGET.md` — ROM/RAM ceilings and measurement rules.
+
+If an implementation idea conflicts with these documents, the frozen v0 scope
+and `WORKPLAN.md` take precedence until deliberately revised by the user.
+
+## Integration strategy
+
+The DebugTool core is developed independently of final placement. Absolute ROM
+locations, free-RAM workspace, stock-ROM service entry points and DynFS state
+addresses are supplied through a late binding layer.
+
+This permits the same core to be used first in the diagnostic/current ROM and
+later in the relocated/final ROM without creating a second implementation.
