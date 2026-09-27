@@ -16,6 +16,11 @@
         .extern DBG_BIND_BYTE_TO_HEX
         .extern DBG_BIND_KEY_DEQUEUE
 
+        ; Converts one stock raw keyboard-queue code in A to the firmware's
+        ; translated character in A. V=0 on a character, V=1 when the raw key
+        ; has no character translation.
+        .extern DBG_BIND_KEY_CHAR
+
         ; Immediate, non-nestable RAM mapping pair used by MEM/EDIT.
         ;
         ; DBG_BIND_RAM_ENTER:
