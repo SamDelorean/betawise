@@ -273,25 +273,29 @@ Reason not used:
 
 - MEM/GOTO/EDIT require arbitrary explicit bank selection independent of F1-F8.
 
-### DebugTool RAM-select adapter
+### DebugTool RAM access adapters
 
-Status: **CANDIDATE**
+Status: **VERIFIED**
 
-Required behavior:
+Increment 4 proved the immediate/non-nestable RAM ENTER/RESTORE pair used by
+MEM:
 
-1. snapshot current PORTA state;
-2. form/select PA6=1 and requested PA5:PA4 bank;
-3. access lower-half RAM;
-4. restore the saved PORTA state before returning to stock firmware.
+1. save incoming CCR and PORTA on the CPU stack;
+2. select PA6=1 plus requested PA5:PA4 bank;
+3. perform the physical read;
+4. restore PORTA;
+5. restore the exact incoming CCR.
 
-Implementation candidates:
+Increment 6 added and proved an atomic `DBG_BIND_RAM_WRITE` used by EDIT:
 
-- reuse stock `$9466` plus a minimal PA6/save/restore wrapper; or
-- reuse placement-free `FS_PORTA_RAM_VALUE`, which already composes
-  PA6=1 + PA5:PA4 while preserving unrelated PORTA bits, followed by the
-  environment binding's hardware write.
+- input A = bank 0..3;
+- input B = byte value;
+- input X = lower-half CPU address;
+- the target, value, CCR and PORTA are carried in registers/CPU stack;
+- no DebugTool workspace byte is required while another bank is visible;
+- the original mapping is restored before return.
 
-Choice is deferred to Increment 3 byte measurement.
+Both adapters were exercised in `as2kdiag` against multiple physical banks.
 
 ### Physical block geometry helper
 
