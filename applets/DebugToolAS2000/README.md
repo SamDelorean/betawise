@@ -88,6 +88,7 @@ The project is controlled by these documents:
 - `ABI_STATE.md` — frozen internal ABI, CALL convention and 30-byte RAM ledger.
 - `INCREMENT3_BINDING_RESULT.md` — binding/relocation build evidence.
 - `INCREMENT4_MEM_RESULT.md` — MEM implementation, size and MAME evidence.
+- `INCREMENT5_GOTO_RESULT.md` — GOTO parser, keyboard path and MAME evidence.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -109,10 +110,11 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 2 — ABI and data-state freeze: **CLOSED / PASS**
 - Increment 3 — binding interface skeleton: **CLOSED / PASS**
 - Increment 4 — MEM only: **CLOSED / PASS**
-- Increment 5 — GOTO only: **NEXT**
+- Increment 5 — GOTO only: **CLOSED / PASS**
+- Increment 6 — EDIT only: **NEXT**
 
-Increment 4 provides the first functional module. MEM renders 32 physical bytes
-as four exact 40-character rows, reads banked RAM through a stack-safe
-ENTER/RESTORE adapter, and switches naturally to fixed ROM at the lower/upper
-address boundary. MAME validation passed for known bank-1 RAM, stock ROM bytes,
-bank switching and `$7FFF->$8000` traversal. Fixed workspace remains 30 bytes.
+Increment 5 accepts `AAAA` and `b:AAAA`, validates banks 0..3, commits only
+after four address digits, and cancels on Escape without altering committed
+state. The complete physical-keyboard path was validated in `as2kdiag`
+through the stock scan/dequeue/translate chain. Current measured code is
+449 bytes core + 54 bytes diagnostic binding; fixed workspace remains 30 bytes.
