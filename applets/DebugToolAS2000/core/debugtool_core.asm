@@ -1,5 +1,5 @@
 ; DebugTool-AS2000 portable core.
-; Increment 4 implements MEM only.
+; Increment 5 implements MEM + GOTO only.
 ; No absolute hardware, ROM, RAM, or DynFS addresses are permitted here.
 
         .include "debugtool_state.inc"
@@ -210,3 +210,185 @@ DBG_MEM_ASCII_LOOP:
         RTS
 
         .size DBG_MEM_REDRAW, .-DBG_MEM_REDRAW
+
+
+; ===========================================================================
+; Increment 5 — GOTO only
+;
+; Syntax:
+;   AAAA      keep current RAM bank, select 16-bit CPU address
+;   b:AAAA    select RAM bank 0..3 plus 16-bit CPU address
+;
+; Parser consumes translated characters. No text buffer is allocated.
+; DBG_GOTO_ACCEPT_A returns:
+;   B=0 continue / ignored
+;   B=1 committed
+;   B=2 cancelled
+; ===========================================================================
+
+        .globl DBG_GOTO_RESET
+        .globl DBG_GOTO_ACCEPT_A
+        .globl DBG_GOTO_RUN
+
+        .type DBG_GOTO_RESET, @function
+DBG_GOTO_RESET:
+        LDAA    #DBG_MODE_GOTO
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        CLRA
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        LDAA    #DBG_INPUT_NO_BANK
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        RTS
+        .size DBG_GOTO_RESET, .-DBG_GOTO_RESET
+
+; A = ASCII hexadecimal character.
+; V=0/A=0..15 if valid, V=1 if invalid.
+DBG_HEX_TO_NIBBLE_A:
+        CMPA    #'0'
+        BLO     DBG_HEX_BAD
+        CMPA    #':'
+        BLO     DBG_HEX_DIGIT
+        CMPA    #'A'
+        BLO     DBG_HEX_BAD
+        CMPA    #'G'
+        BLO     DBG_HEX_UPPER
+        CMPA    #'a'
+        BLO     DBG_HEX_BAD
+        CMPA    #'g'
+        BHS     DBG_HEX_BAD
+        SUBA    #'a'-10
+        CLV
+        RTS
+DBG_HEX_UPPER:
+        SUBA    #'A'-10
+        CLV
+        RTS
+DBG_HEX_DIGIT:
+        SUBA    #'0'
+        CLV
+        RTS
+DBG_HEX_BAD:
+        SEV
+        RTS
+
+        .type DBG_GOTO_ACCEPT_A, @function
+DBG_GOTO_ACCEPT_A:
+        CMPA    #0x1b
+        BEQ     DBG_GOTO_CANCEL
+        CMPA    #0x0d
+        BEQ     DBG_GOTO_ENTER
+        CMPA    #':'
+        BEQ     DBG_GOTO_COLON
+
+        JSR     DBG_HEX_TO_NIBBLE_A
+        BVS     DBG_GOTO_CONTINUE
+
+        LDAB    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        CMPB    #4
+        BHS     DBG_GOTO_CONTINUE
+
+        STAA    DBG_WS_BASE+DBG_WS_TMP0
+        LDD     DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        ASLD
+        ASLD
+        ASLD
+        ASLD
+        ORAB    DBG_WS_BASE+DBG_WS_TMP0
+        STD     DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        INC     DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+
+DBG_GOTO_CONTINUE:
+        CLRB
+        RTS
+
+DBG_GOTO_COLON:
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        CMPA    #DBG_INPUT_NO_BANK
+        BNE     DBG_GOTO_CONTINUE
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        CMPA    #1
+        BNE     DBG_GOTO_CONTINUE
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        BNE     DBG_GOTO_CONTINUE
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        CMPA    #4
+        BHS     DBG_GOTO_CONTINUE
+
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        CLRA
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        CLRB
+        RTS
+
+DBG_GOTO_ENTER:
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        CMPA    #4
+        BNE     DBG_GOTO_CONTINUE
+
+        LDD     DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        STD     DBG_WS_BASE+DBG_WS_MEM_ADDR
+
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        CMPA    #DBG_INPUT_NO_BANK
+        BEQ     DBG_GOTO_COMMIT_MODE
+        STAA    DBG_WS_BASE+DBG_WS_MEM_BANK
+
+DBG_GOTO_COMMIT_MODE:
+        LDAA    #DBG_MODE_MEM
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        LDAB    #1
+        RTS
+
+DBG_GOTO_CANCEL:
+        LDAA    #DBG_MODE_MEM
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        LDAB    #2
+        RTS
+
+        .size DBG_GOTO_ACCEPT_A, .-DBG_GOTO_ACCEPT_A
+
+; Blocking user-facing GOTO transaction.
+; It consumes decoded stock keyboard events through the environment binding,
+; echoes printable translated characters, and returns to MEM after commit or
+; Escape cancellation.
+        .type DBG_GOTO_RUN, @function
+DBG_GOTO_RUN:
+        JSR     DBG_GOTO_RESET
+        JSR     DBG_BIND_LCD_CLEAR
+        JSR     DBG_BIND_LCD_ROW0
+        LDX     #DBG_GOTO_PROMPT
+        JSR     DBG_BIND_LCD_PUTS
+
+DBG_GOTO_KEY_LOOP:
+        JSR     DBG_BIND_KEY_DEQUEUE
+        BVS     DBG_GOTO_KEY_LOOP
+
+        JSR     DBG_BIND_KEY_CHAR
+        BVS     DBG_GOTO_KEY_LOOP
+
+        CMPA    #0x0d
+        BEQ     DBG_GOTO_NO_ECHO
+        CMPA    #0x1b
+        BEQ     DBG_GOTO_NO_ECHO
+        PSHA
+        TAB
+        JSR     DBG_BIND_LCD_PUTBYTE
+        PULA
+
+DBG_GOTO_NO_ECHO:
+        JSR     DBG_GOTO_ACCEPT_A
+        TSTB
+        BEQ     DBG_GOTO_KEY_LOOP
+
+        JSR     DBG_MEM_REDRAW
+        RTS
+
+DBG_GOTO_PROMPT:
+        .ascii  "GOTO "
+        .byte   0
+
+        .size DBG_GOTO_RUN, .-DBG_GOTO_RUN
