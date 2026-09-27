@@ -97,3 +97,14 @@ addresses are supplied through a late binding layer.
 
 This permits the same core to be used first in the diagnostic/current ROM and
 later in the relocated/final ROM without creating a second implementation.
+
+
+## Progress
+
+- Increment 0 — architecture freeze: **CLOSED**
+- Increment 1 — dependency inventory: **CLOSED / PASS**
+- Increment 2 — ABI and data-state freeze: **NEXT**
+
+Increment 1 results are recorded in `BINDINGS_INVENTORY.md`. Final ROM
+placement, debugger hook, workspace RAM, active DynFS-context RAM address and
+resident DynFS function addresses remain deliberately late-bound.
