@@ -51,6 +51,12 @@
         ; May clobber A/X/Y/CCR. The mapping is restored before return.
         .extern DBG_BIND_RAM_WRITE
 
+        ; CALL environment mapping snapshot/restore.
+        ; GET returns the complete current mapping byte in A.
+        ; SET receives the mapping byte in A and restores it.
+        .extern DBG_BIND_ENV_GET
+        .extern DBG_BIND_ENV_SET
+
         ; Stock/DynFS compatibility-state references.
         .extern DBG_BIND_STOCK_FSLOT
         .extern DBG_BIND_STOCK_VIEW
