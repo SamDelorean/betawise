@@ -74,3 +74,11 @@ Increment 5 delta versus Increment 4 is **+201 B core** and **+16 B binding**,
 with **0 B RAM growth**. Of the core delta, **28 B** is the shared ASCII-hex
 nibble helper; GOTO-specific core cost is therefore **173 B**, inside its
 180-byte hard planning ceiling.
+
+
+| Increment 6 EDIT | 675 B | 94 B | 30 B | MEM + GOTO + HEX/ASCII EDIT |
+
+Increment 6 delta versus Increment 5 is **+226 B core** and **+40 B binding**,
+with **0 B RAM growth**. EDIT-specific core cost is **226 B**, inside its
+230-byte hard planning ceiling. Current executable checkpoint is **769 B**
+(core + diagnostic binding).
