@@ -561,8 +561,8 @@ DBG_EDIT_PROTECTED_RUN:
         RTS
 
 DBG_EDIT_HEX_PROMPT:
-        .asciz  "EDIT HEX "
+        .asciz  "HEX "
 DBG_EDIT_ASCII_PROMPT:
-        .asciz  "EDIT ASC "
+        .asciz  "ASC "
 
         .size DBG_EDIT_RUN, .-DBG_EDIT_RUN
