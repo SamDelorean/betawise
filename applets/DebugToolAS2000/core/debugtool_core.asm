@@ -1,5 +1,5 @@
 ; DebugTool-AS2000 portable core.
-; Increment 5 implements MEM + GOTO only.
+; Increment 6 implements MEM + GOTO + EDIT only.
 ; No absolute hardware, ROM, RAM, or DynFS addresses are permitted here.
 
         .include "debugtool_state.inc"
@@ -372,3 +372,185 @@ DBG_GOTO_PROMPT:
         .byte   0
 
         .size DBG_GOTO_RUN, .-DBG_GOTO_RUN
+
+
+; ===========================================================================
+; Increment 6 — EDIT only
+;
+; Target = mem_addr + mem_cursor.
+; Only lower-half banked RAM is writable in v0.
+; input_bank is reused as edit submode: 0=HEX, 1=ASCII.
+; ===========================================================================
+
+        .equ DBG_EDIT_HEX,           0
+        .equ DBG_EDIT_ASCII,         1
+
+        .globl DBG_EDIT_RESET
+        .globl DBG_EDIT_ACCEPT_A
+        .globl DBG_EDIT_RUN
+        .globl DBG_EDIT_WRITE_A
+
+; X = currently selected physical CPU address.
+DBG_EDIT_TARGET_X:
+        LDX     DBG_WS_BASE+DBG_WS_MEM_ADDR
+        LDAB    DBG_WS_BASE+DBG_WS_MEM_CURSOR
+        ABX
+        RTS
+
+; A = byte to write.
+; B returns 1 on committed RAM write, 0 on protected target.
+; No write is attempted at $8000-$FFFF.
+        .type DBG_EDIT_WRITE_A, @function
+DBG_EDIT_WRITE_A:
+        PSHA
+        JSR     DBG_EDIT_TARGET_X
+        XGDX
+        BITA    #0x80
+        XGDX
+        PULA
+        BNE     DBG_EDIT_WRITE_PROTECTED
+
+        TAB
+        LDAA    DBG_WS_BASE+DBG_WS_MEM_BANK
+        JSR     DBG_BIND_RAM_WRITE
+        LDAB    #1
+        RTS
+
+DBG_EDIT_WRITE_PROTECTED:
+        CLRB
+        RTS
+        .size DBG_EDIT_WRITE_A, .-DBG_EDIT_WRITE_A
+
+        .type DBG_EDIT_RESET, @function
+DBG_EDIT_RESET:
+        LDX     #DBG_WS_BASE
+        LDAA    #DBG_MODE_EDIT
+        STAA    DBG_WS_UI_MODE,X
+        CLRA
+        STAA    DBG_WS_INPUT_DIGITS,X
+        STAA    DBG_WS_INPUT_BANK,X       ; HEX mode
+        CLRB
+        STD     DBG_WS_INPUT_VALUE,X
+        RTS
+        .size DBG_EDIT_RESET, .-DBG_EDIT_RESET
+
+; A = translated character.
+; B=0 continue/ignored, B=1 transaction finished.
+        .type DBG_EDIT_ACCEPT_A, @function
+DBG_EDIT_ACCEPT_A:
+        CMPA    #0x1b
+        BEQ     DBG_EDIT_DONE
+        CMPA    #0x09
+        BEQ     DBG_EDIT_TOGGLE
+
+        LDX     #DBG_WS_BASE
+        TST     DBG_WS_INPUT_BANK,X
+        BNE     DBG_EDIT_ASCII_INPUT
+
+        ; HEX: exactly two valid nibbles commit one byte.
+        JSR     DBG_HEX_TO_NIBBLE_A
+        BVS     DBG_EDIT_CONTINUE
+        LDX     #DBG_WS_BASE
+        TST     DBG_WS_INPUT_DIGITS,X
+        BNE     DBG_EDIT_HEX_LOW
+
+        ASLA
+        ASLA
+        ASLA
+        ASLA
+        STAA    DBG_WS_INPUT_VALUE+1,X
+        INC     DBG_WS_INPUT_DIGITS,X
+        CLRB
+        RTS
+
+DBG_EDIT_HEX_LOW:
+        ORAA    DBG_WS_INPUT_VALUE+1,X
+        JSR     DBG_EDIT_WRITE_A
+        TSTB
+        BEQ     DBG_EDIT_DONE
+        BRA     DBG_EDIT_DONE
+
+DBG_EDIT_ASCII_INPUT:
+        CMPA    #0x20
+        BLO     DBG_EDIT_CONTINUE
+        CMPA    #0x7f
+        BHS     DBG_EDIT_CONTINUE
+        JSR     DBG_EDIT_WRITE_A
+        BRA     DBG_EDIT_DONE
+
+DBG_EDIT_TOGGLE:
+        LDX     #DBG_WS_BASE
+        LDAA    DBG_WS_INPUT_BANK,X
+        EORA    #1
+        STAA    DBG_WS_INPUT_BANK,X
+        CLRA
+        STAA    DBG_WS_INPUT_DIGITS,X
+        STAA    DBG_WS_INPUT_VALUE,X
+        STAA    DBG_WS_INPUT_VALUE+1,X
+
+DBG_EDIT_CONTINUE:
+        CLRB
+        RTS
+
+DBG_EDIT_DONE:
+        LDAA    #DBG_MODE_MEM
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        LDAB    #1
+        RTS
+        .size DBG_EDIT_ACCEPT_A, .-DBG_EDIT_ACCEPT_A
+
+; Blocking user-facing edit transaction.
+; Default prompt is HEX. Tab toggles HEX/ASCII and refreshes the prompt.
+        .type DBG_EDIT_RUN, @function
+DBG_EDIT_RUN:
+        JSR     DBG_EDIT_TARGET_X
+        XGDX
+        BITA    #0x80
+        XGDX
+        BNE     DBG_EDIT_PROTECTED_RUN
+
+        JSR     DBG_EDIT_RESET
+DBG_EDIT_PROMPT_REDRAW:
+        JSR     DBG_BIND_LCD_CLEAR
+        JSR     DBG_BIND_LCD_ROW0
+        LDX     #DBG_EDIT_HEX_PROMPT
+        LDAA    DBG_WS_BASE+DBG_WS_INPUT_BANK
+        BEQ     DBG_EDIT_PROMPT_PRINT
+        LDX     #DBG_EDIT_ASCII_PROMPT
+DBG_EDIT_PROMPT_PRINT:
+        JSR     DBG_BIND_LCD_PUTS
+
+DBG_EDIT_KEY_LOOP:
+        JSR     DBG_BIND_KEY_GETCHAR
+        BVS     DBG_EDIT_KEY_LOOP
+
+        CMPA    #0x09
+        BEQ     DBG_EDIT_TAB
+        CMPA    #0x1b
+        BEQ     DBG_EDIT_NO_ECHO
+        PSHA
+        TAB
+        JSR     DBG_BIND_LCD_PUTBYTE
+        PULA
+
+DBG_EDIT_NO_ECHO:
+        JSR     DBG_EDIT_ACCEPT_A
+        TSTB
+        BEQ     DBG_EDIT_KEY_LOOP
+        JSR     DBG_MEM_REDRAW
+        RTS
+
+DBG_EDIT_TAB:
+        JSR     DBG_EDIT_ACCEPT_A
+        BRA     DBG_EDIT_PROMPT_REDRAW
+
+DBG_EDIT_PROTECTED_RUN:
+        JSR     DBG_MEM_REDRAW
+        RTS
+
+DBG_EDIT_HEX_PROMPT:
+        .asciz  "EDIT HEX "
+DBG_EDIT_ASCII_PROMPT:
+        .asciz  "EDIT ASC "
+
+        .size DBG_EDIT_RUN, .-DBG_EDIT_RUN
