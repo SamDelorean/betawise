@@ -111,30 +111,27 @@ Use:
 
 ### Four stock row/controller selectors
 
-Candidate addresses:
+Verified row order:
 
-- `$A54B`
-- `$A556`
-- `$A561`
-- `$A56C`
+- row 0 -> `$A54B`
+- row 1 -> `$A556`
+- row 2 -> `$A561`
+- row 3 -> `$A56C`
 
-Status: **CANDIDATE**
+Status: **VERIFIED**
 
 Evidence:
 
 - the four paths select the two LCD-controller halves and issue DDRAM commands
   `80h` or `C0h`;
-- stock display traversal dispatches among them as row/control operations.
-
-Open narrow detail:
-
-- freeze the user-visible 40x4 row-number -> helper mapping when MEM layout is
-  implemented. No new reverse-engineering branch is required.
+- stock `$9FEF/$A0FD` display traversal uses them in that order;
+- Increment 4 MAME MEM rendering produced the expected physical top-to-bottom
+  40x4 row order.
 
 Decision:
 
-- use these helpers if the mapping is cheaper than computing arbitrary DDRAM
-  commands locally.
+- MEM uses these four stock helpers directly; no local DDRAM row calculator is
+  required.
 
 ---
 
@@ -482,9 +479,9 @@ None of these requires a core-logic redesign.
 
 Required dependency classes from `WORKPLAN.md`:
 
-- LCD clear/output/cursor: **VERIFIED + row mapping CANDIDATE**
+- LCD clear/output/cursor: **VERIFIED, including 40x4 row mapping**
 - keyboard read/decode: **VERIFIED**
-- bank selection/window behavior: **VERIFIED + adapter CANDIDATE**
+- bank selection/window behavior: **VERIFIED; DebugTool adapter proven in Increment 4**
 - safe byte read/write constraints: **VERIFIED**
 - debugger entry/exit mechanism: **CANDIDATE**, physical hook late-bound
 - stock conversion helper: **VERIFIED**
