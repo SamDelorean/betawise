@@ -21,6 +21,11 @@
         ; has no character translation.
         .extern DBG_BIND_KEY_CHAR
 
+        ; Complete non-blocking stock keyboard poll:
+        ; scan/pump hardware, dequeue one raw key, translate to character.
+        ; Returns A=translated character with V=0, or V=1 if none/invalid.
+        .extern DBG_BIND_KEY_GETCHAR
+
         ; Immediate, non-nestable RAM mapping pair used by MEM/EDIT.
         ;
         ; DBG_BIND_RAM_ENTER:
