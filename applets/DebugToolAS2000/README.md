@@ -86,6 +86,7 @@ The project is controlled by these documents:
 - `PORTING_MAP.md` — mapping from the original BetaWise DebugTool behavior.
 - `SIZE_BUDGET.md` — ROM/RAM ceilings and measurement rules.
 - `ABI_STATE.md` — frozen internal ABI, CALL convention and 30-byte RAM ledger.
+- `INCREMENT3_BINDING_RESULT.md` — binding/relocation build evidence.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -105,10 +106,10 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 0 — architecture freeze: **CLOSED**
 - Increment 1 — dependency inventory: **CLOSED / PASS**
 - Increment 2 — ABI and data-state freeze: **CLOSED / PASS**
-- Increment 3 — binding interface skeleton: **NEXT**
+- Increment 3 — binding interface skeleton: **CLOSED / PASS**
+- Increment 4 — MEM only: **NEXT**
 
-Increment 2 freezes a 30-byte fixed workspace with no absolute RAM address,
-native A/B(D)/X/Y CALL state, exact post-call A/B/X/Y/CCR capture, and a
-stack-built RTS transfer that requires no executable RAM trampoline. Final ROM
-placement, hook address, workspace base, DynFS context address and resident
-DynFS entry addresses remain deliberately late-bound.
+Increment 3 proves that the portable core assembles and links through an
+environment binding, can be relocated/rebound without source changes, and
+contains no 16-bit absolute addresses. The product workspace remains 30 bytes;
+all real ROM/RAM/DynFS placement stays late-bound.
