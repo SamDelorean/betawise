@@ -1,5 +1,5 @@
 ; DebugTool-AS2000 portable core.
-; Increment 6 implements MEM + GOTO + EDIT only.
+; Increment 7 implements MEM + GOTO + EDIT + CALL only.
 ; No absolute hardware, ROM, RAM, or DynFS addresses are permitted here.
 
         .include "debugtool_state.inc"
@@ -566,3 +566,270 @@ DBG_EDIT_ASCII_PROMPT:
         .asciz  "ASC "
 
         .size DBG_EDIT_RUN, .-DBG_EDIT_RUN
+
+
+; ===========================================================================
+; Increment 7 — CALL only
+;
+; Native HC11 probe: T16, A8, B8, X16, Y16.  D is A:B.
+; No input CCR, SP editor, generic argument array or 68k compatibility ABI.
+; ===========================================================================
+
+        .globl DBG_CALL_RESET
+        .globl DBG_CALL_ACCEPT_A
+        .globl DBG_CALL_EXECUTE
+        .globl DBG_CALL_RUN
+
+DBG_CALL_CLEAR_INPUT:
+        CLRA
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_DIGITS
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE
+        STAA    DBG_WS_BASE+DBG_WS_INPUT_VALUE+1
+        RTS
+
+        .type DBG_CALL_RESET, @function
+DBG_CALL_RESET:
+        LDX     #DBG_WS_BASE
+        LDAA    #DBG_MODE_CALL
+        STAA    DBG_WS_UI_MODE,X
+        CLRA
+        STAA    DBG_WS_CALL_CTL,X
+        STAA    DBG_WS_CALL_TARGET,X
+        STAA    DBG_WS_CALL_TARGET+1,X
+        STAA    DBG_WS_CALL_IN_A,X
+        STAA    DBG_WS_CALL_IN_B,X
+        STAA    DBG_WS_CALL_IN_X,X
+        STAA    DBG_WS_CALL_IN_X+1,X
+        STAA    DBG_WS_CALL_IN_Y,X
+        STAA    DBG_WS_CALL_IN_Y+1,X
+        STAA    DBG_WS_CALL_OUT_A,X
+        STAA    DBG_WS_CALL_OUT_B,X
+        STAA    DBG_WS_CALL_OUT_X,X
+        STAA    DBG_WS_CALL_OUT_X+1,X
+        STAA    DBG_WS_CALL_OUT_Y,X
+        STAA    DBG_WS_CALL_OUT_Y+1,X
+        STAA    DBG_WS_CALL_OUT_CCR,X
+        JMP     DBG_CALL_CLEAR_INPUT
+        .size DBG_CALL_RESET, .-DBG_CALL_RESET
+
+; A = translated character.
+; B=0 collecting/ignored, B=1 all five fields complete, B=2 cancel.
+        .type DBG_CALL_ACCEPT_A, @function
+DBG_CALL_ACCEPT_A:
+        CMPA    #0x1b
+        BEQ     DBG_CALL_CANCEL
+        JSR     DBG_HEX_TO_NIBBLE_A
+        BVS     DBG_CALL_CONTINUE
+
+        LDX     #DBG_WS_BASE
+        STAA    DBG_WS_TMP0,X
+        LDD     DBG_WS_INPUT_VALUE,X
+        ASLD
+        ASLD
+        ASLD
+        ASLD
+        ORAB    DBG_WS_TMP0,X
+        STD     DBG_WS_INPUT_VALUE,X
+        INC     DBG_WS_INPUT_DIGITS,X
+
+        LDAA    DBG_WS_CALL_CTL,X
+        CMPA    #DBG_CALL_FIELD_A
+        BEQ     DBG_CALL_NEED2
+        CMPA    #DBG_CALL_FIELD_B
+        BEQ     DBG_CALL_NEED2
+        LDAA    DBG_WS_INPUT_DIGITS,X
+        CMPA    #4
+        BLO     DBG_CALL_CONTINUE
+        BRA     DBG_CALL_COMMIT
+DBG_CALL_NEED2:
+        LDAA    DBG_WS_INPUT_DIGITS,X
+        CMPA    #2
+        BLO     DBG_CALL_CONTINUE
+
+DBG_CALL_COMMIT:
+        LDAA    DBG_WS_CALL_CTL,X
+        BEQ     DBG_CALL_STORE_TARGET
+        CMPA    #DBG_CALL_FIELD_A
+        BEQ     DBG_CALL_STORE_A
+        CMPA    #DBG_CALL_FIELD_B
+        BEQ     DBG_CALL_STORE_B
+        CMPA    #DBG_CALL_FIELD_X
+        BEQ     DBG_CALL_STORE_X
+
+        LDD     DBG_WS_INPUT_VALUE,X
+        STD     DBG_WS_CALL_IN_Y,X
+        JSR     DBG_CALL_CLEAR_INPUT
+        LDAB    #1
+        RTS
+
+DBG_CALL_STORE_TARGET:
+        LDD     DBG_WS_INPUT_VALUE,X
+        STD     DBG_WS_CALL_TARGET,X
+        BRA     DBG_CALL_NEXT_FIELD
+DBG_CALL_STORE_A:
+        LDAA    DBG_WS_INPUT_VALUE+1,X
+        STAA    DBG_WS_CALL_IN_A,X
+        BRA     DBG_CALL_NEXT_FIELD
+DBG_CALL_STORE_B:
+        LDAA    DBG_WS_INPUT_VALUE+1,X
+        STAA    DBG_WS_CALL_IN_B,X
+        BRA     DBG_CALL_NEXT_FIELD
+DBG_CALL_STORE_X:
+        LDD     DBG_WS_INPUT_VALUE,X
+        STD     DBG_WS_CALL_IN_X,X
+
+DBG_CALL_NEXT_FIELD:
+        INC     DBG_WS_CALL_CTL,X
+        JSR     DBG_CALL_CLEAR_INPUT
+DBG_CALL_CONTINUE:
+        CLRB
+        RTS
+
+DBG_CALL_CANCEL:
+        LDAA    #DBG_MODE_MEM
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        LDAB    #2
+        RTS
+        .size DBG_CALL_ACCEPT_A, .-DBG_CALL_ACCEPT_A
+
+; Execute exactly one RTS-returning HC11 target.
+; The target sees A/B(D)/X/Y from workspace and one ordinary return address.
+        .type DBG_CALL_EXECUTE, @function
+DBG_CALL_EXECUTE:
+        JSR     DBG_BIND_ENV_GET
+        STAA    DBG_WS_BASE+DBG_WS_ENV_SAVED_MAP
+
+        LDX     #DBG_CALL_RETURN
+        PSHX
+        LDX     DBG_WS_BASE+DBG_WS_CALL_TARGET
+        PSHX
+
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_IN_A
+        LDAB    DBG_WS_BASE+DBG_WS_CALL_IN_B
+        LDX     DBG_WS_BASE+DBG_WS_CALL_IN_X
+        LDY     DBG_WS_BASE+DBG_WS_CALL_IN_Y
+        RTS
+
+DBG_CALL_RETURN:
+        PSHA
+        TPA
+        STAA    DBG_WS_BASE+DBG_WS_CALL_OUT_CCR
+        PULA
+        STAA    DBG_WS_BASE+DBG_WS_CALL_OUT_A
+        STAB    DBG_WS_BASE+DBG_WS_CALL_OUT_B
+        STX     DBG_WS_BASE+DBG_WS_CALL_OUT_X
+        STY     DBG_WS_BASE+DBG_WS_CALL_OUT_Y
+
+        LDAA    DBG_WS_BASE+DBG_WS_ENV_SAVED_MAP
+        JSR     DBG_BIND_ENV_SET
+
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_CTL
+        ORAA    #DBG_CALL_RESULT_VALID
+        STAA    DBG_WS_BASE+DBG_WS_CALL_CTL
+        RTS
+        .size DBG_CALL_EXECUTE, .-DBG_CALL_EXECUTE
+
+DBG_CALL_PROMPT:
+        JSR     DBG_BIND_LCD_CLEAR
+        JSR     DBG_BIND_LCD_ROW0
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_CTL
+        ANDA    #0x07
+        BEQ     DBG_CALL_PROMPT_T
+        CMPA    #DBG_CALL_FIELD_A
+        BEQ     DBG_CALL_PROMPT_A
+        CMPA    #DBG_CALL_FIELD_B
+        BEQ     DBG_CALL_PROMPT_B
+        CMPA    #DBG_CALL_FIELD_X
+        BEQ     DBG_CALL_PROMPT_X
+        LDX     #DBG_CALL_PY
+        BRA     DBG_CALL_PROMPT_OUT
+DBG_CALL_PROMPT_T:
+        LDX     #DBG_CALL_PT
+        BRA     DBG_CALL_PROMPT_OUT
+DBG_CALL_PROMPT_A:
+        LDX     #DBG_CALL_PA
+        BRA     DBG_CALL_PROMPT_OUT
+DBG_CALL_PROMPT_B:
+        LDX     #DBG_CALL_PB
+        BRA     DBG_CALL_PROMPT_OUT
+DBG_CALL_PROMPT_X:
+        LDX     #DBG_CALL_PX
+DBG_CALL_PROMPT_OUT:
+        JMP     DBG_BIND_LCD_PUTS
+
+DBG_CALL_RESULTS:
+        JSR     DBG_BIND_LCD_CLEAR
+        JSR     DBG_BIND_LCD_ROW0
+        LDAA    #'A'
+        JSR     DBG_OUT_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_A
+        JSR     DBG_OUT_HEX_A
+        LDAA    #' '
+        JSR     DBG_OUT_A
+        LDAA    #'B'
+        JSR     DBG_OUT_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_B
+        JSR     DBG_OUT_HEX_A
+        LDAA    #' '
+        JSR     DBG_OUT_A
+        LDAA    #'C'
+        JSR     DBG_OUT_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_CCR
+        JSR     DBG_OUT_HEX_A
+
+        JSR     DBG_BIND_LCD_ROW1
+        LDAA    #'X'
+        JSR     DBG_OUT_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_X
+        JSR     DBG_OUT_HEX_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_X+1
+        JSR     DBG_OUT_HEX_A
+        LDAA    #' '
+        JSR     DBG_OUT_A
+        LDAA    #'Y'
+        JSR     DBG_OUT_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_Y
+        JSR     DBG_OUT_HEX_A
+        LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_Y+1
+        JMP     DBG_OUT_HEX_A
+
+        .type DBG_CALL_RUN, @function
+DBG_CALL_RUN:
+        JSR     DBG_CALL_RESET
+DBG_CALL_FIELD_PROMPT:
+        JSR     DBG_CALL_PROMPT
+DBG_CALL_KEY_LOOP:
+        JSR     DBG_BIND_KEY_GETCHAR
+        BVS     DBG_CALL_KEY_LOOP
+        CMPA    #0x1b
+        BEQ     DBG_CALL_NO_ECHO
+        PSHA
+        TAB
+        JSR     DBG_BIND_LCD_PUTBYTE
+        PULA
+DBG_CALL_NO_ECHO:
+        JSR     DBG_CALL_ACCEPT_A
+        CMPB    #2
+        BEQ     DBG_CALL_EXIT
+        TSTB
+        BEQ     DBG_CALL_KEY_LOOP
+
+        ; Y was the fifth and final field.
+        JSR     DBG_CALL_EXECUTE
+        JSR     DBG_CALL_RESULTS
+DBG_CALL_RESULT_WAIT:
+        JSR     DBG_BIND_KEY_GETCHAR
+        BVS     DBG_CALL_RESULT_WAIT
+
+DBG_CALL_EXIT:
+        LDAA    #DBG_MODE_MEM
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        JSR     DBG_MEM_REDRAW
+        RTS
+        .size DBG_CALL_RUN, .-DBG_CALL_RUN
+
+DBG_CALL_PT: .asciz "T "
+DBG_CALL_PA: .asciz "A "
+DBG_CALL_PB: .asciz "B "
+DBG_CALL_PX: .asciz "X "
+DBG_CALL_PY: .asciz "Y "
