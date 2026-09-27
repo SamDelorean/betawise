@@ -66,3 +66,11 @@ Increment 4 adds **+247 B core** and **+36 B diagnostic bank glue** versus the
 Increment 3 skeleton, with **0 B RAM growth**. The 7-byte synthetic DynFS
 context in the diagnostic link is external state and is not counted as
 DebugTool RAM.
+
+
+| Increment 5 GOTO | 449 B | 54 B | 30 B | MEM + GOTO + complete stock keyboard binding |
+
+Increment 5 delta versus Increment 4 is **+201 B core** and **+16 B binding**,
+with **0 B RAM growth**. Of the core delta, **28 B** is the shared ASCII-hex
+nibble helper; GOTO-specific core cost is therefore **173 B**, inside its
+180-byte hard planning ceiling.
