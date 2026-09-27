@@ -87,6 +87,7 @@ The project is controlled by these documents:
 - `SIZE_BUDGET.md` — ROM/RAM ceilings and measurement rules.
 - `ABI_STATE.md` — frozen internal ABI, CALL convention and 30-byte RAM ledger.
 - `INCREMENT3_BINDING_RESULT.md` — binding/relocation build evidence.
+- `INCREMENT4_MEM_RESULT.md` — MEM implementation, size and MAME evidence.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -107,9 +108,11 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 1 — dependency inventory: **CLOSED / PASS**
 - Increment 2 — ABI and data-state freeze: **CLOSED / PASS**
 - Increment 3 — binding interface skeleton: **CLOSED / PASS**
-- Increment 4 — MEM only: **NEXT**
+- Increment 4 — MEM only: **CLOSED / PASS**
+- Increment 5 — GOTO only: **NEXT**
 
-Increment 3 proves that the portable core assembles and links through an
-environment binding, can be relocated/rebound without source changes, and
-contains no 16-bit absolute addresses. The product workspace remains 30 bytes;
-all real ROM/RAM/DynFS placement stays late-bound.
+Increment 4 provides the first functional module. MEM renders 32 physical bytes
+as four exact 40-character rows, reads banked RAM through a stack-safe
+ENTER/RESTORE adapter, and switches naturally to fixed ROM at the lower/upper
+address boundary. MAME validation passed for known bank-1 RAM, stock ROM bytes,
+bank switching and `$7FFF->$8000` traversal. Fixed workspace remains 30 bytes.
