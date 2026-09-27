@@ -1,0 +1,499 @@
+# DebugTool-AS2000 — Increment 1 dependency inventory
+
+Status: **INCREMENT 1 CLOSED**
+
+This inventory is the only dependency-discovery artifact required by
+`WORKPLAN.md` Increment 1. It records the smallest set of external services and
+state needed by MEM, GOTO, EDIT, CALL and INFO. It does not authorize ROM
+placement, RAM allocation, new DynFS services, or a broader reverse-engineering
+campaign.
+
+## Status legend
+
+- **VERIFIED** — behavior is established strongly enough to bind against.
+- **CANDIDATE** — suitable interface identified; exact binding or one narrow
+  semantic detail is intentionally deferred.
+- **UNRESOLVED_LATE_BINDING** — value cannot/should not be fixed until resident
+  DynFS/current-ROM or later-ROM placement is available. This does not block
+  the portable core.
+- **REJECTED** — historical idea that must not become a dependency.
+
+## Evidence baseline
+
+Current stock firmware baseline used for narrow verification:
+
+- AlphaSmart 2000 v3.1.4
+- stock ROM SHA-1 documented by the AS2000 project:
+  `e0b777dc68c671c31ba808e214fb9d2573b9a853`
+
+Current firmware/DynFS project baseline:
+
+- `/home/spc/Projects/alphasmart/AS2K-V3.14.x`
+- current Profile 1 logical surface: 19/19 services implemented
+- resident integration remains responsible for final addresses/bindings
+
+Only behavioral summaries and addresses are recorded here; private ROM
+disassembly is not copied into this repository.
+
+---
+
+## 1. LCD/output dependencies
+
+### `ROM_LCD_CLEAR` -> stock `$A3D6`
+
+Status: **VERIFIED**
+
+Observed behavior:
+
+- issues LCD clear command `01h` to both display-controller halves;
+- then enters the stock first-row/controller positioning path.
+
+Use:
+
+- initial DebugTool screen clear/reset;
+- deterministic redraw start for MEM/INFO.
+
+Binding note:
+
+- treat it as a stock display-reset/clear primitive, not as a pure side-effect-
+  free byte clear routine.
+
+### `ROM_LCD_PUTS` -> stock `$A435`
+
+Status: **VERIFIED**
+
+Observed behavior:
+
+- X points to a zero-terminated stock string;
+- emits bytes through the stock LCD byte-output primitive;
+- advances X until the zero terminator and returns.
+
+Use:
+
+- fixed DebugTool labels only when this is smaller than repeated character
+  calls.
+
+### `ROM_LCD_PUTBYTE` -> stock `$A44B`
+
+Status: **VERIFIED**
+
+Observed behavior:
+
+- emits the byte supplied in B through the stock two-nibble LCD path;
+- waits on the LCD busy state through `$9400`;
+- data/command selection is controlled by stock display state.
+
+Use:
+
+- normal DebugTool character output;
+- output of the two ASCII digits returned by `$9350`.
+
+Precondition:
+
+- DebugTool must enter through one of the stock row/command paths before
+  assuming ordinary data mode.
+
+### `ROM_LCD_COMMAND` -> stock `$A440`
+
+Status: **VERIFIED**
+
+Observed behavior:
+
+- accepts command byte in A;
+- temporarily selects command mode;
+- sends it through `$A44B`;
+- restores normal data mode.
+
+Use:
+
+- direct DDRAM/cursor commands only if doing so is smaller than a stock row
+  helper.
+
+### Four stock row/controller selectors
+
+Candidate addresses:
+
+- `$A54B`
+- `$A556`
+- `$A561`
+- `$A56C`
+
+Status: **CANDIDATE**
+
+Evidence:
+
+- the four paths select the two LCD-controller halves and issue DDRAM commands
+  `80h` or `C0h`;
+- stock display traversal dispatches among them as row/control operations.
+
+Open narrow detail:
+
+- freeze the user-visible 40x4 row-number -> helper mapping when MEM layout is
+  implemented. No new reverse-engineering branch is required.
+
+Decision:
+
+- use these helpers if the mapping is cheaper than computing arbitrary DDRAM
+  commands locally.
+
+---
+
+## 2. Hex conversion
+
+### `ROM_BYTE_TO_HEX` -> stock `$9350`
+
+Status: **VERIFIED**
+
+Observed contract:
+
+- input: A = byte;
+- output: A = uppercase ASCII high hexadecimal digit;
+- output: B = uppercase ASCII low hexadecimal digit;
+- handles 0-9 and A-F directly.
+
+Use:
+
+- MEM address/data rendering;
+- CALL register display;
+- INFO compact numeric fields.
+
+Decision:
+
+- reuse `$9350`; do not add a local byte-to-hex formatter unless later
+  placement proves the call overhead larger than an inlined special case.
+
+---
+
+## 3. Keyboard dependency
+
+### `ROM_KEY_DEQUEUE` -> stock `$938C`
+
+Status: **VERIFIED**
+
+Observed contract:
+
+- consumes the stock local keyboard ring queue;
+- returns key code in A with V=0 when one is available;
+- returns V=1 when the queue is empty;
+- queue cursors are stock `$008E/$008F`;
+- the retained queue storage is `$0090-$009F`.
+
+Use:
+
+- DebugTool polling/input loop.
+
+Decision:
+
+- DebugTool consumes already-decoded stock keys.
+- Do not scan the keyboard matrix or reproduce debounce/modifier decoding.
+
+Optional stock `$93A3` peek behavior is not needed by v0 and is not a
+dependency.
+
+---
+
+## 4. Physical memory and banking
+
+### Fixed CPU-visible map
+
+Status: **VERIFIED**
+
+Current AS2000 model:
+
+- `$8000-$FFFF`: fixed main firmware ROM for reads.
+- lower `$0000-$7FFF`:
+  - PA6=1 -> selected RAM bank;
+  - PA6=0 -> I/O + DictROM view.
+- RAM = 4 x 32 KiB banks.
+- PA5:PA4 select RAM bank 0..3.
+- write `$9000` is a keyboard-matrix MMIO overlay even though reads in the
+  upper half are ROM.
+
+### `ROM_RAM_BANK_BITS` -> stock `$9466`
+
+Status: **VERIFIED**
+
+Observed contract:
+
+- input A bits 1:0 select RAM-bank bits PA5:PA4;
+- only PA4/PA5 are changed;
+- PA6 is **not** set by this routine.
+
+Use:
+
+- candidate primitive inside the current-ROM RAM-selection adapter.
+
+### `ROM_RAM_BANK0_BITS` -> stock `$947F`
+
+Status: **VERIFIED**
+
+Observed contract:
+
+- clears PA4 and PA5;
+- does **not** by itself restore PA6/view state.
+
+Decision:
+
+- do not describe `$947F` as a complete view restore.
+- the DebugTool binding must preserve/restore the full relevant PORTA state.
+
+### `$9486` stock F-key-derived bank selection
+
+Status: **VERIFIED but NOT USED as the DebugTool bank API**
+
+Observed behavior:
+
+- derives the stock bank from F-key selector `$018E`;
+- is correct for retained stock contiguous-file behavior.
+
+Reason not used:
+
+- MEM/GOTO/EDIT require arbitrary explicit bank selection independent of F1-F8.
+
+### DebugTool RAM-select adapter
+
+Status: **CANDIDATE**
+
+Required behavior:
+
+1. snapshot current PORTA state;
+2. form/select PA6=1 and requested PA5:PA4 bank;
+3. access lower-half RAM;
+4. restore the saved PORTA state before returning to stock firmware.
+
+Implementation candidates:
+
+- reuse stock `$9466` plus a minimal PA6/save/restore wrapper; or
+- reuse placement-free `FS_PORTA_RAM_VALUE`, which already composes
+  PA6=1 + PA5:PA4 while preserving unrelated PORTA bits, followed by the
+  environment binding's hardware write.
+
+Choice is deferred to Increment 3 byte measurement.
+
+### Physical block geometry helper
+
+`FS_BLOCK_MAP`
+
+Status: **VERIFIED placement-free symbol; optional for DebugTool**
+
+Contract:
+
+- A = physical block_id `00..7F`;
+- returns B = bank 0..3;
+- returns X = CPU offset `0000..7C00`.
+
+Decision:
+
+- not required by MEM/GOTO/EDIT.
+- INFO or CALL may expose/test it later through normal CALL, but the debugger
+  core does not depend on it.
+
+---
+
+## 5. Safe MEM/EDIT access policy
+
+Status: **VERIFIED**
+
+### MEM
+
+Allowed v0 reads:
+
+- fixed ROM `$8000-$FFFF`;
+- banked RAM `bank:0000-7FFF` through the RAM-select adapter.
+
+### EDIT
+
+Allowed v0 writes:
+
+- banked RAM `bank:0000-7FFF` only.
+
+Forbidden in v0:
+
+- writes to `$8000-$FFFF`;
+- therefore no accidental write side effect at the `$9000` keyboard overlay;
+- direct I/O/DictROM editing;
+- arbitrary MMIO writes.
+
+Reason:
+
+EDIT is intended to inspect/intervene in DynFS RAM, not to become an unrestricted
+hardware register editor.
+
+The CALL probe remains the controlled route for deliberately exercising known
+firmware routines.
+
+---
+
+## 6. CALL dependency
+
+### Core mechanism
+
+Status: **CANDIDATE, architecture frozen**
+
+Contract:
+
+- target = 16-bit HC11 executable address;
+- pre-call values = A, B/D, X, Y as defined by Increment 2;
+- DebugTool saves the state needed to survive the call;
+- the target is invoked by one HC11-native indirect/direct call mechanism;
+- post-call A/B(D)/X/Y and CCR are captured where practical;
+- returns safely to DebugTool.
+
+No BetaWise six-`uint32_t` ABI and no 68k A-line syscall mechanism are
+dependencies.
+
+### DebugTool entry/exit
+
+Status: **CANDIDATE core / UNRESOLVED_LATE_BINDING hook**
+
+Core contract:
+
+- environment invokes one `DEBUGTOOL_ENTRY` subroutine;
+- normal exit returns to the caller.
+
+Deferred bindings:
+
+- current-ROM activation hook;
+- later-ROM activation hook;
+- MAME diagnostic trampoline/harness.
+
+No keyboard shortcut or stock patch site is selected in Increment 1.
+
+---
+
+## 7. DynFS callable symbols
+
+The following are **VERIFIED placement-free symbols** in the current Profile 1
+implementation, but their final resident addresses are
+**UNRESOLVED_LATE_BINDING**:
+
+- `FS_FSLOT_RESOLVE`
+- `FS_FSLOT_ASSIGN`
+- `FS_FSLOT_UNASSIGN`
+- `FS_STREAM_READ`
+- `FS_STREAM_GETC_CTX`
+- `FS_STOCK_GETC_CTX`
+- `FS_STOCK_READ`
+- `FS_STOCK_REPLACE1`
+- `FS_SERVICE_READY`
+- `FS_BLOCK_MAP`
+- `FS_PORTA_RAM_VALUE`
+
+DebugTool does not require dedicated private entry points for these functions.
+Once resident addresses exist, CALL can invoke any stable one using the normal
+HC11 CALL engine.
+
+### Historical names explicitly rejected
+
+- `BLOCK_SELECT`
+- `BLOCK_ADDR`
+- historical `SLOT_TO_FILE`
+- historical v0.19/`E103...` resident jump-table assumptions
+
+Status: **REJECTED as current dependencies**
+
+Current source of truth defines `FS_FSLOT_RESOLVE` as the logical replacement
+for historical `SLOT_TO_FILE`, and current repository audit does not show a
+live public `BLOCK_SELECT/BLOCK_ADDR` or old `E103` resident ABI.
+
+In particular, protected stock ROM metadata at `$E102-$E103` must not be
+reinterpreted as DebugTool/DynFS service-table space.
+
+---
+
+## 8. INFO diagnostic-state dependencies
+
+### Stock/DynFS compatibility state
+
+Status: **VERIFIED**
+
+Current compatibility ABI:
+
+- `$018E` — active F1-F8 selector;
+- `$0122` — encoded logical cursor/edit position;
+- `$0120` — encoded logical view origin;
+- `$0124` — encoded logical end/length;
+- `$0126` — synthesized compatibility capacity/end guard;
+- `$0128` — encoded logical start/origin;
+- `$0067` — encoded sequential stream position when active.
+
+Important:
+
+- these address-shaped words are compatibility state;
+- they are **not** authoritative physical DynFS payload pointers.
+
+INFO may display them explicitly to diagnose stock<->DynFS translation.
+
+### Active DynFS compatibility context
+
+Status: **VERIFIED SHAPE / UNRESOLVED_LATE_BINDING ADDRESS**
+
+Frozen 7-byte shape:
+
+- +0 mount table pointer16
+- +2 sparse payload-view pointer16
+- +4 file_id8
+- +5 compat_base16
+
+No resident RAM address is assigned yet.
+
+Decision:
+
+- INFO source refers to a symbolic `DBG_DYNFS_ACTIVE_CTX` binding.
+- Current/final ROM integration supplies its actual address only after the
+  DynFS resident plan proves lifetime and RAM ownership.
+
+### Derived INFO values
+
+Status: **CANDIDATE**
+
+Without adding filesystem logic, INFO can derive/display:
+
+- F-slot from `$018E`;
+- file_id from the bound 7-byte active context, or via `FS_FSLOT_RESOLVE`
+  when needed;
+- cursor offset = `$0122 - compat_base`;
+- view offset = `$0120 - compat_base`;
+- logical end/length = `$0124 - compat_base`;
+- start = `$0128 - compat_base`;
+- sequential position = `$0067 - compat_base`.
+
+Fields that require unpublished/private allocator topology are not part of v0
+INFO.
+
+---
+
+## 9. Final late-bound dependency table
+
+| Binding | Increment-1 status | Why deferred |
+|---|---|---|
+| DebugTool ROM base | UNRESOLVED_LATE_BINDING | placement belongs to integration |
+| DebugTool entry hook | UNRESOLVED_LATE_BINDING | current/future ROM differ |
+| DebugTool workspace RAM base | UNRESOLVED_LATE_BINDING | exact RAM ledger belongs to Increment 10 |
+| Active 7-byte DynFS context address | UNRESOLVED_LATE_BINDING | resident DynFS integration assigns lifetime/address |
+| Resident addresses of placement-free DynFS symbols | UNRESOLVED_LATE_BINDING | linker/placement result |
+| Later-ROM equivalents of stock LCD/key helpers | UNRESOLVED_LATE_BINDING | use binding layer; core remains unchanged |
+
+None of these requires a core-logic redesign.
+
+---
+
+## Increment 1 exit check
+
+Required dependency classes from `WORKPLAN.md`:
+
+- LCD clear/output/cursor: **VERIFIED + row mapping CANDIDATE**
+- keyboard read/decode: **VERIFIED**
+- bank selection/window behavior: **VERIFIED + adapter CANDIDATE**
+- safe byte read/write constraints: **VERIFIED**
+- debugger entry/exit mechanism: **CANDIDATE**, physical hook late-bound
+- stock conversion helper: **VERIFIED**
+- stable DynFS symbols/state already available: **VERIFIED symbols/state**,
+  resident addresses late-bound
+
+**Exit criterion: PASS.**
+
+The only unresolved values are deliberately placement-dependent addresses.
+They are not blockers for the portable core.
+
+Next and only authorized increment: **Increment 2 — ABI and data-state freeze**.
