@@ -53,3 +53,16 @@ Every implementation increment that changes code must record:
 5. delta versus previous build.
 
 No feature is accepted solely because the source looks small.
+
+
+## Measured implementation checkpoints
+
+| Checkpoint | Core .text | Binding .text | Fixed DebugTool RAM | Notes |
+|---|---:|---:|---:|---|
+| Increment 3 skeleton | 1 B | 2 B | 30 B | no product function |
+| Increment 4 MEM | 248 B | 38 B | 30 B | MEM + real diagnostic RAM adapter |
+
+Increment 4 adds **+247 B core** and **+36 B diagnostic bank glue** versus the
+Increment 3 skeleton, with **0 B RAM growth**. The 7-byte synthetic DynFS
+context in the diagnostic link is external state and is not counted as
+DebugTool RAM.
