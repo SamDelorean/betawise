@@ -480,23 +480,28 @@ Decision:
 - Current/final ROM integration supplies its actual address only after the
   DynFS resident plan proves lifetime and RAM ownership.
 
-### Derived INFO values
+### v0 INFO values
 
-Status: **CANDIDATE**
+Status: **VERIFIED in Increment 8**
 
-Without adding filesystem logic, INFO can derive/display:
+The final minimum read-only INFO screen displays:
 
 - F-slot from `$018E`;
-- file_id from the bound 7-byte active context, or via `FS_FSLOT_RESOLVE`
-  when needed;
+- file_id from the bound active context;
+- DebugTool MEM inspection bank;
+- payload-view pointer;
+- compat_base;
 - cursor offset = `$0122 - compat_base`;
 - view offset = `$0120 - compat_base`;
-- logical end/length = `$0124 - compat_base`;
-- start = `$0128 - compat_base`;
-- sequential position = `$0067 - compat_base`.
+- logical end/length = `$0124 - compat_base`.
 
-Fields that require unpublished/private allocator topology are not part of v0
-INFO.
+Increment 8 matched all displayed values against independent MAME CPU-space
+reads across two consecutive slot/file/context states.
+
+Mount pointer, origin, sequential position and capacity remain valid bound
+state but are deliberately omitted from the v0 screen to keep INFO inside its
+150-byte hard ceiling. Fields requiring allocator/extent traversal are not part
+of v0 INFO.
 
 ---
 
