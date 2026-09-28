@@ -310,15 +310,20 @@ Frozen shape:
 
 Total: 7 bytes, owned by DynFS integration, **not by DebugTool workspace**.
 
-INFO may derive, using `compat_base`:
+Increment 8 freezes the minimum v0 INFO display to:
 
+- stock F-slot selector
+- active file_id
+- DebugTool MEM inspection bank
+- payload-view pointer
+- compat_base
 - cursor offset = stock cursor - base
 - view offset = stock view - base
 - logical length/end = stock end - base
-- start offset = stock origin - base
-- sequential offset = stock sequential position - base
 
-INFO is read-only. It never repairs or republishes DynFS state.
+Mount pointer, origin, sequential position and capacity remain available
+bindings but are not rendered in v0. INFO is read-only and owns no cached
+filesystem state. It never repairs or republishes DynFS state.
 
 ## 9. Shared scratch rules
 
