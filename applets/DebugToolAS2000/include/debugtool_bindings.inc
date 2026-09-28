@@ -7,22 +7,13 @@
         .extern DBG_BIND_LCD_CLEAR
         .extern DBG_BIND_LCD_PUTS
         .extern DBG_BIND_LCD_PUTBYTE
-        .extern DBG_BIND_LCD_COMMAND
         .extern DBG_BIND_LCD_ROW0
         .extern DBG_BIND_LCD_ROW1
         .extern DBG_BIND_LCD_ROW2
         .extern DBG_BIND_LCD_ROW3
 
-        .extern DBG_BIND_BYTE_TO_HEX
         ; Stock $A3A0: input A=byte, prints two uppercase hex digits.
         .extern DBG_BIND_OUT_HEX
-        .extern DBG_BIND_KEY_DEQUEUE
-
-        ; Converts one stock raw keyboard-queue code in A to the firmware's
-        ; translated character in A. V=0 on a character, V=1 when the raw key
-        ; has no character translation.
-        .extern DBG_BIND_KEY_CHAR
-
         ; Complete non-blocking stock keyboard poll:
         ; scan/pump hardware, dequeue one raw key, translate to character.
         ; Returns A=translated character with V=0, or V=1 if none/invalid.
@@ -64,9 +55,6 @@
         .extern DBG_BIND_STOCK_VIEW
         .extern DBG_BIND_STOCK_CURSOR
         .extern DBG_BIND_STOCK_END
-        .extern DBG_BIND_STOCK_CAP
-        .extern DBG_BIND_STOCK_ORIGIN
-        .extern DBG_BIND_STOCK_SEQ
 
         ; 7-byte active DynFS compatibility context.
         .extern DBG_BIND_DYNFS_ACTIVE_CTX
