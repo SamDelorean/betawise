@@ -71,15 +71,6 @@ DBG_OUT_A:
         TAB
         JMP     DBG_BIND_LCD_PUTBYTE
 
-; A = raw byte. Uses stock verified byte -> two uppercase hex ASCII helper.
-DBG_OUT_HEX_A:
-        JSR     DBG_BIND_BYTE_TO_HEX
-        PSHB
-        TAB
-        JSR     DBG_BIND_LCD_PUTBYTE
-        PULB
-        JMP     DBG_BIND_LCD_PUTBYTE
-
 ; A = byte. Printable 20h..7Eh passes through; everything else becomes '.'.
 DBG_OUT_ASCII_A:
         CMPA    #0x20
@@ -144,9 +135,9 @@ DBG_MEM_HEADER_COMMON:
         JSR     DBG_OUT_A
 
         LDAA    DBG_WS_BASE+DBG_WS_TMP_WORD
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    DBG_WS_BASE+DBG_WS_TMP_WORD+1
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
 
         LDAA    #' '
         JMP     DBG_OUT_A
@@ -178,7 +169,7 @@ DBG_MEM_HEX_LOOP:
         JSR     DBG_MEM_READ_X
         INX
         STX     DBG_WS_BASE+DBG_WS_TMP_WORD
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    #' '
         JSR     DBG_OUT_A
 
@@ -740,27 +731,27 @@ DBG_CALL_RESULTS:
         JSR     DBG_BIND_LCD_CLEAR
         JSR     DBG_BIND_LCD_ROW0
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_A
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    #' '
         JSR     DBG_OUT_A
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_B
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    #' '
         JSR     DBG_OUT_A
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_CCR
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
 
         JSR     DBG_BIND_LCD_ROW1
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_X
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_X+1
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    #' '
         JSR     DBG_OUT_A
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_Y
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    DBG_WS_BASE+DBG_WS_CALL_OUT_Y+1
-        JMP     DBG_OUT_HEX_A
+        JMP     DBG_BIND_OUT_HEX
 
         .type DBG_CALL_RUN, @function
 DBG_CALL_RUN:
@@ -818,7 +809,7 @@ DBG_INFO_FIELD8:
         PSHA
         JSR     DBG_BIND_LCD_PUTBYTE
         PULA
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    #' '
         JMP     DBG_OUT_A
 
@@ -829,9 +820,9 @@ DBG_INFO_FIELD16_X:
         PULX
         STX     DBG_WS_BASE+DBG_WS_TMP_WORD
         LDAA    DBG_WS_BASE+DBG_WS_TMP_WORD
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    DBG_WS_BASE+DBG_WS_TMP_WORD+1
-        JSR     DBG_OUT_HEX_A
+        JSR     DBG_BIND_OUT_HEX
         LDAA    #' '
         JMP     DBG_OUT_A
 
