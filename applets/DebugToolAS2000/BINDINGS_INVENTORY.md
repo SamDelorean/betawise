@@ -148,16 +148,26 @@ Observed contract:
 - output: B = uppercase ASCII low hexadecimal digit;
 - handles 0-9 and A-F directly.
 
-Use:
+### `ROM_OUT_HEX` -> stock `$A3A0`
 
-- MEM address/data rendering;
-- CALL register display;
-- INFO compact numeric fields.
+Status: **VERIFIED / USED BY CONSOLIDATED v0**
+
+Observed implementation:
+
+- calls `$9350`;
+- preserves the low ASCII digit;
+- emits the high digit through `$A44B`;
+- emits the low digit through `$A44B`.
+
+Increment 9 proved this is exactly equivalent to the former local
+`DBG_OUT_HEX_A` helper. The local 12-byte duplicate was removed and the core
+now consumes symbolic `DBG_BIND_OUT_HEX`.
 
 Decision:
 
-- reuse `$9350`; do not add a local byte-to-hex formatter unless later
-  placement proves the call overhead larger than an inlined special case.
+- use `$A3A0` for all two-digit hexadecimal rendering;
+- `$9350` remains a verified stock primitive/internal dependency but is no
+  longer required directly by the portable core.
 
 ---
 
