@@ -92,6 +92,7 @@ The project is controlled by these documents:
 - `INCREMENT6_EDIT_RESULT.md` — HEX/ASCII EDIT, protected-write policy and MAME evidence.
 - `INCREMENT7_CALL_RESULT.md` — native HC11 CALL engine, stock/DynFS tests and MAME evidence.
 - `INCREMENT8_INFO_RESULT.md` — compact read-only DynFS/compatibility state view and transition evidence.
+- `INCREMENT9_V0_CONSOLIDATION.md` — final v0 size, duplicate/dead-code audit, combined regression and reproducible hashes.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -117,10 +118,12 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 6 — EDIT only: **CLOSED / PASS**
 - Increment 7 — CALL only: **CLOSED / PASS**
 - Increment 8 — INFO only: **CLOSED / PASS**
-- Increment 9 — v0 consolidation: **NEXT**
+- Increment 9 — v0 consolidation: **CLOSED / PASS**
+- Increment 10 — current-ROM integration: **NEXT**
 
-All five v0 functions now exist. INFO displays live slot/file, the selected
-physical MEM bank, payload-view mode, compat_base and cursor/view/end logical
-offsets. Two consecutive MAME states matched independent CPU-memory reads
-exactly. Current measured code is 1187 bytes core + 102 bytes diagnostic
-binding = 1289 executable bytes; fixed workspace remains 30 bytes.
+Consolidated v0 is reproducible and passes one combined MAME regression across
+MEM/GOTO/EDIT/CALL/INFO. Reuse of stock $A3A0 removed 12 duplicate bytes.
+Final measured executable size is **1277 bytes** (1175-byte core + 102-byte
+diagnostic binding); fixed workspace remains **30 bytes**. Final ROM placement,
+entry hook, workspace address and resident DynFS addresses remain late-bound
+for Increment 10.
