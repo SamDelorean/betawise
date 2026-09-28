@@ -13,13 +13,16 @@ NM="$PREFIX/m68hc11-nm"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-if grep -En '0x[0-9A-Fa-f]{4}|\$[0-9A-Fa-f]{4}' \
+for SRC in \
   "$ROOT/core/debugtool_core.asm" \
   "$ROOT/include/debugtool_state.inc" \
-  "$ROOT/include/debugtool_bindings.inc"; then
-  echo "ERROR: absolute 16-bit address leaked into portable core/interface" >&2
-  exit 1
-fi
+  "$ROOT/include/debugtool_bindings.inc"
+do
+  if sed 's/;.*$//' "$SRC" | grep -En '0x[0-9A-Fa-f]{4}|\\$[0-9A-Fa-f]{4}'; then
+    echo "ERROR: absolute 16-bit address leaked into portable core/interface: $SRC" >&2
+    exit 1
+  fi
+done
 
 INC="-I$ROOT/include"
 "$AS" -m68hc11 $INC -o "$OUT/core.o" "$ROOT/core/debugtool_core.asm"
