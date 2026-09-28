@@ -861,11 +861,9 @@ DBG_INFO_REDRAW:
         LDAB    #'B'
         JSR     DBG_INFO_FIELD8
 
-        ; Row 1: active mount pointer, payload-view pointer, compat base.
+        ; Row 1: payload-view pointer and compat base.  P=0000 is the
+        ; resident physical-payload mode; nonzero P is a sparse/view context.
         JSR     DBG_BIND_LCD_ROW1
-        LDX     DBG_BIND_DYNFS_ACTIVE_CTX
-        LDAB    #'M'
-        JSR     DBG_INFO_FIELD16_X
         LDX     DBG_BIND_DYNFS_ACTIVE_CTX+2
         LDAB    #'P'
         JSR     DBG_INFO_FIELD16_X
@@ -885,14 +883,7 @@ DBG_INFO_REDRAW:
         LDAB    #'E'
         JSR     DBG_INFO_FIELD_DELTA_X
 
-        ; Row 3: logical origin and sequential offsets.
-        JSR     DBG_BIND_LCD_ROW3
-        LDX     #DBG_BIND_STOCK_ORIGIN
-        LDAB    #'O'
-        JSR     DBG_INFO_FIELD_DELTA_X
-        LDX     #DBG_BIND_STOCK_SEQ
-        LDAB    #'Q'
-        JMP     DBG_INFO_FIELD_DELTA_X
+        RTS
 
         .size DBG_INFO_REDRAW, .-DBG_INFO_REDRAW
 
