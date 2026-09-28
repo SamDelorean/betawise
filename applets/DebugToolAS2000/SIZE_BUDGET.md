@@ -94,3 +94,13 @@ string/output budget categories.
 
 Current executable checkpoint is **1141 B** (core + diagnostic binding), inside
 the **ACCEPTABLE 1025-1536 B** project range.
+
+
+| Increment 8 INFO | 1187 B | 102 B | 30 B | MEM + GOTO + EDIT + CALL + INFO |
+
+Increment 8 delta versus Increment 7 is **+148 B core**, **0 B binding**, and
+**0 B RAM growth**. INFO-specific core cost is **148 B**, inside its 150-byte
+hard planning ceiling.
+
+Current executable checkpoint is **1289 B** (core + diagnostic binding), inside
+the **ACCEPTABLE 1025-1536 B** project range. All five v0 functions now exist.
