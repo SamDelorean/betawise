@@ -104,3 +104,13 @@ hard planning ceiling.
 
 Current executable checkpoint is **1289 B** (core + diagnostic binding), inside
 the **ACCEPTABLE 1025-1536 B** project range. All five v0 functions now exist.
+
+
+| Increment 9 consolidated v0 | 1175 B | 102 B | 30 B | duplicate-helper/dead-interface audit complete |
+
+Increment 9 removes the 12-byte local two-digit hex output helper by reusing
+verified stock `$A3A0`. Final executable v0 size is **1277 B** and fixed
+DebugTool workspace remains **30 B**.
+
+Acceptance result: **ACCEPTABLE** (1025-1536 B). No size-driven optimization
+pass is required before current-ROM integration.
