@@ -26,6 +26,8 @@
 
         .globl DBG_BIND_BYTE_TO_HEX
         .set DBG_BIND_BYTE_TO_HEX,   0x9350
+        .globl DBG_BIND_OUT_HEX
+        .set DBG_BIND_OUT_HEX,       0xA3A0
         .globl DBG_BIND_KEY_DEQUEUE
         .set DBG_BIND_KEY_DEQUEUE,   0x938C
 
