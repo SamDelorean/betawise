@@ -14,6 +14,7 @@
         .word DBG_BIND_LCD_ROW2
         .word DBG_BIND_LCD_ROW3
         .word DBG_BIND_BYTE_TO_HEX
+        .word DBG_BIND_OUT_HEX
         .word DBG_BIND_KEY_DEQUEUE
         .word DBG_BIND_KEY_GETCHAR
         .word DBG_BIND_RAM_ENTER
