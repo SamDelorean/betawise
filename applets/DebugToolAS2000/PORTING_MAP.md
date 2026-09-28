@@ -18,7 +18,7 @@ Status legend:
 | `g_mode`, `g_cursor` | REWRITE | Compact byte/bit state. |
 | 68k bus-error handler | DROP | Replace with AS2000-specific valid-range/bank rules where needed. |
 | `DumpSetCursor*` | ROM-REUSE + REWRITE | Use stock cursor/LCD services where smaller than direct I/O. |
-| `DumpRedrawByteHex` | REWRITE | HC11 nibble-to-hex path; avoid sprintf. |
+| `DumpRedrawByteHex` | ROM-REUSE | Consolidated v0 reuses stock `$A3A0`, which converts and emits both hexadecimal digits. |
 | `DumpRedrawByteAscii` | REWRITE | Minimal printable/non-printable mapping. |
 | `DumpWriteAndRedrawCur` | REWRITE | Byte write + local redraw. |
 | `DumpRedrawScreen` | REWRITE + ROM-REUSE | Fixed 40x4 layout, no general formatting library. |
