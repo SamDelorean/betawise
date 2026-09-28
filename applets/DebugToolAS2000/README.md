@@ -91,6 +91,7 @@ The project is controlled by these documents:
 - `INCREMENT5_GOTO_RESULT.md` — GOTO parser, keyboard path and MAME evidence.
 - `INCREMENT6_EDIT_RESULT.md` — HEX/ASCII EDIT, protected-write policy and MAME evidence.
 - `INCREMENT7_CALL_RESULT.md` — native HC11 CALL engine, stock/DynFS tests and MAME evidence.
+- `INCREMENT8_INFO_RESULT.md` — compact read-only DynFS/compatibility state view and transition evidence.
 
 If an implementation idea conflicts with these documents, the frozen v0 scope
 and `WORKPLAN.md` take precedence until deliberately revised by the user.
@@ -115,11 +116,11 @@ later in the relocated/final ROM without creating a second implementation.
 - Increment 5 — GOTO only: **CLOSED / PASS**
 - Increment 6 — EDIT only: **CLOSED / PASS**
 - Increment 7 — CALL only: **CLOSED / PASS**
-- Increment 8 — INFO only: **NEXT**
+- Increment 8 — INFO only: **CLOSED / PASS**
+- Increment 9 — v0 consolidation: **NEXT**
 
-Increment 7 implements the native HC11 CALL probe with A/B(D)/X/Y inputs and
-A/B/X/Y/CCR capture. The stack-built RTS mechanism passed a synthetic target,
-stock $9350 and the actual placement-free DynFS FS_BLOCK_MAP source, plus a
-full physical-keyboard CALL path in as2kdiag. Current measured code is
-1039 bytes core + 102 bytes diagnostic binding; fixed workspace remains
-30 bytes.
+All five v0 functions now exist. INFO displays live slot/file, the selected
+physical MEM bank, payload-view mode, compat_base and cursor/view/end logical
+offsets. Two consecutive MAME states matched independent CPU-memory reads
+exactly. Current measured code is 1187 bytes core + 102 bytes diagnostic
+binding = 1289 executable bytes; fixed workspace remains 30 bytes.
