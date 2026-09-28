@@ -1,5 +1,5 @@
 ; DebugTool-AS2000 portable core.
-; Increment 7 implements MEM + GOTO + EDIT + CALL only.
+; Increment 8 implements MEM + GOTO + EDIT + CALL + INFO only.
 ; No absolute hardware, ROM, RAM, or DynFS addresses are permitted here.
 
         .include "debugtool_state.inc"
@@ -800,3 +800,112 @@ DBG_CALL_EXIT:
 
 DBG_CALL_LABELS:
         .ascii  "TABXY"
+
+
+; ===========================================================================
+; Increment 8 — INFO only
+;
+; Read-only compact DynFS/stock compatibility state.
+; Logical offsets are shown relative to active compat_base.
+; No INFO snapshot or filesystem repair state is allocated.
+; ===========================================================================
+
+        .globl DBG_INFO_REDRAW
+        .globl DBG_INFO_RUN
+
+; B = label, A = byte value. Emits "Lxx ".
+DBG_INFO_FIELD8:
+        PSHA
+        JSR     DBG_BIND_LCD_PUTBYTE
+        PULA
+        JSR     DBG_OUT_HEX_A
+        LDAA    #' '
+        JMP     DBG_OUT_A
+
+; B = label, X = word value. Emits "Lxxxx ".
+DBG_INFO_FIELD16_X:
+        PSHX
+        JSR     DBG_BIND_LCD_PUTBYTE
+        PULX
+        STX     DBG_WS_BASE+DBG_WS_TMP_WORD
+        LDAA    DBG_WS_BASE+DBG_WS_TMP_WORD
+        JSR     DBG_OUT_HEX_A
+        LDAA    DBG_WS_BASE+DBG_WS_TMP_WORD+1
+        JSR     DBG_OUT_HEX_A
+        LDAA    #' '
+        JMP     DBG_OUT_A
+
+; B = label, X -> stock compatibility word.
+; Emits label + (stock_word - compat_base) as 16-bit hex.
+DBG_INFO_FIELD_DELTA_X:
+        PSHB
+        LDD     0,X
+        SUBD    DBG_BIND_DYNFS_ACTIVE_CTX+5
+        XGDX
+        PULB
+        JMP     DBG_INFO_FIELD16_X
+
+        .type DBG_INFO_REDRAW, @function
+DBG_INFO_REDRAW:
+        JSR     DBG_BIND_LCD_CLEAR
+
+        ; Row 0: selected stock slot, DynFS file ID, physical MEM bank.
+        JSR     DBG_BIND_LCD_ROW0
+        LDAA    DBG_BIND_STOCK_FSLOT
+        LDAB    #'S'
+        JSR     DBG_INFO_FIELD8
+        LDAA    DBG_BIND_DYNFS_ACTIVE_CTX+4
+        LDAB    #'F'
+        JSR     DBG_INFO_FIELD8
+        LDAA    DBG_WS_BASE+DBG_WS_MEM_BANK
+        LDAB    #'B'
+        JSR     DBG_INFO_FIELD8
+
+        ; Row 1: active mount pointer, payload-view pointer, compat base.
+        JSR     DBG_BIND_LCD_ROW1
+        LDX     DBG_BIND_DYNFS_ACTIVE_CTX
+        LDAB    #'M'
+        JSR     DBG_INFO_FIELD16_X
+        LDX     DBG_BIND_DYNFS_ACTIVE_CTX+2
+        LDAB    #'P'
+        JSR     DBG_INFO_FIELD16_X
+        LDX     DBG_BIND_DYNFS_ACTIVE_CTX+5
+        LDAB    #'K'
+        JSR     DBG_INFO_FIELD16_X
+
+        ; Row 2: logical cursor/view/end offsets relative to compat_base.
+        JSR     DBG_BIND_LCD_ROW2
+        LDX     #DBG_BIND_STOCK_CURSOR
+        LDAB    #'C'
+        JSR     DBG_INFO_FIELD_DELTA_X
+        LDX     #DBG_BIND_STOCK_VIEW
+        LDAB    #'V'
+        JSR     DBG_INFO_FIELD_DELTA_X
+        LDX     #DBG_BIND_STOCK_END
+        LDAB    #'E'
+        JSR     DBG_INFO_FIELD_DELTA_X
+
+        ; Row 3: logical origin and sequential offsets.
+        JSR     DBG_BIND_LCD_ROW3
+        LDX     #DBG_BIND_STOCK_ORIGIN
+        LDAB    #'O'
+        JSR     DBG_INFO_FIELD_DELTA_X
+        LDX     #DBG_BIND_STOCK_SEQ
+        LDAB    #'Q'
+        JMP     DBG_INFO_FIELD_DELTA_X
+
+        .size DBG_INFO_REDRAW, .-DBG_INFO_REDRAW
+
+        .type DBG_INFO_RUN, @function
+DBG_INFO_RUN:
+        LDAA    #DBG_MODE_INFO
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        JSR     DBG_INFO_REDRAW
+DBG_INFO_WAIT:
+        JSR     DBG_BIND_KEY_GETCHAR
+        BVS     DBG_INFO_WAIT
+        LDAA    #DBG_MODE_MEM
+        STAA    DBG_WS_BASE+DBG_WS_UI_MODE
+        JSR     DBG_MEM_REDRAW
+        RTS
+        .size DBG_INFO_RUN, .-DBG_INFO_RUN
