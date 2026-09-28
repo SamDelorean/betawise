@@ -14,6 +14,8 @@
         .extern DBG_BIND_LCD_ROW3
 
         .extern DBG_BIND_BYTE_TO_HEX
+        ; Stock $A3A0: input A=byte, prints two uppercase hex digits.
+        .extern DBG_BIND_OUT_HEX
         .extern DBG_BIND_KEY_DEQUEUE
 
         ; Converts one stock raw keyboard-queue code in A to the firmware's
