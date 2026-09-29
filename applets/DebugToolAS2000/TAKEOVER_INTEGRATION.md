@@ -24,3 +24,30 @@ No portable-core rewrite is authorized by this decision.
 
 Integration sequencing is controlled by
 `SamDelorean/AS2K-DictROM-Takeover/docs/DEBUGTOOL_TAKEOVER_PAYLOAD.md`.
+
+
+## Current external takeover status
+
+The no-Z takeover project has now closed its synthetic landing proof through
+BT8.
+
+Current boundary:
+
+```
+BT8 CLOSED / PASS
+BT2 DEFERRED_PHYSICAL
+BT9 BLOCKED_BY_BT2_PHYSICAL
+```
+
+The exact 27-byte stage-0 reaches DictROM bank0 at $4000 with zero stock-Z
+instruction fetches in the bounded proof.
+
+MAME diagnostic preparation is complete through its runnable `asma2kbt` ROM
+set, but native compile/runtime remains pending.
+
+The production bootstrap companion is now an ATtiny85 programmed by ISP with
+no bootloader. That companion work does not change the DebugTool portable core
+or authorize current-ROM Increment 10 work.
+
+DebugTool remains the selected first real user-facing takeover payload after
+the physical BT9 landing proof.
