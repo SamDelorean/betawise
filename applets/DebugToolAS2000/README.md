@@ -107,23 +107,34 @@ This permits the same core to be used first in the diagnostic/current ROM and
 later in the relocated/final ROM without creating a second implementation.
 
 
-## Progress
+## Archive status
 
-- Increment 0 — architecture freeze: **CLOSED**
-- Increment 1 — dependency inventory: **CLOSED / PASS**
-- Increment 2 — ABI and data-state freeze: **CLOSED / PASS**
-- Increment 3 — binding interface skeleton: **CLOSED / PASS**
-- Increment 4 — MEM only: **CLOSED / PASS**
-- Increment 5 — GOTO only: **CLOSED / PASS**
-- Increment 6 — EDIT only: **CLOSED / PASS**
-- Increment 7 — CALL only: **CLOSED / PASS**
-- Increment 8 — INFO only: **CLOSED / PASS**
-- Increment 9 — v0 consolidation: **CLOSED / PASS**
-- Increment 10 — current-ROM integration: **NEXT**
+**ARCHIVED — 2026-09-30**
 
-Consolidated v0 is reproducible and passes one combined MAME regression across
-MEM/GOTO/EDIT/CALL/INFO. Reuse of stock $A3A0 removed 12 duplicate bytes.
-Final measured executable size is **1277 bytes** (1175-byte core + 102-byte
-diagnostic binding); fixed workspace remains **30 bytes**. Final ROM placement,
-entry hook, workspace address and resident DynFS addresses remain late-bound
-for Increment 10.
+This development front is no longer active because the overall project
+direction changed.
+
+The archived technical checkpoint is the completed **Increment 9 consolidated
+v0**:
+
+- MEM: closed / pass
+- GOTO: closed / pass
+- EDIT: closed / pass
+- CALL: closed / pass
+- INFO: closed / pass
+- consolidated executable size: 1277 bytes
+- fixed DebugTool workspace: 30 bytes
+- combined MAME regression: pass
+- reproducible v0 build: pass
+
+The previous plan items:
+
+- Increment 10 — current-ROM integration
+- Increment 11 — later-ROM relocation
+
+are **not to be executed** under this archived front.
+
+All source, test harnesses, reverse-engineering findings, build scripts, size
+records and increment reports are retained as reference material. No further
+implementation work should resume from this branch unless the project is
+explicitly reactivated.
