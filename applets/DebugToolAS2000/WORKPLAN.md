@@ -1,3 +1,9 @@
+> **ARCHIVED — 2026-09-30**  
+> This work plan is retained for historical/reference purposes only. The project
+> direction changed after Increment 9. Increment 10 and Increment 11 are
+> cancelled for this front and must not be resumed unless explicitly
+> reactivated.
+
 # DebugTool-AS2000 rigid work plan
 
 This is the controlling execution plan for v0. Work proceeds in order.
@@ -280,7 +286,7 @@ Exit criterion:
 
 - one reproducible v0 binary/core object and test record.
 
-## Increment 10 — current-ROM integration
+## Increment 10 — current-ROM integration — CANCELLED / ARCHIVED
 
 This increment is allowed only after v0 consolidation.
 
@@ -303,7 +309,7 @@ Exit criterion:
 - same v0 core runs in the current patched ROM with only binding/placement
   changes.
 
-## Increment 11 — later-ROM relocation
+## Increment 11 — later-ROM relocation — CANCELLED / ARCHIVED
 
 This increment occurs only when the later ROM/memory layout exists.
 
