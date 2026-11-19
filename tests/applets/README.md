@@ -14,3 +14,4 @@ Current probes:
 
 - `DialogProbe` — A0F4 / dialog item indexing, IDs, and shortcut behavior.
 - `BatteryProbe` — A138 / baseline interactive battery display.
+- `FileIOProbe` — A190/A194/A198/A19C/A1C8/A1CC dynamic File API regression.
