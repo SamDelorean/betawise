@@ -1,5 +1,7 @@
 # SDK header reconciliation — batch 2
 
+> **Note (Consolidation 2026-11-19):** the `void` signatures shown here for A32C and A334 are superseded by `sdk-audit-a32c-a334-betawise-boundary-*.md` and by `os3k/os3k.h`, which declare `uint32_t SYS_A32C(void)` and `int32_t SYS_A334(void)`. Retained as a historical record.
+
 This note defines the next low-risk cleanup pass for `os3k/os3k.h` after the ABI consolidation through `A470`. It is intentionally limited to contracts already classified `CERRADA`; entries with `CERRADA_CON_LÍMITE_DE_EVIDENCIA` are not promoted to stronger C prototypes here.
 
 ## Build gate

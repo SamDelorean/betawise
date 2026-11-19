@@ -1,5 +1,7 @@
 # System 3 / OS3K SmartApplet runtime API closure — A238–A244
 
+> **Status: SUPERSEDED as the current contract** for A238, A244 by the later source-first closure(s): [`applet-find-by-name-a238-source-first-closure.md`](applet-find-by-name-a238-source-first-closure.md), [`applet-send-message-a244-source-first-closure.md`](applet-send-message-a244-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanical ABI of the four named SmartApplet runtime traps
 immediately following the selected-applet context block A22C–A234:
 

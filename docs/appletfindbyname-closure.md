@@ -1,5 +1,7 @@
 # System 3 / OS3K AppletFindByName — A238 SDK consolidation
 
+> **Status: SUPERSEDED as the current contract** for A238 by the later source-first closure(s): [`applet-find-by-name-a238-source-first-closure.md`](applet-find-by-name-a238-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note is the developer-facing consolidation record for A238, exposed by BetaWise as:
 
 ```c

@@ -1,5 +1,7 @@
 # System 3 / OS3K clipboard editing block — A200–A208
 
+> **Status: SUPERSEDED as the current contract** for A200, A208 by the later source-first closure(s): [`sys-a200-clipboard-copy-source-first-closure.md`](sys-a200-clipboard-copy-source-first-closure.md), [`sys-a208-clipboard-paste-source-first-closure.md`](sys-a208-clipboard-paste-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanical ABI of the System 3 copy/cut/paste primitives
 A200, A204 and A208.  Their functional roles are clear, but reliable original
 System 3 public symbols have not been recovered, so the SDK intentionally keeps

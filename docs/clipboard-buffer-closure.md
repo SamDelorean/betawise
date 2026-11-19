@@ -1,5 +1,7 @@
 # System 3 / OS3K clipboard buffer API — A20C–A214
 
+> **Status: SUPERSEDED as the current contract** for A20C, A214 by the later source-first closure(s): [`clipboardset-a20c-source-first-closure.md`](clipboardset-a20c-source-first-closure.md), [`clipboardclear-a214-source-first-closure.md`](clipboardclear-a214-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanical ABI of the named System 3 clipboard buffer
 routines A20C `ClipboardSet`, A210 `ClipboardGet`, and A214 `ClipboardClear`.
 The analysis was compared directly across the November 2005 AlphaSmart 3000

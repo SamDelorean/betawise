@@ -1,5 +1,7 @@
 # System 3 / OS3K runtime services closure — A248–A258
 
+> **Status: SUPERSEDED as the current contract** for A248, A258 by the later source-first closure(s): [`sys-a248-source-first-closure.md`](sys-a248-source-first-closure.md), [`sys-a258-file-password-protection-setter-source-first-closure.md`](sys-a258-file-password-protection-setter-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanical ABI of the five traps between the named
 SmartApplet runtime API (`A238`–`A244`) and the still-partial special-key
 dispatcher `A25C`:

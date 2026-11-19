@@ -1,5 +1,7 @@
 # System 3 / OS3K clipboard state and capacity — A218–A228
 
+> **Status: SUPERSEDED as the current contract** for A218, A228 by the later source-first closure(s): [`sys-a218-clipboard-tag-getter-source-first-closure.md`](sys-a218-clipboard-tag-getter-source-first-closure.md), [`sys-a228-clipboard-resize-source-first-closure.md`](sys-a228-clipboard-resize-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanical ABI of the five traps immediately following
 `ClipboardClear`: A218, A21C, A220, A224 and A228. Their behavior is stable at
 the machine level in the November 2005 AlphaSmart 3000 ROM, November 2005 NEO

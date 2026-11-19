@@ -1,5 +1,7 @@
 # A260–A270 SmartApplet selection-block mask family
 
+> **Status: SUPERSEDED as the current contract** for A260 by the later source-first closure(s): [`sys-a260-applet-selection-mask-source-first-closure.md`](sys-a260-applet-selection-mask-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 ## Current audit status
 
 The historical family reconstruction is retained as context, but the current

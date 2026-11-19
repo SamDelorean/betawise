@@ -1,5 +1,7 @@
 # System 3 / OS3K applet-selection context — A22C–A234
 
+> **Status: SUPERSEDED as the current contract** for A234 by the later source-first closure(s): [`sys-a234-selected-applet-id-source-first-closure.md`](sys-a234-selected-applet-id-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanical ABI of the three traps immediately before the
 named Applet lookup/message block (`AppletFindByName`, `AppletFindById`,
 `AppletGetName`, `AppletSendMessage`). The compared implementations are the
