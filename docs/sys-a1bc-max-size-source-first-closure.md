@@ -1,6 +1,6 @@
 # SYS_A1BC / A1BC — per-file maximum-size query
 
-Status: mechanically and semantically closed from the three canonical System 3 generations. No trustworthy modern vendor symbol was recovered, so the neutral `SYS_A1BC` name is retained.
+Status: reconciliation companion of `docs/sys-a1bc-file-max-size-source-first-closure.md`, which is the canonical A1BC closure; contract identical. mechanically and semantically closed from the three canonical System 3 generations. No trustworthy modern vendor symbol was recovered, so the neutral `SYS_A1BC` name is retained.
 
 ## Contract
 

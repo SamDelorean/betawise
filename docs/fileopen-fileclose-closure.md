@@ -1,5 +1,7 @@
 # FileOpen / FileClose ABI closure — A1C8 / A1CC
 
+> **Status: SUPERSEDED as the current contract** for A1C8, A1CC by the later source-first closure(s): [`fileopen-a1c8-source-first-closure.md`](fileopen-a1c8-source-first-closure.md), [`fileclose-a1cc-source-first-closure.md`](fileclose-a1cc-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the public ABI contract of System 3 traps A1C8 and A1CC for the BetaWise SDK.
 
 The mechanical ABI is confidence **A** from direct comparison of AlphaSmart 3000 System 3 (Nov 2005), NEO System 3 (Nov 2005), and NEO System 3 (Jul 2013). The `FileOpen` / `FileClose` names are confidence **B+**: they are longstanding BetaWise names and now match the complete observed lifecycle, although the early 2000 `FileModule.c` source predates these literal wrapper names.

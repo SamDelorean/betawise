@@ -1,5 +1,7 @@
 # A1A4 / FileDeleteChars ABI closure
 
+> **Status: SUPERSEDED as the current contract** for A1A4 by the later source-first closure(s): [`filedeletechars-a1a4-source-first-closure.md`](filedeletechars-a1a4-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 Status: **closed for SDK use**.
 
 - Trap: `A1A4`

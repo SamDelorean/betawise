@@ -1,5 +1,7 @@
 # A1D0-A1DC file password/state block closure
 
+> **Status: SUPERSEDED as the current contract** for A1D0, A1D4, A1D8, A1DC by the later source-first closure(s): [`sys-a1d0-file-state-flags-source-first-closure.md`](sys-a1d0-file-state-flags-source-first-closure.md), [`sys-a1d4-file-state-query-source-first-closure.md`](sys-a1d4-file-state-query-source-first-closure.md), [`sys-a1d8-file-password-reset-source-first-closure.md`](sys-a1d8-file-password-reset-source-first-closure.md), [`sys-a1dc-file-password-access-source-first-closure.md`](sys-a1dc-file-password-access-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanically usable ABI of System 3 traps A1D0, A1D4,
 A1D8 and A1DC. The implementation was compared across the November 2005
 AlphaSmart 3000 ROM, the November 2005 NEO ROM and the July 2013 NEO/System

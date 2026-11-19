@@ -1,5 +1,7 @@
 # System 3 / OS3K file identity and dynamic-file block — A1E0–A1FC
 
+> **Status: SUPERSEDED as the current contract** for A1E0, A1E4, A1E8, A1EC, A1F0, A1F4, A1F8, A1FC by the later source-first closure(s): [`password-verify-file-dialog-source-first-closure.md`](password-verify-file-dialog-source-first-closure.md), [`password-change-file-dialog-source-first-closure.md`](password-change-file-dialog-source-first-closure.md), [`sys-a1e8-dynamic-file-create-source-first-closure.md`](sys-a1e8-dynamic-file-create-source-first-closure.md), [`sys-a1ec-dynamic-file-remove-source-first-closure.md`](sys-a1ec-dynamic-file-remove-source-first-closure.md), [`sys-a1f0-file-name-source-first-closure.md`](sys-a1f0-file-name-source-first-closure.md), [`sys-a1f4-local-index-source-first-closure.md`](sys-a1f4-local-index-source-first-closure.md), [`sys-a1f8-local-index-reverse-lookup-source-first-closure.md`](sys-a1f8-local-index-reverse-lookup-source-first-closure.md), [`sys-a1fc-token-build-validate-source-first-closure.md`](sys-a1fc-token-build-validate-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note closes the mechanically usable ABI of traps A1E0–A1FC and records the
 historical genealogy of the two password-dialog entries.  Analysis used the
 November 2005 AlphaSmart 3000 ROM, November 2005 NEO ROM, July 2013 NEO/System

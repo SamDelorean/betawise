@@ -1,5 +1,7 @@
 # System 3 / OS3K FileGetCurrentFile — A1A8 SDK consolidation
 
+> **Status: SUPERSEDED as the current contract** for A1A8 by the later source-first closure(s): [`filegetcurrentfile-a1a8-source-first-closure.md`](filegetcurrentfile-a1a8-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note is the developer-facing consolidation record for A1A8, exposed by BetaWise as:
 
 ```c

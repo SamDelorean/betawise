@@ -1,5 +1,7 @@
 # A1C0 / `FileSetFolder` — ABI closure
 
+> **Status: SUPERSEDED as the current contract** for A1C0 by the later source-first closure(s): [`filesetfolder-a1c0-source-first-closure.md`](filesetfolder-a1c0-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 Status: **closed for SDK use; confidence A for the mechanical ABI**.
 
 This note records the closure point for System 3 syscall A1C0.  The public
