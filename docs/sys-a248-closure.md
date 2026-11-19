@@ -1,5 +1,7 @@
 # System 3 / OS3K SYS_A248 — A248 SDK consolidation
 
+> **Status: SUPERSEDED as the current contract** for A248 by the later source-first closure [`sys-a248-source-first-closure.md`](sys-a248-source-first-closure.md). Retained unchanged for historical genealogy and earlier evidence. (Consolidation 2026-11-19.)
+
 This note is the developer-facing consolidation record for A248, currently exposed with the neutral name:
 
 ```c
